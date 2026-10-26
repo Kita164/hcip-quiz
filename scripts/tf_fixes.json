@@ -180,8 +180,8 @@
     "fix": "只能静默离组的是IGMPv1，IGMPv2可以用Leave报文主动离组。"
   },
   "821-112": {
-    "hi": "RTB、RTC和RTD都是ABR路由器",
-    "fix": "图里这几台并不都是ABR，只有至少连接两个区域的路由器才是ABR。"
+    "hi": "和RTD都是ABR",
+    "fix": "RTB、RTC是ABR（同时连Area 0和其他区域），只有RTD不是ABR。"
   },
   "821-119": {
     "hi": "不允许被路由汇总(asbr-summary)",
