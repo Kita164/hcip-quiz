@@ -142,6 +142,40 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   }
 }
 
+
+.opts li.correct-false {
+  background: color-mix(in srgb, #ef4444 22%, var(--card));
+  border-color: color-mix(in srgb, #ef4444 55%, var(--border));
+}
+.opts li.correct-false .key {
+  color: #dc2626;
+}
+@media (prefers-color-scheme: light) {
+  .opts li.correct-false {
+    background: color-mix(in srgb, #fecaca 50%, #ffffff);
+    border-color: color-mix(in srgb, #ef4444 40%, var(--border));
+  }
+  .opts li.correct-false .key {
+    color: #b91c1c;
+  }
+}
+.ans-box.ans-false {
+  background: color-mix(in srgb, #ef4444 12%, transparent);
+  border-color: color-mix(in srgb, #ef4444 35%, var(--border));
+}
+.ans-box.ans-false .ans-text {
+  color: #ef4444;
+}
+@media (prefers-color-scheme: light) {
+  .ans-box.ans-false {
+    background: color-mix(in srgb, #fecaca 40%, transparent);
+    border-color: color-mix(in srgb, #ef4444 30%, var(--border));
+  }
+  .ans-box.ans-false .ans-text {
+    color: #dc2626;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -172,9 +206,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】如图所示，通过配置VRRP与BFD联动，当Backup设备通过BFD感知故障发生之后，等待Master_Down_Timer计时器超时后Backup设备会立即切换VRRP状态。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   <div class="figs"><img src="images/f82053b353be1367.jpg" alt="题目配图" loading="lazy" referrerpolicy="no-referrer" data-orig="https://www.borimooc.com/itmoocPic/quetionContent/2026-01/32379_1769567617057.jpg" /></div>
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -214,9 +248,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】在使用Ethernet链路层协议的IS-IS网络中，缺省情况下，所有路由器都需要互相建立邻接关系。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -277,9 +311,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】BGP是一种实现自治系统AS之间的路由可达，并选择最佳路由的矢量性协议。它使用TCP作为其传输层协议(端口号为179)，并周期性进行路由更新</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -298,9 +332,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】某企业管理员在配置VPN实例时为了减轻工作量，可以先将接口IP地址和特性通过脚本批量导入到设备，然后再手工将接口与相关VPN实例绑定。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -319,9 +353,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】在三层网络中，所有路由协议自身都拥有故障检查机制，但是由于响应时间较慢，在发生故障时可能会造成大量数据丢失更新</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -361,9 +395,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】GRE是一种二层VPN封装技术，可以对某些数据链路层协议的报文进行封装，最后使封装后的报文都能钩够在IP网铬中传输。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -403,9 +437,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】路由器查找FIB表时，若匹配表项中的TunnelID为O，则表示匹配该项的报文通过隧道转发，如:MPLS隧道转发。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -424,9 +458,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】在IGMPv1中，查询器的选择由组播路由协议(比如PIM)决定。在IGMPV2和IGMPv3中，由IP地址最大的设备接口充当查询器</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -445,9 +479,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】BFD提供了一个通用的、标准化的、跟介质无关的、协议无关的快速故障检测机制，如果想要通过该机制检测链路是否连通，两端设备必须都需要支持该特性。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -466,9 +500,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】使用ACL进行路由匹配时，不管是基本ACL还是高级ACL，或者是用户ACL，缺省情况下它们的ACL规则步长均为10。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -487,9 +521,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】在OSPF或IS-IS网络中,路由器可以通过命令filter-policy import过滤掉其他邻居转发给它的LSA。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -634,9 +668,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】工程师在配置VRRP时需要注意各备份组之间的虚拟IP地址不能重复，但是同属一个备份组的设备接口可以使用不同的VRID。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -865,9 +899,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】某WLAN网络中，AC与AP为三层组网，且AC与AP均采用IPv6地址。此时AP可通过DHCPv6服务器响应报文中所携带的Option43字段来获取AC的IPv6地址fc00:1::1.</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -907,9 +941,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】某企业网络中，用户要求研发人员的流量需按照特定的转发路径进行数据转发，而非研发人员的流量则根据路由表进行转发。针对上述需求，可通过配置filter-policy实现。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -928,9 +962,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】在BGP中AS_Path属性按矢量顺序记录了某条路由从本地到目的地址所要经过的所有AS编号，如果BGPSpeaker将这条路由通告给IBGP对等体时，会在Open报文中创建一个空的AS_Path列表，从而避免了AS间的路由环路。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -949,9 +983,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】在OSPF网络中，NSSA区域与STUB区域都是为了减少LSA数量，两者最主要的区别在于，NSSA区域可以引入外部路由，并同时接收OSPF其他区域引入的外部路由。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -1096,9 +1130,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】二层交换机的以太网接口支持多种接口类型，但无论哪种接口类型，都会存在缺省VLANID，且在华为交换机上，该缺省VLANID为11。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -1159,9 +1193,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】当防火墙接收到一个报文且没有命中会话表时会直接丢弃，从而防止外部攻击，可以有效保障企业内部的信息安全。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -1222,9 +1256,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】在OSPF网络中，7类LSA只能由NSSA区域或STUB区域中的ASBR产生，用于描述到达OSPF域外的路由。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -1264,9 +1298,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】多主检测MAD是一种检测和处理堆叠分裂的协议，有直连检测方式和代理检测方式。在同一堆叠系统中，可同时配置两种检测方式,从而避免检查标记IP和MAC冲突对业务产生影响。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -1306,9 +1340,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】当OSPF网络类型被指定为NBMA网络时，必须在接口视图下使用ospinnbmapeerXX.XX.x.xx命令来互相指邻居，否则OSPF邻居关系不会建立。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -1327,9 +1361,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】使用Route-Policy工具可以使用if-match子项匹配BGP路由的LocalPreference属性。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -1348,9 +1382,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】用户购买设备后，若需要使用BFD增值特性时，需获取设备对应功能或资源的License，以满足业务的需求。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -1411,9 +1445,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】路由器查找FIB表时，将报文的目的IP地址和FIB表中的各表项的掩码进行按位&quot;逻辑或&quot;，得到的地址符合FIB表中的网络地址则匹配。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -1495,9 +1529,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】IGMPsnooping功能可以使交换机工作在三层时，通过侦听上游的三层设备和用户主机之间发送的IGMP报文来建立组播数据报文的三层转发表，管理和控制组播数据报文的转发，进而有效抑制组播数据在三层网络中扩散。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -1516,9 +1550,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】在IPv6中，当主机需要和目标主机通信时，必须先通过ARP协议获得目的主机的链路层地址。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -1579,9 +1613,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】华为防火墙的默认安全区域不能删除，但是管理员可以手工修改安全优先级</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -1621,9 +1655,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】VRRP目前有两个版本，其中VRRPV2仅适用于IPV4网络，VRRPV3仅适用于IPv6网络。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -1705,9 +1739,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】路由聚合是将多条路由合并的机制，BGP在IPV6网络中支持自动聚合和手动聚合两种方式</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -1726,9 +1760,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】为了避免路由聚合可能引起的路由环路，BGP设计ASSet属性，该属性是一种有序的ASPATH属性，标明聚合路由所经过的AS号。当聚合路由重新进入ASSet属性中列出的任何一个AS时，BGP将会检测到自己AS号在聚合路由的ASSet属性中，于是会丢弃该聚合路由，从而避免了路由环路的形成</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -1747,9 +1781,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】路由器配置访问控制列表时，可以通过ACL编号标识ACL，也可以通过名称来标识ACL。其中，配置命名型ACL时，需手工指定ACL的名字和ACL的编号。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -1852,9 +1886,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】在路由器上配置ACL时，可通过指定一个唯一的数字标识该ACL，或通过名称代替编号来标识ACL。其中，命名型ACL一旦创建成功，用户便无法修改，只能删除该ACL，重新配置</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -1873,9 +1907,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】一般情况下，BGP都应用于复杂的网络环境中，路由变化十分频繁。而频繁的路由振荡会消耗大量的带宽资源和CPU资源，严重时会影响到网络的正常工作，这是BGP应用过程中无法避免的问题，也无法解决。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -1978,9 +2012,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】IS-IS的DIS和OSPF的DR一样，在广播类型网络中需要进行选举。但不同的是，OSPF的DR默认是抢占模式而IS-IS的DIS默认是非抢占模式。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -2020,9 +2054,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】Telemetry采样的原始数据只可来自网络设备的转发面，目前支持采集设备的接口流量统计、CPU或内存数据等信息。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -2083,9 +2117,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】某大型企业部署WLAN网络，要求减少广播域的同时，确保无线用户多次上线时可分配相同的VLAN和IP地址，则可以通过配置VLANPooI的顺序分配算法实现。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -2104,9 +2138,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】VRRP中，主备设备都会对虚拟IP地址的ARP请求进行响应，以便故障时进行快速切换。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -2251,9 +2285,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】BGP存在两种对等体关系类型:EBGP及IBGP，其中在配置EBGP时，Peer命令所指定的对等体IP地址要求路由可达，并且UDP连接能够正确建立</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -2272,9 +2306,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】路由器分别定义了外部优先级和内部优先级，路由器选择路由时会先比较路由的内部优先级，若内部优先级相同，则比较外部优先级，数值越小越优</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -2293,9 +2327,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】在BGP中notification报文用于在改变路由策略后请求对等体重新发送路由信息。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -2314,9 +2348,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】访问控制列表是路由策略中常用匹配工具之一，在一台路由器配置ACL后，即可用于匹配相应路由</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -2356,9 +2390,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】MQC和PBR均可在设备接口上调用，对接收和发送的报文进行流量过滤或控制报文的转发路径</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -2377,9 +2411,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】在RSTP网络中，如果一个接口收到一个RSTBPDU，发现自身缓存的RSTBPDU优于收到的RSTBPDU，则会直接丢弃收到的RSTBPDU，不做其他回应。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -2398,9 +2432,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】互联网编号分配委员会将D类地址空间分配给IPV4组播使用，IPv4地址一共32位，D类地址最高4位为1111。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -2482,9 +2516,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】IGMPv2离组使用超时机制，组成员只能静默离组。在未超时的时间内，组播流量依然会被组播路由器转发，因此存在缺陷</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -2503,9 +2537,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】某网络结构和OSPF分区如图所示，图中除了RTA之外，RTB、RTC和RTD都是ABR路由器。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   <div class="figs"><img src="images/a3256f369703360b.jpg" alt="题目配图" loading="lazy" referrerpolicy="no-referrer" data-orig="https://www.borimooc.com/itmoocPic/quetionContent/2026-01/32379_1769567615627.jpg" /></div>
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -2650,9 +2684,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】VRF路由表里的OSPF外部路由不允许被路由汇总(asbr-summary)</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -2692,9 +2726,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】在OSPFv2网络中，一台路由器可以同时运行多个不同的OSPF进程，并可以将同一个接口网段宣告进不同的进程中，它们之间是互不影响，彼此独立的。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -2734,9 +2768,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】BGP中NextHop属性记录了路由的下一跳信息，和IGP中的下一跳一样，一定是邻居接口的IP地址。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -2755,9 +2789,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】当BGP收到到达同一目的地的多条路由时，会根据选路规则选择出最优路由，因此无法实现负载分担。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -2860,9 +2894,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】在IS-IS网络中，区域是根据路由器来划分的，一台路由器只能属于一个区域，因此IS-IS路由器只需要维护当前所在区域的LSDB即可。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -2902,9 +2936,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】某企业办公网络中，运行了OSPF路由协议且划分了多个OSPF区域，为减少路由表规模和优化设备资源利用率，该企业网络工程师可在ASBR上执行路由汇总，减少区域间的三类LSA。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -2923,9 +2957,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】在OSPF网络中，若网络类型为NBMA，则路由器会以单播形式发送所有协议报文；若网络类型为Broadcast，则路由器会以组播形式发送所有协议报文。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -3007,9 +3041,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】在IP组播中，RPF路由只可以从单播路由和组播静态路由中选举产生。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -10990,9 +11024,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】如图所示的OSPFV3网络，R1、R2、R3互联的端口开启OSPFv3，其中R1和R3是DR，在R3的LSDB中可以看到R1生成的Intra-Are-Prefix-LSA和Link-LSA。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   <div class="figs"><img src="images/ced66305afb51892.jpg" alt="题目配图" loading="lazy" referrerpolicy="no-referrer" data-orig="https://www.borimooc.com/itmoocPic/quetionContent/2026-01/32379_1768472446156.jpg" /></div>
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -11032,9 +11066,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】如图所示的IS-ISIPv6网络，当网络稳定后，R2可以Ping通2000:12:1，但是通过“display ipv6neighbors”无法看到2000:12::1对应的MAC地址。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   <div class="figs"><img src="images/6f00bdd78ffaae65.jpg" alt="题目配图" loading="lazy" referrerpolicy="no-referrer" data-orig="https://www.borimooc.com/itmoocPic/quetionContent/2026-01/32379_1768472445346.jpg" /></div>
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -11053,9 +11087,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】在BGP/MPLSIPVPN网络中，两个站点的CE设备之间需建立MP-EBGP对等体关系，从而实现VPN路由端到端的传递</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -11116,9 +11150,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】当交换机配置了端口隔离功能后，缺省情况下，属于同一VLAN的不同主机无法进行一层和三层通信。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -11137,9 +11171,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】为了保证LDP消息的可靠发送，LDP的Discovery消息、Session消息、Advertisement消息和Notifi cation消息都使用TCP传输。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -11158,9 +11192,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】在BGP/MPLSIPVPN网络中，PE设备之间可以通过BGP-4协议进行VPNv4路由的传递</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -11179,9 +11213,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】如图所示的网络，R1和R2配置了单跳BFD检测，网络工程师发现BFD会话DOwn，因此查询了R1和R2BFD相关的配置，配置信息已在图中标出根据配置信息判断，BFD会话Down的原因是R1和R2配置的时间参数不匹配。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   <div class="figs"><img src="images/ffa81d5c1fbb01e4.jpg" alt="题目配图" loading="lazy" referrerpolicy="no-referrer" data-orig="https://www.borimooc.com/itmoocPic/quetionContent/2026-01/32379_1768472444967.jpg" /></div>
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -11200,9 +11234,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】某企业网络如图所示，若CE2双归属PE2和PE3，有可能产生Type3LSA路由环路，可以通过在PE2和PE3设备上设置dn-bit-setdisable命令来进行防环。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   <div class="figs"><img src="images/af7dc0f50b5823a6.jpg" alt="题目配图" loading="lazy" referrerpolicy="no-referrer" data-orig="https://www.borimooc.com/itmoocPic/quetionContent/2026-01/32379_1768472444569.jpg" /></div>
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -11221,9 +11255,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】如果交换机连接的用户变动比较频繁，可以通过端口安全把动态MAC地址转换为Stickymac地址。这样可以在用户变动时，通过表项老化及时清除绑定的旧MAC地址表项。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -11263,9 +11297,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】在MPLS网络中，管理员同时部署了端到端的QoS功能，那么MPLS网络中的倒教第二跳设备可以基于PHP特性将MPLS标签弹出，从而让Egress能够基于内层报文的QoS优先级进行报文处理。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -11284,9 +11318,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】在同一个交换机接口上，管理员只能配置对广播、未知组播、未知单播、已知组播和已知单播报文中的一种进行流量抑制。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -11305,9 +11339,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】每个OSPFv3路由器都会为每个链路产生一个Link-LSA，描述此链路上的link-local地址、IPv6前缀地址以及接口编号等信息，并提供将会在Network-LSA中设置的链路选项，它仅在本链路内传播。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -11368,9 +11402,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】MP-BGP通过新增路径属性MP_REACH_NLRI，在BGP/MPLSIPVPN网络中发布VPNv4路由信息或撤销不可达路由。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -11431,9 +11465,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】当管理员采用命令static-lspegress配置MPLS域内设备的静态LSP时，需要同时指定入标签值和出标签值。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -11452,9 +11486,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】使用“displayospfv3peerverbose”查看OSPFv3邻居信息，在输出信息中可以看到对端的RouterID，对端接口的全局单播地址，邻居的状态等内容。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -11494,9 +11528,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】在创建IPv6静态路由时，对于点到点接口，必须指定出接口。对于广播类型接口，必须指定下一跳。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -11536,9 +11570,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】如图所示的组网，R1和R2通过直连接口无法建立EBGP邻居关系，网络工程师首先查看了R1和R2BGP相关的配置，据此判断，R1和R2无法建立EBGP邻居关系的原因是RouterID和接口IP地址不一致。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   <div class="figs"><img src="images/a2b0c21ff6352d21.jpg" alt="题目配图" loading="lazy" referrerpolicy="no-referrer" data-orig="https://www.borimooc.com/itmoocPic/quetionContent/2026-01/32379_1768472443403.jpg" /></div>
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -11557,9 +11591,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】两台LSR（LabelSwitchingRouter）之间交换Hello消息触发LDP会话的建立，Hello消息中会携带传输地址，其中传输地址较小的设备将作为主动方，发起建立TCP连接。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -11599,9 +11633,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】Type7LSA是为了支持NSSA区域而新增的—种LSA类型，用于描述引入的外部路由信息。它由NSSA区域的自治域边界路由器(ASBR)产生，它扩散范围和Type5LSA类似，除了普通区域和Stub区域外，TyPe7LSA将扩散至OSPF网络中的所有NSSA区域</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -11662,9 +11696,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】某台IS-IS路由器自己生成的LSP信息如图所示，从LSP信息中可以推断该路由器配置了5个IPv6地址</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   <div class="figs"><img src="images/09d61c352f11d507.jpg" alt="题目配图" loading="lazy" referrerpolicy="no-referrer" data-orig="https://www.borimooc.com/itmoocPic/quetionContent/2026-01/32379_1768472443006.jpg" /></div>
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -11767,9 +11801,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】使能了DHCPSnooping的设备根据DHCP客户端发送的DHCP请求报文信息会生成DHCPSnooping绑定表，从而实现后续报文的匹配检查，防范非法用户的攻击。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -11788,9 +11822,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】为防止攻击者伪造BGP报文对设备进行攻击，可以通过配置GTS功能检测IP报文头中的TTL值的范围来对设备进行保护。如果某台设备配置了“peerX.X.X.xvalid−ttl—hops100”，则被检测的报文的TTL值有效范围为[155，255].</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -11809,9 +11843,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】在路由器上使用&quot;displayversion|beginuptime&quot;命令，则输出信息的首个单词为&quot;uptime&quot;</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -11830,9 +11864,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】IP报文在MPLS网络中经过的路径称为标签交换路径LSP，LSP是一个双向路径，指明了数据流的传递方向。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -11872,9 +11906,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】在BGP/MPLS IPVPN网络中，为了保留引入的OSPF路由信息，BGP在MP_REACH_NLRI属性中携带Domain ID来标识和区分不同的OSPF域</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -11893,9 +11927,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】如图所示的IS-ISIPv6网络，R1和R2的接口均有两个IPv6地址，由于R1和R2IPv6地址前缀长度不同，它们无法建立邻居关系。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   <div class="figs"><img src="images/16dc195dbec3d9a1.jpg" alt="题目配图" loading="lazy" referrerpolicy="no-referrer" data-orig="https://www.borimooc.com/itmoocPic/quetionContent/2026-01/32379_1768472441563.jpg" /></div>
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -11935,9 +11969,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】IS-ISLSP分片由LSPID中的LSPNumber字段进行标识，这个字段的长度是4bit.因此，一个IS-IS进程最多可产生256个LSP分片，携带的信息量有限。通过增加附加系统ID，可以让IS-IS进程产生更多LSP分片.</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -11956,9 +11990,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】MPLS标签是一个20bit长的本地标识符，当管理员配置静态LSP时，可以手动指定入标签和出标签，取值范围为0~1048575。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -11998,9 +12032,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】MPLS标签是一个20bit长的标识符，当管理员配置静态LSP时，不同MPLS设备的标签值不能相互重叠</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -12019,9 +12053,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】某企业网络工程师想通过部署VLAN聚合和MUXVLAN实现节约IP地址，并隔离二层互访，那么同时为了节省VLAN资源，该工程师可以将superVLAN和MUXAN设置为同一VANID</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -12040,9 +12074,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】根据本地维护的LSDB，运行OSPF协议的设备通过SPF算法计算出以自己为根的最短路径树，并根据这一最短路径树决定到目的网络的下一跳。如果网络频繁变化，可以将SPF计算的最长间隔设置为O，从而提升路由收敛速度</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -12082,9 +12116,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】随着企业网络规模的不断扩大，某一个企业计划将分散部署的服务器集中移动到同一个机房统一管理，在搬迁的某一个阶段，工作内容为硬件搬迁。在此阶段，网络工程师不需要执行设备调测，因此网络工程师无需制定割接方案。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -12103,9 +12137,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】在BGP/MPLSIPVPN网络中，CE和PE设备之间只能通过IGP或BGP协议进行路由打通。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -12124,9 +12158,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】如图所示的IS-IS网络，链路的Cost值已在图中标出，R1开启IS-ISAutoFRR，则R1到达10.0.3.3/32的主路径为R1-R2-R3，备份路径为R1-R4-R2-R3。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   <div class="figs"><img src="images/00800ce3479d9026.jpg" alt="题目配图" loading="lazy" referrerpolicy="no-referrer" data-orig="https://www.borimooc.com/itmoocPic/quetionContent/2026-01/32379_1768472440787.jpg" /></div>
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -12187,9 +12221,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】当交换机某端口上配置了基本QinQ功能后，只有从该端口收到带有VLANTag的报文，才会为该报文打上本端口缺省VLAN的Tag，从而达到扩展VLAN空间的目的。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -12208,9 +12242,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】当增加了新特性或者需要对原有性能进行优化，以及解决当前运行版本的问题时，需要对设备进行升级。此时需要加载高版本的系统软件，并重新启动设备来实现。华为NetEngineAR系列的设备使用相同的软件包，例如AR6120、AR6280、AR6000V。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -12229,9 +12263,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】OSPFv3报文封装在IPv6报文内，可以采用单播、组播和广播的形式发送。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -12250,9 +12284,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】IPSG是一种基于三层接口的源IP地址过滤技术，它能够防止恶意主机伪造合法主机的IP地址来仿冒合法主机访问合法网络资源的行为。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -12292,9 +12326,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】MPLS根据数据的转发方向确定上、下游关系，MPLS标签报文从上游LSR发出，被下游LSR接收并处理；同理，MPLS标签的发布也是从上游向下游逐个分配。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -12439,9 +12473,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】在MPLS网络中，用LSRID来唯一标识一个LSR（LabelSwitchingRouter)，LSRID缺省为设备某个物理接口IP地址，可以手工配置为Loopback接口地址。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -12460,9 +12494,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】如图所示的网络，R1和R2配置了单跳BFD检测，网络工程师发现BFD会话Down因此查询了R1和R2BFD相关的配置，配置信息已在图中标出。此外，网络工程师在R1上执行了Ping10.0.12.2的操作，输出信息如图所示。据此判断，BFD会话Down的可能原因是UDP端口为4784的报文被拒绝通过。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   <div class="figs"><img src="images/8004f29526771fd6.jpg" alt="题目配图" loading="lazy" referrerpolicy="no-referrer" data-orig="https://www.borimooc.com/itmoocPic/quetionContent/2026-01/32379_1768472439912.jpg" /></div>
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -12481,9 +12515,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】OSPF支持等价负载分担，当组网中存在的等价路由数量大于maximum load-balancing命令配置的等价路由数量时，如果接口的优先级和接口索引都相同，则负载分担选取下一跳IP地址小的路由。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -12502,9 +12536,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】如图所示的IS-IS网络，R1通过&quot;default-route-advertisealwayslevel-1&quot;命令引入了缺省路由，则R3能通过IS-IS学习到该缺省路由</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   <div class="figs"><img src="images/f09223c84f49b923.jpg" alt="题目配图" loading="lazy" referrerpolicy="no-referrer" data-orig="https://www.borimooc.com/itmoocPic/quetionContent/2026-01/32379_1768472439464.jpg" /></div>
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -12607,9 +12641,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】当交换机配置了端口隔离功能后，缺省情况下，属于同一VLAN的不同主机无法进行二层和三层通信。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -12628,9 +12662,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】BGP协议支持使用&quot;flter-policy acl-nunber import&quot;命令对接收的路由信息进行过滤，acl-number的取值范围是2000-3999。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -12670,9 +12704,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】OSPF邻居之间周期性发送Hello报文建立和维护邻接关系，并且Hello定时器的时间间隔要保持一致，否则不能建立邻接关系。为了加速OSPF收敛，网络工程师可以将Hello报文的时间间隔设置为1ms。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -12691,9 +12725,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】如图所示的网络，R1和R2通过SW1相连，如果SW1未启用STP，则R1和R2无法互相Ping通。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   <div class="figs"><img src="images/31f6ce5a09b7b75f.jpg" alt="题目配图" loading="lazy" referrerpolicy="no-referrer" data-orig="https://www.borimooc.com/itmoocPic/quetionContent/2026-01/32379_1768472437649.jpg" /></div>
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -12712,9 +12746,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】OSPF与BFD联动就是将BFD和OSPF协议关联起来，加快OSPF协议对于网络拓扑变化的响应。BFD状态变为UP后，OSPF邻居状态才能达到FulI状态。BFD状态变为Down后，OSPF邻居状态才能变为Down状态。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -12775,9 +12809,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】一般大型的、重要的割接项目，都要求在实验室内搭建环境进行提前验证，这种方式被称为实验局测试。实验局测试成功代表割接方案可行，无需再约客户进行评审。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -12901,9 +12935,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】高级ACL根据源IP地址、目的IP地址、IP协议类型、TCP源/目的端口、UDP源/目的端口号等信息来定义规则，使用路由策略调用高级ACL可以实现BGP路由控制。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -12964,9 +12998,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】在BGP/MPLSIPVPN网络中，PE和P设备间通过运行MP-BGP来交换公网标签，从而实现P设备基于标签进行数据转发。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -12985,9 +13019,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】网络维护可以分为两类：日常维护和故障排除。如果维护人员技术水平高，他就可以根据经验维护网络，无需遵循操作规范。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -13069,9 +13103,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】路由反射器和它的客户机组成一个集群(Cluster)，使用AS内唯一的ClusterlD作为标识。当一条路由第一次被RR反射的时候，如果没有ClusterList属性，RR会把本地ClusterID添加到ClusterList的前面。如果一条路由中已经存在了ClusterList属性，则照不再修改ClusterList属性。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -13111,9 +13145,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】如图所示的组网，R1和R2通过直连接口无法建立EBGP邻居关系，网络工程师首先查看了R1和R2BGP相关的配置，据此判断，R1和R2无法建立EBGP邻居关系的原因是Keepalive和Hold参数不匹配。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   <div class="figs"><img src="images/8233c6e4f18c4fec.jpg" alt="题目配图" loading="lazy" referrerpolicy="no-referrer" data-orig="https://www.borimooc.com/itmoocPic/quetionContent/2026-01/32379_1768472435414.jpg" /></div>
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -13237,9 +13271,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】如图所示，为了实现VPN路由在Hub&amp;Spoke组网中正确的传递，管理员在Hub-PE与Hub-CE之间部署了IGP，在Spoke-PE与Spoke-CE之间部署了EBGP。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   <div class="figs"><img src="images/6a61078b03f866ca.jpg" alt="题目配图" loading="lazy" referrerpolicy="no-referrer" data-orig="https://www.borimooc.com/itmoocPic/quetionContent/2026-01/32379_1768472433814.jpg" /></div>
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -13258,9 +13292,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】网络管理员可以用clocktimezone命令设置设备的时区信息。如果两台网络设备的时区设置不一致，会导致这两台设备运行的动态路由协议无法正常建立邻居关系。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
@@ -13279,9 +13313,9 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   </div>
   <div class="stem">【单选题】如图所示的网络，R1和R2互联接口规划的IP地址已在图中标出，但R1和R2无法Ping通，因此网络工程师查看R1和R2接口的配置，根据配置信息判断，R2接口掩码配置错误是导致该故障的原因。</div>
   <ul class="opts"><li><span class="key">A.</span>正确</li>
-<li class="correct"><span class="key">B.</span>错误</li></ul>
+<li class="correct-false"><span class="key">B.</span>错误</li></ul>
   <div class="figs"><img src="images/2503bb0871d285ce.jpg" alt="题目配图" loading="lazy" referrerpolicy="no-referrer" data-orig="https://www.borimooc.com/itmoocPic/quetionContent/2026-01/32379_1768472433424.jpg" /></div>
-  <div class="ans-box">
+  <div class="ans-box ans-false">
     <button type="button" class="ans-toggle" aria-expanded="true">隐藏答案</button>
     <div class="ans-body">
       <div class="ans-label">答案</div>
