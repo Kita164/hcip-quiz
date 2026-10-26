@@ -3,10 +3,12 @@
 
 Notes restate only what the bank asserts:
 - a true/false stem the key marks 正确
-- a stem or option the key marks 错误 (recorded as 不成立, not rewritten)
+- a stem or option the key marks 错误 (recorded as 不成立)
+- for a 判断题 the key marks 错误: the false wording (hi) plus one short sentence (fix)
 - the selected options or filled blanks
 
-No textbook paraphrase is added. Regenerate with:
+False 判断题 corrections live in scripts/tf_fixes.json and must be a substring
+of the stored stem plus one sentence grounded in the bank. Regenerate with:
 
   python3 scripts/build_study_data.py [path/to/togogo-qa.txt]
 """
@@ -25,6 +27,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 HTML_PATH = ROOT / "index.html"
 OUT_PATH = ROOT / "notes-data.js"
+FIXES_PATH = ROOT / "scripts" / "tf_fixes.json"
 IMG_DIR = ROOT / "images"
 
 OPT_RE = re.compile(r"^([A-H])[\.．、]\s*(.*)$")
@@ -572,7 +575,16 @@ def parse_keys(answer_raw: str) -> list[str]:
     return keys
 
 
-def make_note_lines(q: dict) -> dict:
+def load_tf_fixes() -> dict[str, dict]:
+    if not FIXES_PATH.exists():
+        return {}
+    data = json.loads(FIXES_PATH.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise SystemExit("tf_fixes.json must be an object")
+    return data
+
+
+def make_note_lines(q: dict, fixes: dict[str, dict]) -> dict:
     stem = q["stem"]
     options = q["options"]
     raw = q["answer_raw"]
@@ -585,10 +597,13 @@ def make_note_lines(q: dict) -> dict:
         truth = chosen.startswith("正") or chosen in {"对", "正确"}
         false = chosen.startswith("错") or chosen in {"错", "错误"}
         if truth or false:
-            return {
-                "lead": "",
-                "lines": [{"p": "yes" if truth else "no", "t": stem}],
-            }
+            line = {"p": "yes" if truth else "no", "t": stem}
+            if false:
+                fix = fixes.get(q["id"])
+                if fix and fix.get("hi") and fix.get("fix"):
+                    line["hi"] = fix["hi"]
+                    line["fix"] = fix["fix"]
+            return {"lead": "", "lines": [line]}
 
     if q["type"] == "填空题" or (not options and raw and raw not in {"正确答案", "见解析", "（原站未给出有效答案）"} and not raw.startswith("见解析")):
         if raw and "见解析" not in raw and "未给出" not in raw and raw != "正确答案":
@@ -623,7 +638,8 @@ def make_note_lines(q: dict) -> dict:
     return {"lead": stem, "lines": [{"p": "answer", "t": raw}]}
 
 
-def build(questions: list[dict]) -> dict:
+def build(questions: list[dict], fixes: dict[str, dict] | None = None) -> dict:
+    fixes = fixes if fixes is not None else load_tf_fixes()
     items_by_section: dict[tuple[str, str], list] = OrderedDict()
     topic_counts: dict[str, int] = defaultdict(int)
 
@@ -637,7 +653,7 @@ def build(questions: list[dict]) -> dict:
         q["subtopic"] = sid
         q["subtopicTitle"] = stitle
         topic_counts[topic] += 1
-        note = make_note_lines(q)
+        note = make_note_lines(q, fixes)
         images = list(q["images"])
         if any(line["p"] == "gap" for line in note["lines"]):
             for img in q["answerImages"]:
@@ -778,7 +794,8 @@ def attach_answers_and_ids(questions: list[dict], mapping: dict[str, str]) -> No
             q["answerText"] = "（无文字答案）"
 
 
-def validate(data: dict) -> None:
+def validate(data: dict, fixes: dict[str, dict] | None = None) -> None:
+    fixes = fixes if fixes is not None else load_tf_fixes()
     qs = data["questions"]
     assert len(qs) == 865, len(qs)
     assert sum(1 for q in qs if q["bank"] == "H12-821") == 486
@@ -804,8 +821,40 @@ def validate(data: dict) -> None:
         for img in q["images"] + q["answerImages"]:
             if img.startswith("images/"):
                 assert (ROOT / img).exists(), img
-    # spot-check a few known facts from the bank, without adding outside knowledge
     by_id = {q["id"]: q for q in qs}
+    false_ids = []
+    for q in qs:
+        opts = q["options"]
+        if not (opts and is_tf(opts) and q["answerKeys"]):
+            continue
+        chosen = next((o["t"] for o in opts if o["k"] == q["answerKeys"][0]), "")
+        if chosen.startswith("错") or chosen in {"错", "错误"}:
+            false_ids.append(q["id"])
+    missing_fix = [qid for qid in false_ids if qid not in fixes]
+    extra_fix = sorted(set(fixes) - set(false_ids))
+    assert not missing_fix, missing_fix
+    assert not extra_fix, extra_fix
+    noted = {}
+    for topic in data["notes"]:
+        for sec in topic["sections"]:
+            for it in sec["items"]:
+                for line in it["lines"]:
+                    if line.get("hi") or line.get("fix"):
+                        for qid in it["qids"]:
+                            noted[qid] = line
+    for qid in false_ids:
+        line = noted.get(qid)
+        stem = by_id[qid]["stem"]
+        assert line and line["p"] == "no", qid
+        hi = line["hi"]
+        fix = line["fix"]
+        assert hi and hi in stem, (qid, hi)
+        assert stem.count(hi) >= 1
+        assert fix and "\n" not in fix and len(fix) <= 90, (qid, fix)
+        assert fix.endswith("。"), qid
+    # spot-check a few known facts from the bank
+    assert noted["821-10"]["hi"] == "二层VPN封装技术"
+    assert "三层" in noted["821-10"]["fix"]
     assert by_id["821-1"]["answerKeys"] == ["B"]
     assert by_id["821-2"]["answerKeys"] == ["A"]
     # fill-in: default OSPF reference bandwidth 100
@@ -821,20 +870,33 @@ def validate(data: dict) -> None:
 
 
 def image_map_html() -> str:
-    """The published quiz page is the image-url map. Prefer git HEAD so a
-    rebuilt index.html does not drop the local filenames."""
+    """Local image filenames live on the old quiz page (data-orig), not on
+    the study page. Walk recent history so a rebuild does not re-download."""
     import subprocess
     try:
-        return subprocess.check_output(
-            ["git", "show", "HEAD:index.html"],
+        revs = subprocess.check_output(
+            ["git", "rev-list", "--max-count=30", "HEAD"],
             cwd=ROOT,
             text=True,
             stderr=subprocess.DEVNULL,
-        )
+        ).split()
     except (subprocess.CalledProcessError, FileNotFoundError):
-        if HTML_PATH.exists():
-            return HTML_PATH.read_text(encoding="utf-8")
-        return ""
+        revs = []
+    for rev in revs:
+        try:
+            html = subprocess.check_output(
+                ["git", "show", f"{rev}:index.html"],
+                cwd=ROOT,
+                text=True,
+                stderr=subprocess.DEVNULL,
+            )
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            continue
+        if "data-orig" in html:
+            return html
+    if HTML_PATH.exists():
+        return HTML_PATH.read_text(encoding="utf-8")
+    return ""
 
 
 def main() -> None:
@@ -851,8 +913,9 @@ def main() -> None:
     mapping = load_image_map(html) if html else {}
     questions = parse_bank(src.read_text(encoding="utf-8"))
     attach_answers_and_ids(questions, mapping)
-    data = build(questions)
-    validate(data)
+    fixes = load_tf_fixes()
+    data = build(questions, fixes)
+    validate(data, fixes)
     payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
     OUT_PATH.write_text(
         "/* Generated by scripts/build_study_data.py from the togogo question bank.\n"
