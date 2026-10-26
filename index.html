@@ -229,6 +229,7 @@ input:focus-visible, select:focus-visible, .q-item:focus-visible, .qref:focus-vi
   border-radius: 12px;
   padding: 8px 10px 10px;
   margin: 8px 0;
+  cursor: pointer;
 }
 .note.hit {
   border-color: var(--accent);
@@ -257,7 +258,21 @@ input:focus-visible, select:focus-visible, .q-item:focus-visible, .qref:focus-vi
 .line.no .tag { color: #f87171; }
 .line.answer .tag { color: #93c5fd; }
 .line.gap .tag { color: #fbbf24; }
+mark.bad-bit {
+  background: color-mix(in srgb, #f87171 34%, transparent);
+  color: inherit;
+  padding: 0 2px;
+  border-radius: 3px;
+}
+.line .fix {
+  margin: 4px 0 0;
+  font-size: .86rem;
+  line-height: 1.45;
+  color: color-mix(in srgb, var(--text) 86%, #f87171);
+}
 @media (prefers-color-scheme: light) {
+  mark.bad-bit { background: #fecaca; }
+  .line .fix { color: #7f1d1d; }
   .line.yes .tag { color: #15803d; }
   .line.no .tag { color: #b91c1c; }
   .line.answer .tag { color: #1d4ed8; }
@@ -353,6 +368,19 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
+  }
+  function markFalse(text, hi) {
+    const t = String(text == null ? '' : text);
+    if (!hi || t.indexOf(hi) < 0) return esc(t);
+    let out = '';
+    let from = 0;
+    let at = t.indexOf(hi, from);
+    while (at >= 0) {
+      out += esc(t.slice(from, at)) + '<mark class="bad-bit">' + esc(hi) + '</mark>';
+      from = at + hi.length;
+      at = t.indexOf(hi, from);
+    }
+    return out + esc(t.slice(from));
   }
   function bankCode(q) { return q.bank === 'H12-831' ? '831' : '821'; }
   function label(q) { return bankCode(q) + ' #' + q.n; }
@@ -470,7 +498,7 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
       return;
     }
     const ids = new Set(view.map(function (q) { return q.id; }));
-    let html = '<div class="legend"><b class="yes">成立</b> 题库肯定的说法 · <b class="no">不成立</b> 题库否定的原句，不改写成别的解释 · <b class="answer">答案</b> 这道题选出的项或填空 · <b class="gap">无文字结论</b> 答案只在配图里</div>';
+    let html = '<div class="legend"><b class="yes">成立</b> 题库肯定的说法 · <b class="no">不成立</b> 题库否定的原句，浅红是错误措辞，下面一句是正确说法 · <b class="answer">答案</b> 这道题选出的项或填空 · <b class="gap">无文字结论</b> 答案只在配图里</div>';
     let any = false;
     DATA.notes.forEach(function (topicBlock) {
       const sections = [];
@@ -499,7 +527,9 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
           if (it.lead) html += '<p class="lead">' + esc(it.lead) + '</p>';
           (it.lines || []).forEach(function (line) {
             const p = line.p || 'answer';
-            html += '<div class="line ' + esc(p) + '"><span class="tag">' + esc(LINE_TAG[p] || '笔记') + '</span>' + esc(line.t) + '</div>';
+            html += '<div class="line ' + esc(p) + '"><span class="tag">' + esc(LINE_TAG[p] || '笔记') + '</span>' + markFalse(line.t, p === 'no' ? line.hi : '');
+            if (p === 'no' && line.fix) html += '<p class="fix">' + esc(line.fix) + '</p>';
+            html += '</div>';
           });
           if (it.images && it.images.length) {
             html += '<div class="note-figs">' + it.images.map(function (src) {
@@ -516,16 +546,32 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
     html += '<footer class="note-end">笔记共覆盖两个题库 865 题 · 仅供个人复习</footer>';
     notesEl.innerHTML = html;
   }
-  function scrollInto(container, el) {
+  function scrollInto(container, el, align) {
     if (!el) return;
     const paneScrolls = container && container.scrollHeight > container.clientHeight + 8;
-    if (paneScrolls) {
-      const cRect = container.getBoundingClientRect();
-      const eRect = el.getBoundingClientRect();
-      container.scrollTop += eRect.top - cRect.top - 12;
+    if (!paneScrolls) {
+      try { el.scrollIntoView({ block: align === 'center' ? 'center' : 'nearest' }); } catch (_) {}
       return;
     }
-    try { el.scrollIntoView({ block: 'start' }); } catch (_) {}
+    const cRect = container.getBoundingClientRect();
+    const eRect = el.getBoundingClientRect();
+    let delta;
+    if (align === 'center') {
+      const legend = container.querySelector('.legend');
+      const legendH = legend ? legend.offsetHeight : 0;
+      const visibleH = Math.max(40, container.clientHeight - legendH);
+      if (eRect.height >= visibleH - 16) {
+        delta = eRect.top - (cRect.top + legendH + 10);
+      } else {
+        const viewCenter = cRect.top + legendH + visibleH / 2;
+        const elCenter = eRect.top + eRect.height / 2;
+        delta = elCenter - viewCenter;
+      }
+    } else {
+      delta = eRect.top - cRect.top - 8;
+    }
+    const max = Math.max(0, container.scrollHeight - container.clientHeight);
+    container.scrollTop = Math.max(0, Math.min(max, container.scrollTop + delta));
   }
   function highlight(opts) {
     const q = byId.get(selected);
@@ -542,14 +588,21 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
     });
     countEl.textContent = '当前 ' + view.length + ' / ' + DATA.questions.length + ' 题'
       + (q ? (' · 正在看 ' + label(q) + ' · ' + (topicTitle[q.topic] || '')) : '');
-    if (opts && opts.scrollList) {
-      const active = listEl.querySelector('.q-item.active');
-      scrollInto(listEl, active);
-    }
-    if (opts && opts.scrollNote) {
-      const hit = notesEl.querySelector('.note.hit');
-      scrollInto(notesEl, hit);
-    }
+    if (!(opts && (opts.scrollList || opts.scrollNote))) return;
+    requestAnimationFrame(function () {
+      if (opts.scrollList) {
+        const active = listEl.querySelector('.q-item.active');
+        scrollInto(listEl, active, 'start');
+        if (window.matchMedia('(max-width: 900px)').matches) {
+          const pane = document.getElementById('q-pane');
+          if (pane) { try { pane.scrollIntoView({ block: 'start' }); } catch (_) {} }
+        }
+      }
+      if (opts.scrollNote) {
+        const hit = notesEl.querySelector('.note.hit');
+        scrollInto(notesEl, hit, 'center');
+      }
+    });
   }
   function renderAll(opts) {
     view = DATA.questions.filter(matches);
@@ -640,14 +693,14 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
     select(btn.dataset.id, { scrollNote: true });
   });
   notesEl.addEventListener('click', function (e) {
-    const ref = e.target.closest('[data-qid]');
-    if (ref) {
-      select(ref.dataset.qid, { scrollList: true });
-      if (window.matchMedia('(max-width: 900px)').matches) setMode('q');
-      return;
-    }
     const lead = e.target.closest('.lead');
     if (lead) lead.classList.toggle('open');
+    const ref = e.target.closest('[data-qid]');
+    const card = e.target.closest('.note');
+    const qid = (ref && ref.dataset.qid) || (card && (card.dataset.qids || '').split(',').filter(Boolean)[0]);
+    if (!qid) return;
+    if (window.matchMedia('(max-width: 900px)').matches) setMode('q');
+    select(qid, { scrollList: true });
   });
   detailEl.addEventListener('click', function (e) {
     if (e.target.id === 'prev') step(-1);
