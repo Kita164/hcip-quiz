@@ -5,10 +5,12 @@ Notes restate only what the bank asserts:
 - a true/false stem the key marks 正确
 - a stem or option the key marks 错误 (recorded as 不成立)
 - for a 判断题 the key marks 错误: the false wording (hi) plus one short sentence (fix)
+- for a 找错项选择题: each keyed wrong option gets hi plus one short sentence
 - the selected options or filled blanks
 
-False 判断题 corrections live in scripts/tf_fixes.json and must be a substring
-of the stored stem plus one sentence grounded in the bank. Regenerate with:
+False 判断题 corrections live in scripts/tf_fixes.json.
+Wrong-option corrections live in scripts/wrong_option_fixes.json.
+Each hi must be a substring of the stored stem or option. Regenerate with:
 
   python3 scripts/build_study_data.py [path/to/togogo-qa.txt]
 """
@@ -28,6 +30,7 @@ ROOT = Path(__file__).resolve().parents[1]
 HTML_PATH = ROOT / "index.html"
 OUT_PATH = ROOT / "notes-data.js"
 FIXES_PATH = ROOT / "scripts" / "tf_fixes.json"
+WRONG_FIXES_PATH = ROOT / "scripts" / "wrong_option_fixes.json"
 IMG_DIR = ROOT / "images"
 
 OPT_RE = re.compile(r"^([A-H])[\.．、]\s*(.*)$")
@@ -584,7 +587,17 @@ def load_tf_fixes() -> dict[str, dict]:
     return data
 
 
-def make_note_lines(q: dict, fixes: dict[str, dict]) -> dict:
+def load_wrong_fixes() -> dict[str, dict]:
+    if not WRONG_FIXES_PATH.exists():
+        return {}
+    data = json.loads(WRONG_FIXES_PATH.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise SystemExit("wrong_option_fixes.json must be an object")
+    return data
+
+
+def make_note_lines(q: dict, fixes: dict[str, dict], wrong_fixes: dict[str, dict] | None = None) -> dict:
+    wrong_fixes = wrong_fixes if wrong_fixes is not None else load_wrong_fixes()
     stem = q["stem"]
     options = q["options"]
     raw = q["answer_raw"]
@@ -620,7 +633,15 @@ def make_note_lines(q: dict, fixes: dict[str, dict]) -> dict:
             lines += [{"p": "no", "t": by_key[k]} for k in missing]
             return {"lead": stem, "lines": lines}
         if mode == "wrong":
-            lines = [{"p": "no", "t": by_key[k]} for k in selected]
+            per_q = wrong_fixes.get(q["id"], {})
+            lines = []
+            for k in selected:
+                line = {"p": "no", "t": by_key[k]}
+                item = per_q.get(k) if isinstance(per_q, dict) else None
+                if isinstance(item, dict) and item.get("hi") and item.get("fix"):
+                    line["hi"] = item["hi"]
+                    line["fix"] = item["fix"]
+                lines.append(line)
             lines += [{"p": "yes", "t": by_key[k]} for k in missing]
             return {"lead": stem, "lines": lines}
         lines = [{"p": "answer", "t": f"{k}. {by_key[k]}"} for k in selected]
@@ -638,8 +659,13 @@ def make_note_lines(q: dict, fixes: dict[str, dict]) -> dict:
     return {"lead": stem, "lines": [{"p": "answer", "t": raw}]}
 
 
-def build(questions: list[dict], fixes: dict[str, dict] | None = None) -> dict:
+def build(
+    questions: list[dict],
+    fixes: dict[str, dict] | None = None,
+    wrong_fixes: dict[str, dict] | None = None,
+) -> dict:
     fixes = fixes if fixes is not None else load_tf_fixes()
+    wrong_fixes = wrong_fixes if wrong_fixes is not None else load_wrong_fixes()
     items_by_section: dict[tuple[str, str], list] = OrderedDict()
     topic_counts: dict[str, int] = defaultdict(int)
 
@@ -653,7 +679,7 @@ def build(questions: list[dict], fixes: dict[str, dict] | None = None) -> dict:
         q["subtopic"] = sid
         q["subtopicTitle"] = stitle
         topic_counts[topic] += 1
-        note = make_note_lines(q, fixes)
+        note = make_note_lines(q, fixes, wrong_fixes)
         images = list(q["images"])
         if any(line["p"] == "gap" for line in note["lines"]):
             for img in q["answerImages"]:
@@ -794,8 +820,13 @@ def attach_answers_and_ids(questions: list[dict], mapping: dict[str, str]) -> No
             q["answerText"] = "（无文字答案）"
 
 
-def validate(data: dict, fixes: dict[str, dict] | None = None) -> None:
+def validate(
+    data: dict,
+    fixes: dict[str, dict] | None = None,
+    wrong_fixes: dict[str, dict] | None = None,
+) -> None:
     fixes = fixes if fixes is not None else load_tf_fixes()
+    wrong_fixes = wrong_fixes if wrong_fixes is not None else load_wrong_fixes()
     qs = data["questions"]
     assert len(qs) == 865, len(qs)
     assert sum(1 for q in qs if q["bank"] == "H12-821") == 486
@@ -855,6 +886,47 @@ def validate(data: dict, fixes: dict[str, dict] | None = None) -> None:
     # spot-check a few known facts from the bank
     assert noted["821-10"]["hi"] == "二层VPN封装技术"
     assert "三层" in noted["821-10"]["fix"]
+    assert noted["821-112"]["hi"] == "和RTD都是ABR"
+    wrong_ids = []
+    for q in qs:
+        opts = q["options"]
+        if not opts or is_tf(opts):
+            continue
+        if judgment_mode(q["stem"]) != "wrong" or not q["answerKeys"]:
+            continue
+        wrong_ids.append(q["id"])
+        per = wrong_fixes.get(q["id"])
+        assert isinstance(per, dict), q["id"]
+        extra_letters = sorted(set(per) - set(q["answerKeys"]))
+        assert not extra_letters, (q["id"], extra_letters)
+        by_key = {o["k"]: o["t"] for o in opts}
+        for key in q["answerKeys"]:
+            item = per.get(key)
+            assert isinstance(item, dict), (q["id"], key)
+            hi, fix = item.get("hi"), item.get("fix")
+            assert hi and hi in by_key[key], (q["id"], key, hi)
+            assert fix and "\n" not in fix and len(fix) <= 90 and fix.endswith("。"), (q["id"], key, fix)
+    missing_wrong = [qid for qid in wrong_ids if qid not in wrong_fixes]
+    extra_wrong = sorted(set(wrong_fixes) - set(wrong_ids))
+    assert not missing_wrong, missing_wrong
+    assert not extra_wrong, extra_wrong
+    attached = {qid: [] for qid in wrong_ids}
+    for topic in data["notes"]:
+        for sec in topic["sections"]:
+            for it in sec["items"]:
+                for line in it["lines"]:
+                    if line.get("p") != "no" or not line.get("hi"):
+                        continue
+                    for qid in it["qids"]:
+                        if qid in attached:
+                            attached[qid].append(line)
+    for qid in wrong_ids:
+        opts = {o["k"]: o["t"] for o in by_id[qid]["options"]}
+        got = attached[qid]
+        for key in by_id[qid]["answerKeys"]:
+            hi = wrong_fixes[qid][key]["hi"]
+            match = [line for line in got if line["t"] == opts[key] and line["hi"] == hi]
+            assert match, (qid, key, hi)
     assert by_id["821-1"]["answerKeys"] == ["B"]
     assert by_id["821-2"]["answerKeys"] == ["A"]
     # fill-in: default OSPF reference bandwidth 100
@@ -914,8 +986,9 @@ def main() -> None:
     questions = parse_bank(src.read_text(encoding="utf-8"))
     attach_answers_and_ids(questions, mapping)
     fixes = load_tf_fixes()
-    data = build(questions, fixes)
-    validate(data, fixes)
+    wrong_fixes = load_wrong_fixes()
+    data = build(questions, fixes, wrong_fixes)
+    validate(data, fixes, wrong_fixes)
     payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
     OUT_PATH.write_text(
         "/* Generated by scripts/build_study_data.py from the togogo question bank.\n"

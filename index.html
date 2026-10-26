@@ -498,7 +498,7 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
       return;
     }
     const ids = new Set(view.map(function (q) { return q.id; }));
-    let html = '<div class="legend"><b class="yes">成立</b> 题库肯定的说法 · <b class="no">不成立</b> 题库否定的原句，浅红是错误措辞，下面一句是正确说法 · <b class="answer">答案</b> 这道题选出的项或填空 · <b class="gap">无文字结论</b> 答案只在配图里</div>';
+    let html = '<div class="legend"><b class="yes">成立</b> 题库肯定的说法 · <b class="no">不成立</b> 判断题或找错项里被否定的说法，浅红是错误措辞，下面一句是正确说法 · <b class="answer">答案</b> 这道题选出的项或填空 · <b class="gap">无文字结论</b> 答案只在配图里</div>';
     let any = false;
     DATA.notes.forEach(function (topicBlock) {
       const sections = [];
