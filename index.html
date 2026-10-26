@@ -202,14 +202,6 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   border: 1px solid var(--border); background: var(--bg); color: var(--text);
   font-size: .9rem; font-variant-numeric: tabular-nums;
 }
-.meta .idx-nav {
-  display: inline-flex; gap: 6px; align-items: center; margin-left: 4px;
-  flex-wrap: wrap;
-}
-.meta .idx-nav .btn {
-  padding: 4px 10px; font-size: .78rem;
-}
-.meta .idx-nav .btn:disabled { opacity: .45; cursor: not-allowed; }
 .meta .idx {
   font-weight: 650; color: var(--text); font-size: .85rem;
 }
@@ -19484,17 +19476,6 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
 </article>
 
 <div class="empty" id="empty" hidden>没有匹配的题目</div>
-<div class="pager" id="pager-bottom" aria-label="翻页">
-  <div class="nav nav-progress">
-    <button type="button" class="btn" id="prev-bottom">上一题</button>
-    <div class="progress" id="progress-bottom">第 0 / 0 题</div>
-    <button type="button" class="btn" id="next-bottom">下一题</button>
-  </div>
-  <div class="nav">
-    <label class="hint" for="jump-bottom">跳转</label>
-    <input class="jump" id="jump-bottom" type="number" min="1" inputmode="numeric" />
-  </div>
-</div>
 </main>
 <footer>仅供个人复习 · 内容来自 togogo 刷题站收录</footer>
 <script>
@@ -19505,50 +19486,25 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   const countEl = document.getElementById('count');
   const emptyEl = document.getElementById('empty');
   const progressTop = document.getElementById('progress-top');
-  const progressBottom = document.getElementById('progress-bottom');
-  const prevBtns = [document.getElementById('prev-top'), document.getElementById('prev-bottom')];
-  const nextBtns = [document.getElementById('next-top'), document.getElementById('next-bottom')];
+  const prevBtn = document.getElementById('prev-top');
+  const nextBtn = document.getElementById('next-top');
   const jumpTop = document.getElementById('jump-top');
-  const jumpBottom = document.getElementById('jump-bottom');
   let bank = 'all';
   let filtered = cards.slice();
   let idx = 0;
-
-  // Shared card-level nav next to 题目序号 (#N)
-  const cardNav = document.createElement('span');
-  cardNav.className = 'idx-nav';
-  cardNav.innerHTML =
-    '<button type="button" class="btn" id="prev-card">上一题</button>' +
-    '<button type="button" class="btn" id="next-card">下一题</button>';
-  const prevCard = cardNav.querySelector('#prev-card');
-  const nextCard = cardNav.querySelector('#next-card');
-  prevBtns.push(prevCard);
-  nextBtns.push(nextCard);
 
   function setProgress(){
     const total = filtered.length;
     const cur = total ? (idx + 1) : 0;
     const label = '第 ' + cur + ' / ' + total + ' 题';
     progressTop.textContent = label;
-    progressBottom.textContent = label;
     countEl.textContent = total
       ? ('筛选后 ' + total + ' / ' + cards.length + ' 题 · 当前第 ' + cur + ' 题')
       : ('筛选后 0 / ' + cards.length + ' 题');
-    prevBtns.forEach(b => { if (b) b.disabled = !total || idx <= 0; });
-    nextBtns.forEach(b => { if (b) b.disabled = !total || idx >= total - 1; });
+    if (prevBtn) prevBtn.disabled = !total || idx <= 0;
+    if (nextBtn) nextBtn.disabled = !total || idx >= total - 1;
     if (jumpTop) { jumpTop.max = total || 1; jumpTop.value = cur || ''; }
-    if (jumpBottom) { jumpBottom.max = total || 1; jumpBottom.value = cur || ''; }
     emptyEl.hidden = total > 0;
-  }
-
-  function placeCardNav(card){
-    if (!card) return;
-    const meta = card.querySelector('.meta');
-    const idxEl = meta && meta.querySelector('.idx');
-    if (!meta || !idxEl) return;
-    if (cardNav.parentElement !== meta || cardNav.previousElementSibling !== idxEl) {
-      idxEl.insertAdjacentElement('afterend', cardNav);
-    }
   }
 
   function showCurrent(){
@@ -19556,7 +19512,6 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
     if (filtered.length && filtered[idx]) {
       const card = filtered[idx];
       card.classList.add('visible');
-      placeCardNav(card);
       // eager-load images for current card
       card.querySelectorAll('img[loading="lazy"]').forEach(img => { img.loading = 'eager'; });
     }
@@ -19599,16 +19554,17 @@ footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24
   }));
   search.addEventListener('input', () => apply(true));
 
-  prevBtns.forEach(b => b.addEventListener('click', () => go(-1)));
-  nextBtns.forEach(b => b.addEventListener('click', () => go(1)));
+  if (prevBtn) prevBtn.addEventListener('click', () => go(-1));
+  if (nextBtn) nextBtn.addEventListener('click', () => go(1));
 
   function onJump(el){
+    if (!el) return;
     el.addEventListener('change', () => jumpTo(parseInt(el.value, 10)));
     el.addEventListener('keydown', e => {
       if (e.key === 'Enter') { e.preventDefault(); jumpTo(parseInt(el.value, 10)); }
     });
   }
-  onJump(jumpTop); onJump(jumpBottom);
+  onJump(jumpTop);
 
   document.addEventListener('keydown', e => {
     const tag = (e.target && e.target.tagName || '').toLowerCase();
