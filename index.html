@@ -112,6 +112,7 @@ button.opt:focus-visible, .q-group-h:focus-visible, .q-open:focus-visible {
   align-items: center;
   margin-top: 6px;
 }
+#confusable-row[hidden] { display: none; }
 .dim-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
 .dim-hint, .key-hint, .quiz-msg {
   color: var(--muted);
@@ -326,6 +327,59 @@ button.opt.missed { border-style: dashed; }
   font-variant-numeric: tabular-nums;
   flex: none;
 }
+.q-group-h .badge { font-weight: 650; }
+.badge.cg-topology { background: #d97706; }
+.badge.cg-command { background: #0891b2; }
+.cg-bar {
+  margin: 8px 0 10px;
+  padding: 8px 10px 10px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--warn) 45%, var(--border));
+  background: color-mix(in srgb, var(--warn) 10%, var(--card));
+}
+.cg-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.cg-title { font-weight: 750; font-size: .88rem; min-width: 0; }
+.cg-count {
+  margin-left: auto;
+  font-size: .72rem;
+  font-weight: 750;
+  color: var(--warn);
+  border: 1px solid color-mix(in srgb, var(--warn) 55%, var(--border));
+  border-radius: 999px;
+  padding: 1px 8px;
+  white-space: nowrap;
+}
+.cg-summary {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: .82rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.cg-peers { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; align-items: center; }
+.cg-peers .hint { margin-right: 2px; }
+.cg-explain {
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px dashed color-mix(in srgb, var(--warn) 45%, var(--border));
+}
+.cg-explain-label {
+  display: block;
+  font-size: .72rem;
+  font-weight: 750;
+  color: var(--warn);
+}
+.cg-explain p {
+  margin: 2px 0 0;
+  font-size: .86rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
 .legend {
   position: sticky; top: 0; z-index: 2;
   background: color-mix(in srgb, var(--bg) 92%, transparent);
@@ -454,8 +508,15 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
         <button type="button" class="tab" data-dim="memory" role="tab" title="记忆型基础考点">记忆考点</button>
         <button type="button" class="tab" data-dim="style" role="tab">提问方式</button>
         <button type="button" class="tab" data-dim="ease" role="tab" title="好拿分程度">好拿分</button>
+        <button type="button" class="tab" data-dim="confusable" role="tab" title="同一张图或同一段回显反复考的题">易混淆题</button>
       </div>
       <p class="dim-hint" id="dim-hint"></p>
+      <div class="row" id="confusable-row" hidden>
+        <div class="tabs" id="confusable-kinds" role="tablist" aria-label="易混淆题分类">
+          <button type="button" class="tab" data-ckind="topology" role="tab">公用拓扑图</button>
+          <button type="button" class="tab" data-ckind="command" role="tab">公用命令回显</button>
+        </div>
+      </div>
       <div class="row">
         <div class="tabs" id="practice" role="tablist" aria-label="练习筛选">
           <button type="button" class="tab active" data-practice="all">全部</button>
@@ -493,6 +554,7 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
   </div>
 </div>
 <script src="notes-data.js"></script>
+<script src="confusable-data.js"></script>
 <script>
 (function () {
   var DATA = window.STUDY_DATA;
@@ -516,7 +578,7 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
   var LONG_STEM = 120;
   var TYPE_SHORT = { "单选题": "单选", "多选题": "多选", "填空题": "填空", "简答题": "简答", "判断题": "判断" };
   var LINE_TAG = { yes: "成立", no: "不成立", answer: "答案", gap: "无文字结论" };
-  var DIMS = ["topic", "qtype", "memory", "style", "ease"];
+  var DIMS = ["topic", "qtype", "memory", "style", "ease", "confusable"];
   var PRACTICES = ["all", "new", "wrong", "forgot"];
   var TYPE_ORDER = ["tf", "single", "multi", "blank", "short"];
   var STYLE_ORDER = ["judge", "wrong", "calc", "concept"];
@@ -527,8 +589,10 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
     qtype: "判断题是选项恰好为「正确 / 错误」的单选题，单独成组，不并进单选题。",
     memory: "记忆型基础考点：题干命中参数触发词才归入对应桶（端口号、定时器、报文过期时间、开销值、参考值、优先级、超时/秒、缺省值等）。多个同时命中时取更具体的一项；数量、长度、最大、最小还需题干在问具体数值。未命中的归入「其他题目」，并固定排在最后。其余桶按题量从多到少。",
     style: "正误判断型：选项为正确/错误。找错项型：题干含「错误的是」「不正确的是」「错误的有」或「描述错误」。数值计算型：在问具体数值，或选项基本是数字，或填空答案是数字。其余为概念理解型。每题只进一个桶。",
-    ease: EASE_HINT
+    ease: EASE_HINT,
+    confusable: "只列出同一张拓扑图或同一段命令回显反复考的题目，并按组浏览。再用「公用拓扑图」或「公用命令回显」收窄。点同组题号可直接跳转。"
   };
+  var KIND_NAME = { topology: "公用拓扑图", command: "公用命令回显" };
   /* 记忆型触发词，先匹配到的优先。strong 只要题干出现就算；否则还要在问数值。 */
   var MEMORY_RULES = [
     { id: "port", label: "端口号", re: /端口号|目的端口|源端口/, strong: true },
@@ -556,6 +620,34 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
 
   var topicTitle = Object.fromEntries(DATA.topics.map(function (t) { return [t.id, t.title]; }));
   var byId = new Map(DATA.questions.map(function (q) { return [q.id, q]; }));
+  var confusableGroups = [];
+  var confusableOrder = [];
+  var confusableByQid = new Map();
+  var confusableByGroup = new Map();
+  (Array.isArray(window.CONFUSABLE_GROUPS) ? window.CONFUSABLE_GROUPS : []).forEach(function (raw) {
+    if (!raw || typeof raw !== "object" || !raw.id || !Array.isArray(raw.qids)) return;
+    var qids = [];
+    raw.qids.forEach(function (id) {
+      if (typeof id === "string" && byId.has(id) && qids.indexOf(id) < 0) qids.push(id);
+    });
+    if (!qids.length) return;
+    var kind = raw.kind === "command" || raw.kind === "topology" ? raw.kind : "";
+    var group = {
+      id: String(raw.id),
+      kind: kind,
+      title: raw.title ? String(raw.title) : String(raw.id),
+      summary: raw.summary ? String(raw.summary) : "",
+      qids: qids,
+      notes: raw.notes && typeof raw.notes === "object" && !Array.isArray(raw.notes) ? raw.notes : {}
+    };
+    confusableGroups.push(group);
+    confusableOrder.push(group.id);
+    confusableByGroup.set(group.id, group);
+    qids.forEach(function (id) {
+      if (!confusableByQid.has(id)) confusableByQid.set(id, []);
+      confusableByQid.get(id).push(group);
+    });
+  });
   var topicSel = document.getElementById("topic");
   var searchEl = document.getElementById("search");
 
@@ -564,6 +656,7 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
   var query = "";
   var dim = "topic";
   var practice = "all";
+  var confusableKind = "all";
   var selected = DATA.questions[0].id;
   var view = DATA.questions.slice();
   var openGroups = new Set();
@@ -633,6 +726,16 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
     if (asks || calcWord || numericOpts || fillNum) return { id: "calc", label: "数值计算型" };
     return { id: "concept", label: "概念理解型" };
   }
+  function kindName(kind) {
+    return KIND_NAME[kind] || "";
+  }
+  function groupsOf(id) {
+    return confusableByQid.get(id) || [];
+  }
+  function primaryGroup(id) {
+    var list = groupsOf(id);
+    return list.length ? list[0] : null;
+  }
   function easeBucket(q) {
     var hasImage = q.images.length > 0 || q.answerImages.length > 0;
     if (q.type === "多选题" || hasImage || q.stem.length >= LONG_STEM) return { id: "hard", label: "需要理解" };
@@ -646,6 +749,11 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
     if (dim === "qtype") return typeBucket(q);
     if (dim === "memory") return memoryBucket(q);
     if (dim === "style") return styleBucket(q);
+    if (dim === "confusable") {
+      var g = primaryGroup(q.id);
+      if (!g) return { id: "cg-none", label: "其他" };
+      return { id: g.id, label: g.title, kindLabel: kindName(g.kind), kindId: g.kind };
+    }
     return easeBucket(q);
   }
   function orderIndex(order, id) {
@@ -693,12 +801,22 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
     var r = quiz.items[q.id];
     return !!(q.options.length && r && r.answered);
   }
-  function inScope(q) {
+  function baseScope(q) {
     if (bank !== "all" && q.bank !== bank) return false;
     if (topic !== "all" && q.topic !== topic) return false;
     if (!query) return true;
     var blob = (q.stem + " " + q.options.map(function (o) { return o.k + " " + o.t; }).join(" ") + " " + (q.answerText || "")).toLowerCase();
     return blob.indexOf(query) >= 0;
+  }
+  function inConfusable(q) {
+    if (dim !== "confusable") return true;
+    var g = primaryGroup(q.id);
+    if (!g) return false;
+    if (confusableKind !== "all" && g.kind !== confusableKind) return false;
+    return true;
+  }
+  function inScope(q) {
+    return baseScope(q) && inConfusable(q);
   }
   function practiceMatch(q) {
     var r = quiz.items[q.id];
@@ -714,7 +832,7 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
     var map = new Map();
     view.forEach(function (q) {
       var b = bucketOf(q);
-      if (!map.has(b.id)) map.set(b.id, { id: b.id, label: b.label, items: [] });
+      if (!map.has(b.id)) map.set(b.id, { id: b.id, label: b.label, kindLabel: b.kindLabel || "", kindId: b.kindId || "", items: [] });
       map.get(b.id).items.push(q);
     });
     var groups = Array.from(map.values());
@@ -725,6 +843,14 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
         if (b.items.length !== a.items.length) return b.items.length - a.items.length;
         return a.label.localeCompare(b.label, "zh");
       }
+      if (dim === "confusable") {
+        var ga = confusableByGroup.get(a.id);
+        var gb = confusableByGroup.get(b.id);
+        var ka = ga && ga.kind === "command" ? 1 : 0;
+        var kb = gb && gb.kind === "command" ? 1 : 0;
+        if (ka !== kb) return ka - kb;
+        return orderIndex(confusableOrder, a.id) - orderIndex(confusableOrder, b.id);
+      }
       var order = dim === "topic"
         ? DATA.topics.map(function (t) { return t.id; })
         : dim === "qtype" ? TYPE_ORDER : dim === "style" ? STYLE_ORDER : EASE_ORDER;
@@ -732,6 +858,13 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
       if (d) return d;
       return a.label.localeCompare(b.label, "zh");
     });
+    if (dim === "confusable") {
+      groups.forEach(function (g) {
+        var src = confusableByGroup.get(g.id);
+        if (!src) return;
+        g.items.sort(function (a, b) { return src.qids.indexOf(a.id) - src.qids.indexOf(b.id); });
+      });
+    }
     return groups;
   }
   function flatItems() {
@@ -860,6 +993,34 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
     if (r.correct === false) return { cls: "bad", text: "错误" + extra };
     return { cls: "seen", text: "已看答案" + extra };
   }
+  function confusableBarHtml(q) {
+    var groups = groupsOf(q.id);
+    if (!groups.length) return "";
+    var html = "";
+    groups.forEach(function (g) {
+      var peers = "";
+      g.qids.forEach(function (id) {
+        if (id === q.id) return;
+        var peer = byId.get(id);
+        if (!peer) return;
+        peers += '<button type="button" class="qref" data-act="jump" data-qid="' + esc(id) + '">' + esc(label(peer)) + "</button>";
+      });
+      html += '<aside class="cg-bar">';
+      html += '<div class="cg-head">';
+      if (g.kind) html += '<span class="badge cg-' + esc(g.kind) + '">' + esc(kindName(g.kind)) + "</span>";
+      html += '<span class="cg-title">' + esc(g.title) + "</span>";
+      html += '<span class="cg-count">本组共 ' + g.qids.length + " 题</span>";
+      html += "</div>";
+      if (g.summary) html += '<p class="cg-summary">' + esc(g.summary) + "</p>";
+      if (peers) html += '<div class="cg-peers"><span class="hint">同组其他题</span>' + peers + "</div>";
+      var note = g.notes ? g.notes[q.id] : "";
+      if (note) {
+        html += '<div class="cg-explain"><span class="cg-explain-label">易混淆组解析</span><p>' + esc(note) + "</p></div>";
+      }
+      html += "</aside>";
+    });
+    return html;
+  }
   function cardHtml(q) {
     var r = quiz.items[q.id] || null;
     var revealed = !!(r && r.answered);
@@ -878,6 +1039,7 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
     html += '<span class="status ' + esc(st.cls) + '">' + esc(st.text) + "</span>";
     html += '<button type="button" class="btn tiny" data-act="note">笔记</button>';
     html += "</div>";
+    html += confusableBarHtml(q);
     html += '<p class="stem">' + esc(q.stem) + "</p>";
     html += figsHtml(q.images, q.id === selected);
     if (q.options.length) {
@@ -960,9 +1122,12 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
     var html = groups.map(function (g) {
       var open = openGroups.has(g.id);
       var body = open ? g.items.map(cardHtml).join("") : "";
+      var kind = g.kindLabel
+        ? '<span class="badge cg-' + esc(g.kindId) + '">' + esc(g.kindLabel) + "</span> "
+        : "";
       return '<section class="q-group" data-gid="' + esc(g.id) + '">' +
         '<button type="button" class="q-group-h" data-gid="' + esc(g.id) + '" aria-expanded="' + (open ? "true" : "false") + '">' +
-        '<span class="g-main">' + (open ? "▾ " : "▸ ") + esc(g.label) + "</span>" +
+        '<span class="g-main">' + (open ? "▾ " : "▸ ") + kind + esc(g.label) + "</span>" +
         '<span class="g-count" data-count="' + g.items.length + '">' + g.items.length + "</span>" +
         "</button>" + body + "</section>";
     }).join("");
@@ -1150,15 +1315,37 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
     });
     var easeBtn = document.querySelector('#dims [data-dim="ease"]');
     if (easeBtn) easeBtn.title = "好拿分程度。" + EASE_HINT;
+    var cgRow = document.getElementById("confusable-row");
+    if (cgRow) cgRow.hidden = dim !== "confusable";
+    document.querySelectorAll("#confusable-kinds .tab").forEach(function (b) {
+      var kind = b.dataset.ckind;
+      var on = kind === confusableKind;
+      var n = 0;
+      confusableGroups.forEach(function (g) {
+        if (g.kind !== kind) return;
+        g.qids.forEach(function (id) {
+          var item = byId.get(id);
+          if (item && baseScope(item) && practiceMatch(item)) n++;
+        });
+      });
+      b.textContent = kindName(kind) + " " + n;
+      b.classList.toggle("active", on);
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+    });
     topicSel.value = topic;
     searchEl.value = query;
-    hintEl.textContent = DIM_HINT[dim] || "";
+    var hint = DIM_HINT[dim] || "";
+    if (dim === "confusable") {
+      hint += confusableKind === "all" ? " 当前显示两类。" : " 当前只看" + kindName(confusableKind) + "。";
+    }
+    hintEl.textContent = hint;
     updateStats();
   }
   function saveUi() {
     try {
       sessionStorage.setItem(UI_KEY, JSON.stringify({
-        bank: bank, topic: topic, query: query, selected: selected, dim: dim, practice: practice
+        bank: bank, topic: topic, query: query, selected: selected, dim: dim, practice: practice,
+        confusableKind: confusableKind
       }));
     } catch (e) {}
   }
@@ -1192,6 +1379,8 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
       topic = "all";
       query = "";
       practice = "all";
+      if (dim === "confusable" && !primaryGroup(id)) dim = "topic";
+      else if (dim === "confusable") confusableKind = "all";
       applyView();
     }
     selected = id;
@@ -1352,6 +1541,9 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
       if (saved.selected && byId.has(saved.selected)) selected = saved.selected;
       if (DIMS.indexOf(saved.dim) >= 0) dim = saved.dim;
       if (PRACTICES.indexOf(saved.practice) >= 0) practice = saved.practice;
+      if (saved.confusableKind === "all" || saved.confusableKind === "topology" || saved.confusableKind === "command") {
+        confusableKind = saved.confusableKind;
+      }
     }
   } catch (e) {}
   var hash = "";
@@ -1362,6 +1554,8 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
     topic = "all";
     query = "";
     practice = "all";
+    if (dim === "confusable" && !primaryGroup(hash)) dim = "topic";
+    else if (dim === "confusable") confusableKind = "all";
   }
 
   document.getElementById("banks").addEventListener("click", function (e) {
@@ -1382,6 +1576,15 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
     var btn = e.target.closest("[data-dim]");
     if (!btn || DIMS.indexOf(btn.dataset.dim) < 0) return;
     dim = btn.dataset.dim;
+    renderAll({ scrollList: true, autoOpen: true });
+  });
+  document.getElementById("confusable-kinds").addEventListener("click", function (e) {
+    var btn = e.target.closest("[data-ckind]");
+    if (!btn) return;
+    var kind = btn.dataset.ckind;
+    if (kind !== "topology" && kind !== "command") return;
+    confusableKind = confusableKind === kind ? "all" : kind;
+    if (dim !== "confusable") dim = "confusable";
     renderAll({ scrollList: true, autoOpen: true });
   });
   document.getElementById("practice").addEventListener("click", function (e) {
@@ -1454,7 +1657,9 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
       select(id, { scrollNote: true });
       return;
     }
-    if (act.dataset.act === "opt") onOptClick(id, act.dataset.key);
+    if (act.dataset.act === "jump") {
+      if (byId.has(act.dataset.qid)) select(act.dataset.qid, { scrollList: true, scrollNote: true });
+    } else if (act.dataset.act === "opt") onOptClick(id, act.dataset.key);
     else if (act.dataset.act === "submit") submitId(id);
     else if (act.dataset.act === "reveal") {
       if (selected !== id) select(id, { scrollNote: true });
@@ -1505,7 +1710,7 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
     if (e.key === "Enter") {
       var btn = e.target.closest && e.target.closest("button");
       if (btn && !btn.closest(".q-card")) return;
-      if (btn && btn.dataset.act && ["rate", "grade", "note", "open"].indexOf(btn.dataset.act) >= 0) return;
+      if (btn && btn.dataset.act && ["rate", "grade", "note", "open", "jump"].indexOf(btn.dataset.act) >= 0) return;
       e.preventDefault();
       submitSelected();
       return;
