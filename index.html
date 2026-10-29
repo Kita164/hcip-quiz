@@ -209,6 +209,47 @@ button.opt.missed { border-style: dashed; }
 .btn.on-forgot { background: var(--warn); border-color: var(--warn); color: #1a2332; }
 .btn.tiny { padding: 2px 8px; font-size: .72rem; }
 .btn.quiet { color: var(--muted); }
+.export-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  padding: 16px;
+  background: color-mix(in srgb, #000 48%, transparent);
+  align-items: center;
+  justify-content: center;
+}
+.export-modal:not([hidden]) { display: flex; }
+.export-card {
+  width: min(720px, 100%);
+  max-height: min(86vh, 840px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  padding: 12px 12px 14px;
+}
+.export-head { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.export-head h2 { margin: 0; font-size: 1rem; flex: 1 1 auto; }
+#export-text {
+  margin-top: 10px;
+  flex: 1 1 auto;
+  min-height: 200px;
+  width: 100%;
+  resize: none;
+  overflow: auto;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  padding: 10px 12px;
+  font: 0.88rem/1.55 "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
 .pager {
   display: flex;
   flex-wrap: wrap;
@@ -422,6 +463,7 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
           <button type="button" class="tab" data-practice="wrong">做错过</button>
           <button type="button" class="tab" data-practice="forgot">没记住</button>
         </div>
+        <button type="button" class="btn quiet" id="export-quiz">导出错题</button>
         <button type="button" class="btn quiet" id="reset-quiz">清除练习记录</button>
       </div>
       <div class="pager">
@@ -439,6 +481,16 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
     <div id="q-list"></div>
   </section>
   <section class="pane" id="n-pane" aria-label="笔记"></section>
+</div>
+<div id="export-modal" class="export-modal" hidden>
+  <div class="export-card" role="dialog" aria-modal="true" aria-labelledby="export-title">
+    <div class="export-head">
+      <h2 id="export-title">错题导出</h2>
+      <button type="button" class="btn" id="export-copy">复制</button>
+      <button type="button" class="btn" id="export-close">关闭</button>
+    </div>
+    <textarea id="export-text" readonly aria-label="错题纯文本"></textarea>
+  </div>
 </div>
 <script src="notes-data.js"></script>
 <script>
@@ -715,6 +767,79 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
   function typeName(q) {
     if (isTf(q)) return "判断";
     return TYPE_SHORT[q.type] || q.type || "题目";
+  }
+  function exportMarker(r) {
+    var wrong = !!(r && r.answered && r.correct === false);
+    var forgot = !!(r && r.selfRating === "forgot");
+    if (wrong && forgot) return "两者都有";
+    if (wrong) return "答错";
+    if (forgot) return "没记住";
+    return "";
+  }
+  function formatExportItem(q) {
+    var lines = [];
+    lines.push(label(q) + " " + typeBucket(q).label);
+    lines.push(q.stem || "（无题干）");
+    q.options.forEach(function (o) { lines.push(o.k + ". " + (o.t || "")); });
+    if (q.answerKeys.length) lines.push("答案：" + q.answerKeys.join("、"));
+    else lines.push("答案：" + (q.answerText || "（无）"));
+    return lines.join("\n");
+  }
+  function buildExportText() {
+    var chunks = [];
+    DATA.questions.forEach(function (q) {
+      if (!exportMarker(quiz.items[q.id])) return;
+      chunks.push(formatExportItem(q));
+    });
+    if (!chunks.length) return "";
+    return "错题 " + chunks.length + " 题\n\n" + chunks.join("\n\n") + "\n";
+  }
+  function closeExport() {
+    var modal = document.getElementById("export-modal");
+    modal.hidden = true;
+    var copyBtn = document.getElementById("export-copy");
+    copyBtn.textContent = "复制";
+  }
+  function openExport() {
+    var text = buildExportText();
+    var msg = document.getElementById("quiz-msg");
+    if (!text) {
+      closeExport();
+      flash("还没有答错或没记住的题目。");
+      return;
+    }
+    if (msg) msg.textContent = "";
+    var box = document.getElementById("export-text");
+    var modal = document.getElementById("export-modal");
+    box.value = text;
+    document.getElementById("export-copy").textContent = "复制";
+    modal.hidden = false;
+    box.focus();
+    box.select();
+  }
+  function copyExport() {
+    var box = document.getElementById("export-text");
+    var copyBtn = document.getElementById("export-copy");
+    var text = box.value;
+    function finish(ok) {
+      copyBtn.textContent = ok ? "已复制" : "请手动全选复制";
+      if (!ok) {
+        box.focus();
+        box.select();
+      }
+    }
+    function fallback() {
+      box.focus();
+      box.select();
+      var ok = false;
+      try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+      finish(!!ok);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { finish(true); }).catch(fallback);
+      return;
+    }
+    fallback();
   }
   function markFalse(text, hi) {
     var t = String(text == null ? "" : text);
@@ -1272,6 +1397,12 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
     practice = btn.dataset.practice;
     renderAll({ scrollList: true, autoOpen: true });
   });
+  document.getElementById("export-quiz").addEventListener("click", openExport);
+  document.getElementById("export-close").addEventListener("click", closeExport);
+  document.getElementById("export-copy").addEventListener("click", copyExport);
+  document.getElementById("export-modal").addEventListener("click", function (e) {
+    if (e.target.id === "export-modal") closeExport();
+  });
   document.getElementById("reset-quiz").addEventListener("click", function () {
     if (!window.confirm("清除这台浏览器里保存的练习记录？题目和笔记不会受影响。")) return;
     quiz = emptyQuiz();
@@ -1353,6 +1484,13 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
     select(qid, { scrollList: true });
   });
   document.addEventListener("keydown", function (e) {
+    if (!document.getElementById("export-modal").hidden) {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closeExport();
+      }
+      return;
+    }
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     if (isTyping(e.target)) return;
     var q = byId.get(selected);
