@@ -768,31 +768,24 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
     if (isTf(q)) return "判断";
     return TYPE_SHORT[q.type] || q.type || "题目";
   }
-  function exportMarker(r) {
-    var wrong = !!(r && r.answered && r.correct === false);
-    var forgot = !!(r && r.selfRating === "forgot");
-    if (wrong && forgot) return "两者都有";
-    if (wrong) return "答错";
-    if (forgot) return "没记住";
-    return "";
-  }
-  function formatExportItem(q) {
-    var lines = [];
-    lines.push(label(q) + " " + typeBucket(q).label);
-    lines.push(q.stem || "（无题干）");
-    q.options.forEach(function (o) { lines.push(o.k + ". " + (o.t || "")); });
-    if (q.answerKeys.length) lines.push("答案：" + q.answerKeys.join("、"));
-    else lines.push("答案：" + (q.answerText || "（无）"));
-    return lines.join("\n");
+  function exportWanted(r) {
+    if (!r) return false;
+    return (r.answered && r.correct === false) || r.selfRating === "forgot";
   }
   function buildExportText() {
-    var chunks = [];
+    var list = [];
     DATA.questions.forEach(function (q) {
-      if (!exportMarker(quiz.items[q.id])) return;
-      chunks.push(formatExportItem(q));
+      if (exportWanted(quiz.items[q.id])) list.push(q);
     });
-    if (!chunks.length) return "";
-    return "错题 " + chunks.length + " 题\n\n" + chunks.join("\n\n") + "\n";
+    if (!list.length) return "";
+    list.sort(function (a, b) {
+      var bankOrder = (bankCode(a) === "831" ? 1 : 0) - (bankCode(b) === "831" ? 1 : 0);
+      if (bankOrder) return bankOrder;
+      return a.n - b.n;
+    });
+    var lines = ["错题 " + list.length + " 题"];
+    list.forEach(function (q) { lines.push(label(q)); });
+    return lines.join("\n") + "\n";
   }
   function closeExport() {
     var modal = document.getElementById("export-modal");
