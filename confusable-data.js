@@ -45,7 +45,7 @@ window.CONFUSABLE_GROUPS = [
     "notes": {
       "831-154": "看到 Stub、TotallyStub、NSSA 三种区一起问「都不会出现哪种 LSA」→ 选 Type4。",
       "831-172": "看到区域2 是 Stub、问「谁没有这条外部路由」→ 选区域2 里那台（R4）。",
-      "831-193": "看到问「谁没有缺省路由」→ 选那个 TotallyStub 区的 ABR（R3）；其余几台都在会收到缺省的区里。",
+      "831-193": "看到 Stub、Totally Stub：ABR 会自动下发三类缺省，所以 R6、R4 有。看到普通 NSSA（没写 Totally NSSA，也没配 default-route-advertise）：缺省情况下不下发，R5 没有。R3 在骨干区域也没有。选 R3 和 R5。",
       "831-230": "看到问「谁不能引入外部路由」→ 只选落在 Stub、TotallyStub 里的那几台（R4、R6）。",
       "831-234": "看到普通区域里配了 default-route-advertise always → 缺省是普通 5 类，全网都收得到，全选。",
       "831-238": "看到 Stub 加 TotallyNSSA、问「谁没有这条外部明细」→ 选 Stub 区那台和 TotallyNSSA 区那台（R6、R4）。",
