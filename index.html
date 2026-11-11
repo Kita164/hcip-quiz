@@ -160,10 +160,18 @@ button.opt:focus-visible, .q-group-h:focus-visible, .q-open:focus-visible {
 #n-pane { overflow: auto; padding: 4px 18px 32px; }
 .meta {
   display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.meta-tags {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
   flex-wrap: wrap;
   gap: 6px;
   align-items: center;
-  margin-bottom: 6px;
 }
 .badge {
   font-size: .72rem; font-weight: 650; padding: 2px 8px; border-radius: 999px; color: #fff;
@@ -1219,6 +1227,7 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
     var active = q.id === selected ? " active" : "";
     var html = '<article class="q-card' + active + (st.cls ? " st-" + st.cls : "") + '" data-id="' + esc(q.id) + '" id="qcard-' + esc(q.id) + '">';
     html += '<div class="meta">';
+    html += '<div class="meta-tags">';
     html += '<button type="button" class="q-open" data-act="open"><span class="q-no">' + esc(label(q)) + "</span></button>";
     html += '<span class="badge ' + (q.bank === "H12-831" ? "b831" : "b821") + '">' + esc(q.bank) + "</span>";
     html += '<span class="badge type">' + esc(typeName(q)) + "</span>";
@@ -1227,6 +1236,7 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
       if (t !== q.topic) html += '<span class="badge type">亦见 ' + esc(topicTitle[t] || t) + "</span>";
     });
     html += '<span class="status ' + esc(st.cls) + '">' + esc(st.text) + "</span>";
+    html += "</div>";
     html += '<button type="button" class="btn note-jump" data-act="note">笔记</button>';
     html += "</div>";
     html += '<p class="stem">' + esc(q.stem) + "</p>";
