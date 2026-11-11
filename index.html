@@ -258,7 +258,7 @@ button.opt.missed { border-style: dashed; }
   align-items: center;
   margin-top: 6px;
 }
-.pager .progress { font-variant-numeric: tabular-nums; font-weight: 650; min-width: 7em; }
+.pager .progress { font-variant-numeric: tabular-nums; font-weight: 650; min-width: 7em; white-space: nowrap; }
 .jump {
   width: 72px; padding: 6px 8px; border-radius: 10px;
   border: 1px solid var(--border); background: var(--bg); color: var(--text);
@@ -509,7 +509,8 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
   <section class="pane" id="q-pane" aria-label="题目">
     <div class="q-toolbar">
       <div class="dim-tabs" id="dims" role="tablist" aria-label="分组维度">
-        <button type="button" class="tab active" data-dim="topic" role="tab">主题</button>
+        <button type="button" class="tab active" data-dim="seq" role="tab" title="默认刷题顺序：按题号从第 1 题开始">顺序</button>
+        <button type="button" class="tab" data-dim="topic" role="tab">主题</button>
         <button type="button" class="tab" data-dim="qtype" role="tab">题型</button>
         <button type="button" class="tab" data-dim="memory" role="tab" title="记忆型基础考点">记忆考点</button>
         <button type="button" class="tab" data-dim="style" role="tab">提问方式</button>
@@ -537,8 +538,9 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
         <button type="button" class="btn" id="prev">上一题</button>
         <div class="progress" id="pos">第 0 / 0 题</div>
         <button type="button" class="btn" id="next">下一题</button>
-        <label class="hint" for="jump">本组</label>
-        <input class="jump" id="jump" type="number" min="1" inputmode="numeric" />
+        <label class="hint" for="jump" id="jump-label">题号</label>
+        <input class="jump" id="jump" type="number" min="1" inputmode="numeric" title="跳到当前题库的题号" />
+        <button type="button" class="btn" id="seq-restart">从第 1 题开始</button>
         <button type="button" class="btn" id="expand-all">展开全部</button>
         <button type="button" class="btn" id="collapse-all">收起</button>
       </div>
@@ -580,18 +582,20 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
   }
 
   var QUIZ_KEY = "hcip-quiz-v1";
+  var SEQ_KEY = "hcip-quiz-seq";
   var UI_KEY = "hcip-notes-ui";
   var SHORT_STEM = 60;
   var LONG_STEM = 120;
   var TYPE_SHORT = { "单选题": "单选", "多选题": "多选", "填空题": "填空", "简答题": "简答", "判断题": "判断" };
   var LINE_TAG = { yes: "成立", no: "不成立", answer: "答案", gap: "无文字结论" };
-  var DIMS = ["topic", "qtype", "memory", "style", "ease", "confusable"];
+  var DIMS = ["seq", "topic", "qtype", "memory", "style", "ease", "confusable"];
   var PRACTICES = ["all", "new", "wrong", "forgot"];
   var TYPE_ORDER = ["tf", "single", "multi", "blank", "short"];
   var STYLE_ORDER = ["judge", "wrong", "calc", "concept"];
   var EASE_ORDER = ["gift", "mid", "hard"];
   var EASE_HINT = "送分题：题干不超过 " + SHORT_STEM + " 字，并且是判断题或单一数值答案，而且没有配图。需要理解：多选题、带配图，或题干不少于 " + LONG_STEM + " 字。其余为一般。";
   var DIM_HINT = {
+    seq: "默认刷题顺序：同一题库内按题号从第 1 题做到最后，按数字排（1、2、10），不按字符串。全部题库时先 H12-821，再 H12-831。进度记在这台浏览器里。「从第 1 题开始」回到当前题库的第 1 题；题号框可直接跳转。",
     topic: "按协议主题分组。右上角的主题菜单仍可再筛一层。",
     qtype: "判断题是选项恰好为「正确 / 错误」的单选题，单独成组，不并进单选题。",
     memory: "记忆型基础考点：题干命中参数触发词才归入对应桶（端口号、定时器、报文过期时间、开销值、参考值、优先级、超时/秒、缺省值等）。多个同时命中时取更具体的一项；数量、长度、最大、最小还需题干在问具体数值。未命中的归入「其他题目」，并固定排在最后。其余桶按题量从多到少。",
@@ -672,7 +676,7 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
   var bank = "all";
   var topic = "all";
   var query = "";
-  var dim = "topic";
+  var dim = "seq";
   var practice = "all";
   var confusableKind = "all";
   var selected = DATA.questions[0].id;
@@ -763,6 +767,7 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
     return { id: "mid", label: "一般" };
   }
   function bucketOf(q) {
+    if (dim === "seq") return { id: q.bank || "other", label: q.bank || "其他题库" };
     if (dim === "topic") return { id: q.topic || "other", label: topicTitle[q.topic] || q.topic || "其他" };
     if (dim === "qtype") return typeBucket(q);
     if (dim === "memory") return memoryBucket(q);
@@ -777,6 +782,74 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
   function orderIndex(order, id) {
     var i = order.indexOf(id);
     return i < 0 ? 1000 : i;
+  }
+  /* 题号按数值比较，避免 "10" 排在 "2" 前面。多题库先 821 再 831，其余按题库名。 */
+  function bankOrderKey(bankId) {
+    if (bankId === "H12-821") return 0;
+    if (bankId === "H12-831") return 1;
+    return 100;
+  }
+  function questionNumber(q) {
+    if (!q) return 1000000;
+    var n = q.n;
+    if (typeof n === "number" && isFinite(n)) return n;
+    if (typeof n === "string" && /^\d+$/.test(n.trim())) return parseInt(n.trim(), 10);
+    var m = String(q.id || "").match(/(\d+)\s*$/);
+    if (m) return parseInt(m[1], 10);
+    return 1000000;
+  }
+  function compareSeq(a, b) {
+    var dBank = bankOrderKey(a.bank) - bankOrderKey(b.bank);
+    if (dBank) return dBank;
+    if (a.bank !== b.bank) return String(a.bank || "").localeCompare(String(b.bank || ""), "en");
+    var dNum = questionNumber(a) - questionNumber(b);
+    if (dNum) return dNum;
+    return String(a.id).localeCompare(String(b.id), "en");
+  }
+  function maxQuestionNumber(items) {
+    var m = 1;
+    (items || []).forEach(function (item) {
+      var n = questionNumber(item);
+      if (n > m && n < 1000000) m = n;
+    });
+    return m;
+  }
+  function emptySeq() {
+    return { v: 1, id: "", banks: {} };
+  }
+  function loadSeqData() {
+    var raw;
+    try { raw = localStorage.getItem(SEQ_KEY); } catch (e) { return emptySeq(); }
+    if (!raw) return emptySeq();
+    var data;
+    try { data = JSON.parse(raw); } catch (e) { return emptySeq(); }
+    if (!data || typeof data !== "object" || Array.isArray(data)) return emptySeq();
+    var banks = {};
+    if (data.banks && typeof data.banks === "object" && !Array.isArray(data.banks)) {
+      Object.keys(data.banks).forEach(function (key) {
+        var id = data.banks[key];
+        if (typeof id === "string" && byId.has(id)) banks[key] = id;
+      });
+    }
+    var id = typeof data.id === "string" && byId.has(data.id) ? data.id : "";
+    return { v: 1, id: id, banks: banks };
+  }
+  function saveSeqPos(id) {
+    if (dim !== "seq" || !byId.has(id)) return;
+    var data = loadSeqData();
+    data.id = id;
+    data.banks[byId.get(id).bank] = id;
+    try { localStorage.setItem(SEQ_KEY, JSON.stringify(data)); } catch (e) {}
+  }
+  function seqPosForCurrentBank() {
+    var data = loadSeqData();
+    if (bank !== "all") {
+      var id = data.banks[bank];
+      if (!id || !byId.has(id)) return "";
+      if (topic !== "all" && byId.get(id).topic !== topic) return "";
+      return id;
+    }
+    return data.id || "";
   }
   function emptyQuiz() {
     return { v: 1, items: {} };
@@ -855,6 +928,11 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
     });
     var groups = Array.from(map.values());
     groups.sort(function (a, b) {
+      if (dim === "seq") {
+        var dBank = bankOrderKey(a.id) - bankOrderKey(b.id);
+        if (dBank) return dBank;
+        return String(a.id).localeCompare(String(b.id), "en");
+      }
       if (dim === "memory") {
         if (a.id === "mem-other") return 1;
         if (b.id === "mem-other") return -1;
@@ -876,6 +954,11 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
       if (d) return d;
       return a.label.localeCompare(b.label, "zh");
     });
+    if (dim === "seq") {
+      groups.forEach(function (g) {
+        g.items.sort(compareSeq);
+      });
+    }
     if (dim === "confusable") {
       groups.forEach(function (g) {
         var src = confusableByGroup.get(g.id);
@@ -1322,7 +1405,17 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
     var loc = locateSelected();
     var flat = flatItems();
     var idx = flat.findIndex(function (item) { return item.id === selected; });
-    if (loc.group) {
+    if (dim === "seq" && loc.group && q) {
+      var num = questionNumber(q);
+      var total = loc.group.items.length;
+      var at = loc.index + 1;
+      posEl.textContent = num === at
+        ? loc.group.label + " · 第 " + num + " / " + total + " 题"
+        : loc.group.label + " · 第 " + num + " 题 · " + at + " / " + total;
+      var bankItems = DATA.questions.filter(function (item) { return item.bank === loc.group.id; });
+      jumpEl.max = String(maxQuestionNumber(bankItems));
+      if (document.activeElement !== jumpEl) jumpEl.value = String(num);
+    } else if (loc.group) {
       posEl.textContent = loc.group.label + " · 第 " + (loc.index + 1) + " / " + loc.group.items.length;
       jumpEl.max = String(loc.group.items.length);
       if (document.activeElement !== jumpEl) jumpEl.value = String(loc.index + 1);
@@ -1373,6 +1466,11 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
     });
     topicSel.value = topic;
     searchEl.value = query;
+    var jumpLabel = document.getElementById("jump-label");
+    if (jumpLabel) jumpLabel.textContent = dim === "seq" ? "题号" : "本组";
+    jumpEl.title = dim === "seq" ? "跳到当前题库的题号" : "跳到本组的第几题";
+    var restartBtn = document.getElementById("seq-restart");
+    if (restartBtn) restartBtn.hidden = dim !== "seq";
     var hint = DIM_HINT[dim] || "";
     if (dim === "confusable") {
       hint += confusableKind === "all" ? " 当前显示两类。" : " 当前只看" + kindName(confusableKind) + "。";
@@ -1397,7 +1495,15 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
   }
   function renderAll(opts) {
     applyView();
-    if (!view.some(function (q) { return q.id === selected; }) && view[0]) selected = view[0].id;
+    if (!view.some(function (q) { return q.id === selected; })) {
+      var nextId = "";
+      if (dim === "seq") {
+        var savedId = seqPosForCurrentBank();
+        if (savedId && view.some(function (q) { return q.id === savedId; })) nextId = savedId;
+      }
+      if (!nextId && view[0]) nextId = view[0].id;
+      if (nextId) selected = nextId;
+    }
     if (!opts || opts.autoOpen !== false) autoOpen();
     syncControls();
     renderList();
@@ -1423,6 +1529,7 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
       applyView();
     }
     selected = id;
+    if (dim === "seq") saveSeqPos(id);
     var r = quiz.items[id];
     if (r) {
       r.lastSeen = Date.now();
@@ -1571,13 +1678,17 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
   }
 
   fillTopicSelect();
+  var sessionPickedQuestion = false;
   try {
     var saved = JSON.parse(sessionStorage.getItem(UI_KEY) || "null");
     if (saved && typeof saved === "object") {
       if (saved.bank === "all" || saved.bank === "H12-821" || saved.bank === "H12-831") bank = saved.bank;
       if (saved.topic === "all" || topicTitle[saved.topic]) topic = saved.topic;
       if (typeof saved.query === "string") query = saved.query;
-      if (saved.selected && byId.has(saved.selected)) selected = saved.selected;
+      if (saved.selected && byId.has(saved.selected)) {
+        selected = saved.selected;
+        sessionPickedQuestion = true;
+      }
       if (DIMS.indexOf(saved.dim) >= 0) dim = saved.dim;
       if (PRACTICES.indexOf(saved.practice) >= 0) practice = saved.practice;
       if (saved.confusableKind === "all" || saved.confusableKind === "topology" || saved.confusableKind === "command") {
@@ -1585,6 +1696,10 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
       }
     }
   } catch (e) {}
+  if (!sessionPickedQuestion && dim === "seq") {
+    var resumeId = seqPosForCurrentBank();
+    if (resumeId) selected = resumeId;
+  }
   var hash = "";
   try { hash = decodeURIComponent((location.hash || "").replace(/^#/, "")); } catch (e) { hash = ""; }
   if (byId.has(hash)) {
@@ -1661,13 +1776,60 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
   });
   prevBtn.addEventListener("click", function () { step(-1); });
   nextBtn.addEventListener("click", function () { step(1); });
+  function jumpToSeq() {
+    var n = parseInt(jumpEl.value, 10);
+    if (!n || n < 1) return;
+    var loc = locateSelected();
+    var pools = [];
+    if (loc.group) pools.push(loc.group.items);
+    else pools.push(flatItems());
+    var hit = null;
+    for (var i = 0; i < pools.length && !hit; i++) {
+      hit = pools[i].find(function (item) { return questionNumber(item) === n; });
+    }
+    if (hit) {
+      select(hit.id, { scrollNote: true, scrollList: true });
+      return;
+    }
+    var bankId = loc.group ? loc.group.id : (bank !== "all" ? bank : "");
+    var exists = DATA.questions.some(function (item) {
+      if (questionNumber(item) !== n) return false;
+      if (bankId && item.bank !== bankId) return false;
+      if (bank !== "all" && item.bank !== bank) return false;
+      return true;
+    });
+    flash(exists ? ("当前筛选里没有第 " + n + " 题") : ("没有第 " + n + " 题"));
+  }
   function jumpTo() {
+    if (dim === "seq") {
+      jumpToSeq();
+      return;
+    }
     var loc = locateSelected();
     if (!loc.group) return;
     var n = parseInt(jumpEl.value, 10);
     if (!n || n < 1 || n > loc.group.items.length) return;
     select(loc.group.items[n - 1].id, { scrollNote: true, scrollList: true });
   }
+  function restartSeq() {
+    var pool = DATA.questions.filter(function (item) {
+      return bank === "all" || item.bank === bank;
+    }).sort(compareSeq);
+    if (!pool.length) {
+      flash("没有可开始的题目");
+      return;
+    }
+    topic = "all";
+    practice = "all";
+    query = "";
+    dim = "seq";
+    selected = pool[0].id;
+    renderAll({ scrollList: true, scrollNote: true, autoOpen: true });
+    saveSeqPos(selected);
+    try { history.replaceState(null, "", "#" + selected); } catch (e) {}
+    flash("已从 " + label(pool[0]) + " 开始");
+  }
+  document.getElementById("seq-restart").addEventListener("click", restartSeq);
   jumpEl.addEventListener("change", jumpTo);
   jumpEl.addEventListener("keydown", function (e) {
     if (e.key !== "Enter") return;
