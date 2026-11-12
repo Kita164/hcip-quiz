@@ -796,11 +796,25 @@ def build(
     return {"questions": public_questions, "topics": topics, "notes": notes}
 
 
+# Bank keys that disagree with device behavior. Applied to answer_raw before
+# keys and study-note lines are derived, so a rebuild does not restore the bank.
+# 831-311: ipv6 summary on R1/R2 level-2, plus L2→L1 import on R1/R2/R3, leaks
+# 2000::/64 into R4's own L1 area. The Down bit only stops that summary from
+# being re-advertised into L2; it does not keep the /64 out of R4's table.
+# Bank ABD excludes R4. Real routing tables include R4, so the key is ABCD.
+REAL_ANSWER_OVERRIDES = {
+    "831-311": "A. R3；B. R2；C. R4；D. R5",
+}
+
+
 def attach_answers_and_ids(questions: list[dict], mapping: dict[str, str]) -> None:
     cache: dict[str, str] = {}
     for q in questions:
         code = "821" if q["bank"] == "H12-821" else "831"
         q["id"] = f"{code}-{q['n']}"
+        override = REAL_ANSWER_OVERRIDES.get(q["id"])
+        if override:
+            q["answer_raw"] = override
         q["stem"] = readable(q["stem"])
         for opt in q["options"]:
             opt["t"] = readable(opt["t"])
@@ -929,6 +943,8 @@ def validate(
             assert match, (qid, key, hi)
     assert by_id["821-1"]["answerKeys"] == ["B"]
     assert by_id["821-2"]["answerKeys"] == ["A"]
+    assert by_id["831-311"]["answerKeys"] == ["A", "B", "C", "D"]
+    assert "C. R4" in by_id["831-311"]["answerText"]
     # fill-in: default OSPF reference bandwidth 100
     fills = [q for q in qs if q["type"] == "填空题" and "缺省参考值" in q["stem"]]
     assert fills and fills[0]["answerText"] == "100"
