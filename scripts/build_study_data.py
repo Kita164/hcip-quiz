@@ -10,6 +10,8 @@ Notes restate only what the bank asserts:
 
 False 判断题 corrections live in scripts/tf_fixes.json.
 Wrong-option corrections live in scripts/wrong_option_fixes.json.
+Bank answers that disagree with device behavior live in REAL_ANSWER_OVERRIDES
+below and are applied before keys and study-note lines are derived.
 Each hi must be a substring of the stored stem or option. Regenerate with:
 
   python3 scripts/build_study_data.py [path/to/togogo-qa.txt]
@@ -796,12 +798,50 @@ def build(
     return {"questions": public_questions, "topics": topics, "notes": notes}
 
 
+# Bank keys, stems, and types that disagree with device behavior. Applied
+# before keys and study-note lines are derived, so a rebuild does not restore
+# the bank.
+#
+# 831-193: plain NSSA does not auto-inject a default. That needs
+# nssa default-route-advertise, and this stem is not Totally NSSA. Stub and
+# Totally Stub ABRs do inject a Type-3 default, so R6 and R4 have one. R3 is
+# on the backbone; nobody injects a default into Area 0. Both R3 and R5 have
+# no default route. The bank marked only A and called the item 单选.
+REAL_ANSWER_OVERRIDES = {
+    "831-193": "A. R3；B. R5",
+}
+STEM_REPLACEMENTS = {
+    "831-193": ("哪一台路由器", "哪些路由器"),
+}
+TYPE_OVERRIDES = {
+    "831-193": "多选题",
+}
+
+
+def apply_bank_overrides(q: dict) -> None:
+    """Replace a bank answer, stem phrase, or question type that is wrong."""
+    override = REAL_ANSWER_OVERRIDES.get(q["id"])
+    if override:
+        q["answer_raw"] = override
+    repl = STEM_REPLACEMENTS.get(q["id"])
+    if repl:
+        src, dst = repl
+        if src in q["stem"]:
+            q["stem"] = q["stem"].replace(src, dst, 1)
+        elif dst not in q["stem"]:
+            raise SystemExit(f"{q['id']} stem has neither {src!r} nor {dst!r}")
+    forced = TYPE_OVERRIDES.get(q["id"])
+    if forced:
+        q["type"] = forced
+
+
 def attach_answers_and_ids(questions: list[dict], mapping: dict[str, str]) -> None:
     cache: dict[str, str] = {}
     for q in questions:
         code = "821" if q["bank"] == "H12-821" else "831"
         q["id"] = f"{code}-{q['n']}"
         q["stem"] = readable(q["stem"])
+        apply_bank_overrides(q)
         for opt in q["options"]:
             opt["t"] = readable(opt["t"])
         q["images"] = [local_or_remote(u, mapping, cache) for u in q["images_raw"]]
@@ -929,6 +969,13 @@ def validate(
             assert match, (qid, key, hi)
     assert by_id["821-1"]["answerKeys"] == ["B"]
     assert by_id["821-2"]["answerKeys"] == ["A"]
+    assert by_id["831-191"]["answerKeys"] == ["B"]
+    q193 = by_id["831-193"]
+    assert q193["type"] == "多选题"
+    assert q193["answerKeys"] == ["A", "B"]
+    assert q193["answerText"] == "A. R3；B. R5"
+    assert "哪些路由器" in q193["stem"]
+    assert "哪一台" not in q193["stem"]
     # fill-in: default OSPF reference bandwidth 100
     fills = [q for q in qs if q["type"] == "填空题" and "缺省参考值" in q["stem"]]
     assert fills and fills[0]["answerText"] == "100"
