@@ -10,6 +10,8 @@ Notes restate only what the bank asserts:
 
 False 判断题 corrections live in scripts/tf_fixes.json.
 Wrong-option corrections live in scripts/wrong_option_fixes.json.
+Bank answers that disagree with device behavior live in REAL_ANSWER_OVERRIDES
+and are applied before keys and study-note lines are derived.
 Each hi must be a substring of the stored stem or option. Regenerate with:
 
   python3 scripts/build_study_data.py [path/to/togogo-qa.txt]
@@ -796,11 +798,28 @@ def build(
     return {"questions": public_questions, "topics": topics, "notes": notes}
 
 
+# Bank keys that disagree with device behavior. Applied before keys and
+# study-note lines are derived, so a rebuild does not restore the bank.
+#
+# 821-255: four equal-cost links, maximum load-balancing 1. Huawei prefers the
+# smaller nexthop weight (all default 255 here), then the larger outbound
+# interface index; next-hop IP is only a tie-break. Physical ports are
+# indexed at boot (GE0/0/0 < GE0/0/1). Subinterfaces are created later, so
+# GE0/0/2.20 > GE0/0/2.10 > GE0/0/1 > GE0/0/0. The single kept route is
+# GE0/0/2.20. Bank B is GE0/0/0, the smallest index.
+REAL_ANSWER_OVERRIDES = {
+    "821-255": "A. GE0/0/2.20",
+}
+
+
 def attach_answers_and_ids(questions: list[dict], mapping: dict[str, str]) -> None:
     cache: dict[str, str] = {}
     for q in questions:
         code = "821" if q["bank"] == "H12-821" else "831"
         q["id"] = f"{code}-{q['n']}"
+        override = REAL_ANSWER_OVERRIDES.get(q["id"])
+        if override:
+            q["answer_raw"] = override
         q["stem"] = readable(q["stem"])
         for opt in q["options"]:
             opt["t"] = readable(opt["t"])
@@ -929,6 +948,10 @@ def validate(
             assert match, (qid, key, hi)
     assert by_id["821-1"]["answerKeys"] == ["B"]
     assert by_id["821-2"]["answerKeys"] == ["A"]
+    assert by_id["821-255"]["answerKeys"] == ["A"]
+    assert by_id["821-255"]["answerText"] == "A. GE0/0/2.20"
+    assert by_id["831-116"]["answerKeys"] == ["B"]
+    assert "GE0/0/2.20" in by_id["831-116"]["answerText"]
     # fill-in: default OSPF reference bandwidth 100
     fills = [q for q in qs if q["type"] == "填空题" and "缺省参考值" in q["stem"]]
     assert fills and fills[0]["answerText"] == "100"

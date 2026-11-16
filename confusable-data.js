@@ -277,10 +277,10 @@ window.CONFUSABLE_GROUPS = [
       "821-255",
       "821-425"
     ],
-    "summary": "看到 R1、R2 之间四条链路，题目里给 maximum load-balancing，就是这一组。只看那个数字：写 1 就答一条，写 3 就答三条。",
+    "summary": "看到 R1、R2 之间四条链路，题目里给 maximum load-balancing，就是这一组。看数字：写 1 选 GE0/0/2.20，写 3 选除 GE0/0/0 外的三条。规则是接口索引大的优先（子接口最大）。",
     "notes": {
-      "821-255": "看到 maximum load-balancing 1 → 只留开销最小的一条，选 GE0/0/0。",
-      "821-425": "看到 maximum load-balancing 3 → 开销最小的三条都进转发表，选 GE0/0/2.10、GE0/0/1、GE0/0/2.20。"
+      "821-255": "看到 maximum load-balancing 1 → 写 1 只留接口索引最大的一条，就是最后创建的子接口 GE0/0/2.20（题库原答案 GE0/0/0 是索引最小的，不对）。",
+      "821-425": "看到 maximum load-balancing 3 → 四条链路开销相同都是等价，超过 maximum load-balancing 时华为先比接口索引，索引大的优先；子接口后创建索引最大，GE0/0/0 索引最小。写 3 就剔掉 GE0/0/0。"
     }
   },
   {
@@ -333,10 +333,10 @@ window.CONFUSABLE_GROUPS = [
       "831-116",
       "831-317"
     ],
-    "summary": "和 OSPF 负载分担那一组同图同考点，只是换到 831 题库、选项顺序不一样，就是这一组。还是只看 maximum load-balancing 后面的数字。",
+    "summary": "和 OSPF 负载分担那一组同图同考点，只是换到 831 题库、选项顺序不一样，就是这一组。看数字：写 1 选 GE0/0/2.20，写 3 选除 GE0/0/0 外的三条。规则是接口索引大的优先（子接口最大）。",
     "notes": {
-      "831-116": "看到 maximum load-balancing 1 → 只留一条，本题按选项选 GE0/0/2.20。注意 821 #255 是同图同问法却给 GE0/0/0，两题答案对不上，按各自选项选。",
-      "831-317": "看到 maximum load-balancing 3 → 开销最小的三条都进表，选 GE0/0/2.10、GE0/0/1、GE0/0/2.20。"
+      "831-116": "看到 maximum load-balancing 1 → 写 1 只留接口索引最大的一条，就是最后创建的子接口 GE0/0/2.20。",
+      "831-317": "看到 maximum load-balancing 3 → 四条链路开销相同都是等价，超过 maximum load-balancing 时华为先比接口索引，索引大的优先；子接口后创建索引最大，GE0/0/0 索引最小。写 3 就剔掉 GE0/0/0。"
     }
   },
   {
