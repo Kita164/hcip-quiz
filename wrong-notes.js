@@ -118,7 +118,7 @@ window.WRONG_NOTES={
   "821-234": "ExStart 阶段的 DD 是空的，只用来协商主从和序列号；带 LSA 摘要的是 Exchange 的 DD。主从由 Router ID 大的当 Master，不是小的。",
   "821-238": "ip as-path-filter 是 BGP 的 AS_Path 过滤工具，OSPF 用不上；OSPF 路由过滤只能靠 ACL、前缀列表、route-policy。",
   "821-253": "邻居状态顺序：Down → Init → 2-Way → ExStart（选主从）→ Exchange（交换 DD 摘要）→ Loading → Full。主从协商就在 ExStart。",
-  "821-255": "看到 maximum load-balancing 1：四条开销相同，华为先比出接口索引，索引大的优先。子接口后创建，索引最大的是 GE0/0/2.20，只留这一条。题库原来标的 GE0/0/0 是索引最小的，不对。",
+  "821-255": "四条链路开销相同都是等价，超过 maximum load-balancing 时华为先比下一跳权重，再比出接口索引，索引大的优先。写 1 只留索引最大的一条，就是最后创建的子接口 GE0/0/2.20（题库原答案 GE0/0/0 是索引最小的，不对）。",
   "821-261": "四种网络类型里只有 P2P 是全部报文都组播；广播网 Hello 是组播，但 DBD、LSR 这些还要看角色，可能是单播。",
   "821-262": "IPv4 组播映射到 MAC 有固定规律：224.0.0.5 → 01-00-5e-00-00-05，224.0.0.6 → 01-00-5e-00-00-06，末位跟着组播地址走。",
   "821-263": "标识一条 LSA 的三元组是 LS Type、Link State ID、Advertising Router；序列号、Age、Checksum 是判断新旧用的，不在三元组里。",
