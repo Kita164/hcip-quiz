@@ -10,6 +10,8 @@ Notes restate only what the bank asserts:
 
 False 判断题 corrections live in scripts/tf_fixes.json.
 Wrong-option corrections live in scripts/wrong_option_fixes.json.
+Bank answers that disagree with device behavior live in REAL_ANSWER_OVERRIDES
+and are applied before keys and study-note lines are derived.
 Each hi must be a substring of the stored stem or option. Regenerate with:
 
   python3 scripts/build_study_data.py [path/to/togogo-qa.txt]
@@ -643,6 +645,9 @@ def make_note_lines(q: dict, fixes: dict[str, dict], wrong_fixes: dict[str, dict
                     line["fix"] = item["fix"]
                 lines.append(line)
             lines += [{"p": "yes", "t": by_key[k]} for k in missing]
+            aside = per_q.get("note") if isinstance(per_q, dict) else None
+            if isinstance(aside, str) and aside:
+                lines.append({"p": "note", "t": aside})
             return {"lead": stem, "lines": lines}
         lines = [{"p": "answer", "t": f"{k}. {by_key[k]}"} for k in selected]
         return {"lead": stem, "lines": lines}
@@ -796,11 +801,33 @@ def build(
     return {"questions": public_questions, "topics": topics, "notes": notes}
 
 
+# Bank keys that disagree with device behavior. Applied before keys and
+# study-note lines are derived, so a rebuild does not restore the bank.
+#
+# 821-255: four equal-cost links, maximum load-balancing 1. Huawei prefers the
+# smaller nexthop weight (all default 255 here), then the larger outbound
+# interface index; next-hop IP is only a tie-break. Physical ports are
+# indexed at boot (GE0/0/0 < GE0/0/1). Subinterfaces are created later, so
+# GE0/0/2.20 > GE0/0/2.10 > GE0/0/1 > GE0/0/0. The single kept route is
+# GE0/0/2.20. Bank B is GE0/0/0, the smallest index.
+# 821-364: bank marks B and D as the false statements. D says the VRRP
+# advertisement interval defaults to 1 second, which is true (same as
+# 821-154 and 821-424). B is false: default priority is 100, and a larger
+# value wins. The key is B only.
+REAL_ANSWER_OVERRIDES = {
+    "821-255": "A. GE0/0/2.20",
+    "821-364": "B. 缺省情况下，设备在VRRP备份组中的优先级为100，数值越小优先级越高",
+}
+
+
 def attach_answers_and_ids(questions: list[dict], mapping: dict[str, str]) -> None:
     cache: dict[str, str] = {}
     for q in questions:
         code = "821" if q["bank"] == "H12-821" else "831"
         q["id"] = f"{code}-{q['n']}"
+        override = REAL_ANSWER_OVERRIDES.get(q["id"])
+        if override:
+            q["answer_raw"] = override
         q["stem"] = readable(q["stem"])
         for opt in q["options"]:
             opt["t"] = readable(opt["t"])
@@ -897,7 +924,7 @@ def validate(
         wrong_ids.append(q["id"])
         per = wrong_fixes.get(q["id"])
         assert isinstance(per, dict), q["id"]
-        extra_letters = sorted(set(per) - set(q["answerKeys"]))
+        extra_letters = sorted(set(per) - set(q["answerKeys"]) - {"note"})
         assert not extra_letters, (q["id"], extra_letters)
         by_key = {o["k"]: o["t"] for o in opts}
         for key in q["answerKeys"]:
@@ -905,7 +932,9 @@ def validate(
             assert isinstance(item, dict), (q["id"], key)
             hi, fix = item.get("hi"), item.get("fix")
             assert hi and hi in by_key[key], (q["id"], key, hi)
-            assert fix and "\n" not in fix and len(fix) <= 90 and fix.endswith("。"), (q["id"], key, fix)
+            # 821-288 contrasts the bank key with default preemption, so its fix is longer.
+            limit = 120 if q["id"] == "821-288" else 90
+            assert fix and "\n" not in fix and len(fix) <= limit and fix.endswith("。"), (q["id"], key, fix, len(fix or ""))
     missing_wrong = [qid for qid in wrong_ids if qid not in wrong_fixes]
     extra_wrong = sorted(set(wrong_fixes) - set(wrong_ids))
     assert not missing_wrong, missing_wrong
@@ -929,6 +958,13 @@ def validate(
             assert match, (qid, key, hi)
     assert by_id["821-1"]["answerKeys"] == ["B"]
     assert by_id["821-2"]["answerKeys"] == ["A"]
+    assert by_id["821-255"]["answerKeys"] == ["A"]
+    assert by_id["821-255"]["answerText"] == "A. GE0/0/2.20"
+    assert by_id["821-364"]["answerKeys"] == ["B"]
+    assert "数值越小优先级越高" in by_id["821-364"]["answerText"]
+    assert "1秒" not in by_id["821-364"]["answerText"]
+    assert by_id["831-116"]["answerKeys"] == ["B"]
+    assert "GE0/0/2.20" in by_id["831-116"]["answerText"]
     # fill-in: default OSPF reference bandwidth 100
     fills = [q for q in qs if q["type"] == "填空题" and "缺省参考值" in q["stem"]]
     assert fills and fills[0]["answerText"] == "100"
