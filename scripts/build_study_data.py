@@ -645,6 +645,9 @@ def make_note_lines(q: dict, fixes: dict[str, dict], wrong_fixes: dict[str, dict
                     line["fix"] = item["fix"]
                 lines.append(line)
             lines += [{"p": "yes", "t": by_key[k]} for k in missing]
+            aside = per_q.get("note") if isinstance(per_q, dict) else None
+            if isinstance(aside, str) and aside:
+                lines.append({"p": "note", "t": aside})
             return {"lead": stem, "lines": lines}
         lines = [{"p": "answer", "t": f"{k}. {by_key[k]}"} for k in selected]
         return {"lead": stem, "lines": lines}
@@ -807,8 +810,13 @@ def build(
 # indexed at boot (GE0/0/0 < GE0/0/1). Subinterfaces are created later, so
 # GE0/0/2.20 > GE0/0/2.10 > GE0/0/1 > GE0/0/0. The single kept route is
 # GE0/0/2.20. Bank B is GE0/0/0, the smallest index.
+# 821-364: bank marks B and D as the false statements. D says the VRRP
+# advertisement interval defaults to 1 second, which is true (same as
+# 821-154 and 821-424). B is false: default priority is 100, and a larger
+# value wins. The key is B only.
 REAL_ANSWER_OVERRIDES = {
     "821-255": "A. GE0/0/2.20",
+    "821-364": "B. 缺省情况下，设备在VRRP备份组中的优先级为100，数值越小优先级越高",
 }
 
 
@@ -916,7 +924,7 @@ def validate(
         wrong_ids.append(q["id"])
         per = wrong_fixes.get(q["id"])
         assert isinstance(per, dict), q["id"]
-        extra_letters = sorted(set(per) - set(q["answerKeys"]))
+        extra_letters = sorted(set(per) - set(q["answerKeys"]) - {"note"})
         assert not extra_letters, (q["id"], extra_letters)
         by_key = {o["k"]: o["t"] for o in opts}
         for key in q["answerKeys"]:
@@ -952,6 +960,9 @@ def validate(
     assert by_id["821-2"]["answerKeys"] == ["A"]
     assert by_id["821-255"]["answerKeys"] == ["A"]
     assert by_id["821-255"]["answerText"] == "A. GE0/0/2.20"
+    assert by_id["821-364"]["answerKeys"] == ["B"]
+    assert "数值越小优先级越高" in by_id["821-364"]["answerText"]
+    assert "1秒" not in by_id["821-364"]["answerText"]
     assert by_id["831-116"]["answerKeys"] == ["B"]
     assert "GE0/0/2.20" in by_id["831-116"]["answerText"]
     # fill-in: default OSPF reference bandwidth 100
