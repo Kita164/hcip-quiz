@@ -501,9 +501,9 @@ window.CONFUSABLE_GROUPS = [
       "831-208",
       "831-301"
     ],
-    "summary": "看到 R5 在 NSSA 里 import 2000::5/128、问 Inter-Area-Router-LSA 谁生成，就是这一组。单选只认「R2 在区域0 生成」这一条；多选再加上「R2 在区域2 生成」和「R3 生成 AS-External-LSA」。",
+    "summary": "看到 R5 在 NSSA 里 import 2000::5/128、问 Inter-Area-Router-LSA 谁生成，就是这一组。看到「谁生成 Inter-Area-Router-LSA」→ 先找做 7 转 5 的 ABR（Router ID 大的 R3），再选另一台 ABR R2；点名 R1、R3 的都错。多选再加「R2 在区域2 生成」和「R3 生成 AS-External-LSA」。",
     "notes": {
-      "831-208": "看到四个选项都是「某台在某个区生成 Inter-Area-Router-LSA」→ 选「R2 在区域0 生成」那条；点名 R1、R3 的都错。",
+      "831-208": "看到「谁生成 Inter-Area-Router-LSA」→ 先找做 7 转 5 的 ABR（Router ID 大的 R3），再选另一台 ABR R2；点名 R1、R3 的都错。",
       "831-301": "同场景改成多选 → 选「R2 在区域2 生成」「R3 生成 AS-External-LSA」「R2 在区域0 生成」这三句；说「R1 生成 AS-External-LSA」的错。"
     }
   },
