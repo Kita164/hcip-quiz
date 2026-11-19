@@ -33,6 +33,7 @@ HTML_PATH = ROOT / "index.html"
 OUT_PATH = ROOT / "notes-data.js"
 FIXES_PATH = ROOT / "scripts" / "tf_fixes.json"
 WRONG_FIXES_PATH = ROOT / "scripts" / "wrong_option_fixes.json"
+FALSE_FIXES_PATH = ROOT / "scripts" / "multi_false_fixes.json"
 IMG_DIR = ROOT / "images"
 
 OPT_RE = re.compile(r"^([A-H])[\.．、]\s*(.*)$")
@@ -598,8 +599,35 @@ def load_wrong_fixes() -> dict[str, dict]:
     return data
 
 
-def make_note_lines(q: dict, fixes: dict[str, dict], wrong_fixes: dict[str, dict] | None = None) -> dict:
+def load_false_fixes() -> dict[str, dict]:
+    """Why each non-keyed option of a 多选题 is wrong.
+
+    Used for 正确的是 items and for ordinary multi-selects, whose unselected
+    options are the false statements. 找错项 stay in wrong_option_fixes.json.
+    """
+    if not FALSE_FIXES_PATH.exists():
+        return {}
+    data = json.loads(FALSE_FIXES_PATH.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise SystemExit("multi_false_fixes.json must be an object")
+    return data
+
+
+def apply_option_fix(line: dict, qid: str, key: str, store: dict[str, dict]) -> None:
+    item = (store.get(qid) or {}).get(key) if isinstance(store.get(qid), dict) else None
+    if isinstance(item, dict) and item.get("hi") and item.get("fix"):
+        line["hi"] = item["hi"]
+        line["fix"] = item["fix"]
+
+
+def make_note_lines(
+    q: dict,
+    fixes: dict[str, dict],
+    wrong_fixes: dict[str, dict] | None = None,
+    false_fixes: dict[str, dict] | None = None,
+) -> dict:
     wrong_fixes = wrong_fixes if wrong_fixes is not None else load_wrong_fixes()
+    false_fixes = false_fixes if false_fixes is not None else load_false_fixes()
     stem = q["stem"]
     options = q["options"]
     raw = q["answer_raw"]
@@ -632,7 +660,11 @@ def make_note_lines(q: dict, fixes: dict[str, dict], wrong_fixes: dict[str, dict
         missing = [o["k"] for o in options if o["k"] not in selected]
         if mode == "right":
             lines = [{"p": "yes", "t": by_key[k]} for k in selected]
-            lines += [{"p": "no", "t": by_key[k]} for k in missing]
+            for k in missing:
+                line = {"p": "no", "t": by_key[k]}
+                if q.get("type") == "多选题":
+                    apply_option_fix(line, q["id"], k, false_fixes)
+                lines.append(line)
             return {"lead": stem, "lines": lines}
         if mode == "wrong":
             per_q = wrong_fixes.get(q["id"], {})
@@ -650,6 +682,11 @@ def make_note_lines(q: dict, fixes: dict[str, dict], wrong_fixes: dict[str, dict
                 lines.append({"p": "note", "t": aside})
             return {"lead": stem, "lines": lines}
         lines = [{"p": "answer", "t": f"{k}. {by_key[k]}"} for k in selected]
+        if q.get("type") == "多选题":
+            for k in missing:
+                line = {"p": "no", "t": by_key[k]}
+                apply_option_fix(line, q["id"], k, false_fixes)
+                lines.append(line)
         return {"lead": stem, "lines": lines}
 
     # No extractable written conclusion.
@@ -668,9 +705,11 @@ def build(
     questions: list[dict],
     fixes: dict[str, dict] | None = None,
     wrong_fixes: dict[str, dict] | None = None,
+    false_fixes: dict[str, dict] | None = None,
 ) -> dict:
     fixes = fixes if fixes is not None else load_tf_fixes()
     wrong_fixes = wrong_fixes if wrong_fixes is not None else load_wrong_fixes()
+    false_fixes = false_fixes if false_fixes is not None else load_false_fixes()
     items_by_section: dict[tuple[str, str], list] = OrderedDict()
     topic_counts: dict[str, int] = defaultdict(int)
 
@@ -684,7 +723,7 @@ def build(
         q["subtopic"] = sid
         q["subtopicTitle"] = stitle
         topic_counts[topic] += 1
-        note = make_note_lines(q, fixes, wrong_fixes)
+        note = make_note_lines(q, fixes, wrong_fixes, false_fixes)
         images = list(q["images"])
         if any(line["p"] == "gap" for line in note["lines"]):
             for img in q["answerImages"]:
@@ -817,6 +856,11 @@ def build(
 REAL_ANSWER_OVERRIDES = {
     "821-255": "A. GE0/0/2.20",
     "821-364": "B. 缺省情况下，设备在VRRP备份组中的优先级为100，数值越小优先级越高",
+    # 831-311: level-2 summary 2000::/64 is leaked into R4's Level-1 area by
+    # import level-2 into level-1 on R1/R2. The Up/Down bit only stops that
+    # prefix being advertised back into Level-2; R4 still installs it.
+    # Bank ABD leaves R4 out.
+    "831-311": "A. R3；B. R2；C. R4；D. R5",
 }
 
 
@@ -851,9 +895,11 @@ def validate(
     data: dict,
     fixes: dict[str, dict] | None = None,
     wrong_fixes: dict[str, dict] | None = None,
+    false_fixes: dict[str, dict] | None = None,
 ) -> None:
     fixes = fixes if fixes is not None else load_tf_fixes()
     wrong_fixes = wrong_fixes if wrong_fixes is not None else load_wrong_fixes()
+    false_fixes = false_fixes if false_fixes is not None else load_false_fixes()
     qs = data["questions"]
     assert len(qs) == 865, len(qs)
     assert sum(1 for q in qs if q["bank"] == "H12-821") == 486
@@ -965,6 +1011,42 @@ def validate(
     assert "1秒" not in by_id["821-364"]["answerText"]
     assert by_id["831-116"]["answerKeys"] == ["B"]
     assert "GE0/0/2.20" in by_id["831-116"]["answerText"]
+    missing_false = []
+    extra_false = []
+    for q in qs:
+        if q["type"] != "多选题" or is_tf(q["options"]):
+            continue
+        if judgment_mode(q["stem"]) == "wrong":
+            continue
+        by_opt = {o["k"]: o["t"] for o in q["options"]}
+        wrong_keys = [o["k"] for o in q["options"] if o["k"] not in q["answerKeys"]]
+        per = false_fixes.get(q["id"], {})
+        if not isinstance(per, dict):
+            missing_false.append(q["id"])
+            continue
+        extra = sorted(set(per) - set(wrong_keys))
+        if extra:
+            extra_false.append((q["id"], extra))
+        for key in wrong_keys:
+            item = per.get(key)
+            text = by_opt[key]
+            if not isinstance(item, dict):
+                missing_false.append((q["id"], key))
+                continue
+            hi, fix = item.get("hi"), item.get("fix")
+            if not hi or hi not in text:
+                missing_false.append((q["id"], key, hi))
+            elif not fix or "\n" in str(fix) or len(fix) > 90 or not str(fix).endswith("。"):
+                missing_false.append((q["id"], key, "fix", len(fix or "")))
+    # These options are not given a made-up reason. See the PR notes.
+    uncertain_false = {
+        ("821-397", "D"),
+        ("821-409", "C"),
+        ("821-435", "D"),
+    }
+    missing_false = [item for item in missing_false if item[:2] not in uncertain_false]
+    assert not extra_false, extra_false[:6]
+    assert not missing_false, missing_false[:12]
     # fill-in: default OSPF reference bandwidth 100
     fills = [q for q in qs if q["type"] == "填空题" and "缺省参考值" in q["stem"]]
     assert fills and fills[0]["answerText"] == "100"
@@ -1023,8 +1105,9 @@ def main() -> None:
     attach_answers_and_ids(questions, mapping)
     fixes = load_tf_fixes()
     wrong_fixes = load_wrong_fixes()
-    data = build(questions, fixes, wrong_fixes)
-    validate(data, fixes, wrong_fixes)
+    false_fixes = load_false_fixes()
+    data = build(questions, fixes, wrong_fixes, false_fixes)
+    validate(data, fixes, wrong_fixes, false_fixes)
     payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
     OUT_PATH.write_text(
         "/* Generated by scripts/build_study_data.py from the togogo question bank.\n"
