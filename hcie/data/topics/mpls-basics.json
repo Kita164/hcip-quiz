@@ -1,0 +1,309 @@
+{
+  "id": "mpls-basics",
+  "title": "MPLS 转发和静态 LSP",
+  "summary": "标签 32 比特，本地有效。Ingress 查 FIB 的 Tunnel ID，不为 0 就 Push。Transit 用入标签换出标签。静态 LSP 上一跳的出标签必须等于下一跳的入标签。",
+  "source": "Datacom 通用 V1.0 · MPLS 原理与配置 · 2020.03 / 2021.07",
+  "mindmap": [
+    {
+      "t": "MPLS",
+      "c": [
+        {
+          "t": "谁",
+          "d": "LER 在边上。Ingress 压入，Transit 交换，Egress 弹出"
+        },
+        {
+          "t": "标签",
+          "d": "20+3+1+8。0 和 3 是特殊标签。静态入标签 16～1023"
+        },
+        {
+          "t": "表",
+          "d": "Ingress 用 FTN+NHLFE。Transit 用 ILM+NHLFE"
+        },
+        {
+          "t": "静态",
+          "d": "手工标签，不随拓扑变。以太网口必须写 nexthop"
+        }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "h",
+      "text": "它现在还用来干什么"
+    },
+    {
+      "type": "p",
+      "text": "MPLS 插在二层和三层之间，给上层网络协议提供服务。早期是为了少查 IP 路由表。硬件快了以后，这个速度优势变弱，留下的是多层标签和转控分离，所以 VPN、QoS 还在用。本课只讲 IP 网络上的 MPLS。"
+    },
+    {
+      "type": "p",
+      "text": "传统 IP 是逐跳解封装、最长匹配。每台都要全网路由，IP 头变长，也没有连接的概念，端到端 QoS 不好做。"
+    },
+    {
+      "type": "h",
+      "text": "名词"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "词",
+        "是什么"
+      ],
+      "rows": [
+        [
+          "MPLS 域",
+          "连续运行 MPLS 的设备"
+        ],
+        [
+          "LSR / LER",
+          "会 MPLS 的路由器。边上的叫 LER，域里的叫核心 LSR"
+        ],
+        [
+          "Ingress / Transit / Egress",
+          "按这一条流量：压入标签的、交换标签的、弹出标签的。同一台设备对不同 FEC 角色可以不同"
+        ],
+        [
+          "FEC",
+          "转发时被同样处理的一组报文。最常见是匹配同一条目的路由"
+        ],
+        [
+          "LSP",
+          "标签报文穿过域的单向路径。要双向就建两条。数据开始转发前必须已经建好"
+        ]
+      ]
+    },
+    {
+      "type": "p",
+      "text": "同一个 FEC，从不同 Ingress 进去，走的 LSP 不同。标签只有本地意义，相邻设备可以给同一 FEC 分配相同或不同的标签值。"
+    },
+    {
+      "type": "h",
+      "text": "32 比特标签头"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "字段",
+        "长度",
+        "看见什么"
+      ],
+      "rows": [
+        [
+          "Label",
+          "20 bit",
+          "0～1048575。不是 16 bit 的 0～65535"
+        ],
+        [
+          "EXP",
+          "3 bit",
+          "实际当 CoS 用。RFC 5462 改叫 Traffic Class，设备上仍常叫 EXP"
+        ],
+        [
+          "S",
+          "1 bit",
+          "1 是栈底，0 表示后面还有标签"
+        ],
+        [
+          "TTL",
+          "8 bit",
+          "防环。没有 max_hop 这个字段"
+        ]
+      ]
+    },
+    {
+      "type": "p",
+      "text": "标签插在二层头和 IP 头之间。栈顶靠近二层，S=0；栈底靠近 IP，S=1。以太网类型 0x8847，PPP 协议字段 0x8281。"
+    },
+    {
+      "type": "table",
+      "caption": "多选题：32 比特和多层嵌套是对的。Label 写成 0～65535、用 max_hop 防环，都是错的。",
+      "headers": [
+        "标签值",
+        "谁用"
+      ],
+      "rows": [
+        [
+          "0～15",
+          "特殊。0 是 IPv4 显式空，3 是隐式空"
+        ],
+        [
+          "16～1023",
+          "静态 LSP、静态 CR-LSP 共用"
+        ],
+        [
+          "1024～1048575",
+          "LDP、RSVP-TE、MP-BGP 各自一段，互不占用"
+        ]
+      ]
+    },
+    {
+      "type": "p",
+      "text": "操作三种：Push 压入，Swap 换栈顶，Pop 弹出。Ingress 做 Push，Transit 做 Swap，Egress 做 Pop。"
+    },
+    {
+      "type": "h",
+      "text": "控制平面和转发平面"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "平面",
+        "表",
+        "干什么"
+      ],
+      "rows": [
+        [
+          "控制",
+          "RIB",
+          "IP 路由选出来的"
+        ],
+        [
+          "控制",
+          "LIB",
+          "标签绑定。LDP、RSVP 或静态配置"
+        ],
+        [
+          "转发",
+          "FIB",
+          "普通 IP 转发"
+        ],
+        [
+          "转发",
+          "LFIB",
+          "带标签的报文"
+        ]
+      ]
+    },
+    {
+      "type": "p",
+      "text": "FEC 在 IP 路由表里没有路由，这条标签转发表项不生效。上游的出标签必须等于下游的入标签。数据方向上，发出标签的是上游，接收的是下游。"
+    },
+    {
+      "type": "h",
+      "text": "Tunnel ID 把三张表串起来"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "FTN：FEC 到 NHLFE。只在 Ingress。FIB 里 Tunnel ID 不是 0x0，就去 NHLFE 做 Push。是 0x0 就普通 IP 转发。",
+        "NHLFE：出接口、下一跳、出标签、操作。Ingress 和 Transit 都有。",
+        "ILM：入标签映射。只在 Transit 和 Egress。Transit 用入标签找到 Tunnel ID，再去 NHLFE 做 Swap。Egress 的操作是 Pop。",
+        "Pop 之后看 S。S=1 栈底，改 IP 转发。S=0 还有内层标签，按内层继续。"
+      ]
+    },
+    {
+      "type": "p",
+      "text": "静态 LSP 手工分配标签，没有信令，不看拓扑变化，适合小而稳的网络。它是本地概念，每台只知道自己的入标签和出标签。动态 LSP 用 LDP、RSVP-TE 或 MP-BGP。RSVP-TE 能做带宽和显式路径。MP-BGP 给 MPLS VPN 的私网路由和跨域标签路由分配标签。"
+    },
+    {
+      "type": "callout",
+      "kind": "exam",
+      "title": "静态入标签和出标签范围不一样",
+      "text": "判断题「入标签和出标签都是 16～1023」是错的。in-label 用的是本机静态空间，16～1023。out-label 写的是下游的标签，下游可能是动态分配，所以范围是 16～1048575。以太网出接口必须写 nexthop，只写出接口不够。"
+    }
+  ],
+  "exam": [
+    "标签头 32 比特：Label 20、EXP 3、S 1、TTL 8。防环靠 TTL，不是 max_hop。",
+    "0 显式空，3 隐式空。静态空间 16～1023。动态从 1024 起。",
+    "S=1 栈底。栈顶靠近二层头。",
+    "Tunnel ID 为 0x0 走 IP。非 0 走 MPLS。",
+    "Ingress：FIB 到 NHLFE，Push。Transit：ILM 到 NHLFE，Swap。Egress：ILM 上 Pop。",
+    "上一跳出标签 = 下一跳入标签。LSP 单向。",
+    "静态入标签 16～1023，出标签 16～1048575。"
+  ],
+  "mixups": [
+    {
+      "see": "Label 取值 0～65535",
+      "mean": "错。Label 20 比特，到 1048575。65535 是 16 比特。"
+    },
+    {
+      "see": "max_hop",
+      "mean": "标签头里没有这个字段。防环是 TTL。"
+    },
+    {
+      "see": "Tunnel ID 0x0",
+      "mean": "普通 IP 转发。非 0 才去 NHLFE 压标签。"
+    },
+    {
+      "see": "静态 LSP 的 in-label 和 out-label",
+      "mean": "入标签 16～1023。出标签可以到 1048575，因为它占的是下游的标签空间。"
+    },
+    {
+      "see": "只配了去程静态 LSP，回程抓包没有标签",
+      "mean": "正常。LSP 单向。回程要再配一条反方向 LSP，否则按 IP 转发。"
+    },
+    {
+      "see": "以太网接口只写了 outgoing-interface",
+      "mean": "静态 LSP 在以太网上必须带 nexthop，否则转发不起来。"
+    }
+  ],
+  "memory": [
+    "32 比特：20 标签、3 EXP、1 栈底、8 TTL。",
+    "0 显式空，3 隐式空，16 起才能静态用。",
+    "进域 Push，域中 Swap，出域 Pop。Tunnel ID 是 0 就还是 IP。",
+    "出标签等于对方的入标签。静态入标签到 1023 为止。"
+  ],
+  "labs": [
+    {
+      "title": "R1 到 3.3.3.0/24 的静态 LSP",
+      "goal": "R1 Ingress 出标签 200，R2 入 200 出 300，R3 入 300。只建去程。回程仍走 IP。",
+      "topo": {
+        "caption": "FEC 3.3.3.0/24。R1—R2 为 10.0.12.0/24，R2—R3 为 10.0.23.0/24。",
+        "nodes": [
+          {
+            "id": "R1",
+            "x": 20,
+            "y": 60,
+            "label": "R1",
+            "sub": "出 200"
+          },
+          {
+            "id": "R2",
+            "x": 190,
+            "y": 60,
+            "label": "R2",
+            "sub": "200/300"
+          },
+          {
+            "id": "R3",
+            "x": 360,
+            "y": 60,
+            "label": "R3",
+            "sub": "入 300"
+          }
+        ],
+        "links": [
+          {
+            "a": "R1",
+            "b": "R2",
+            "label": "10.0.12.0/24"
+          },
+          {
+            "a": "R2",
+            "b": "R3",
+            "label": "10.0.23.0/24"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "where": "每台先开 MPLS",
+          "text": "LSR ID 没有缺省值，用 Loopback 并事先规划。例子里三台是 10.1.1.1、10.1.1.2、10.1.1.3。接口要在全局 mpls 之后再开。",
+          "code": "mpls lsr-id 10.1.1.1\nmpls\ninterface GigabitEthernet0/0/0\n mpls"
+        },
+        {
+          "where": "一条去程",
+          "code": "[R1] static-lsp ingress 1to3 destination 3.3.3.0 24 nexthop 10.0.12.2 out-label 200\n[R2] static-lsp transit 1to3 incoming-interface GigabitEthernet0/0/0 in-label 200 nexthop 10.0.23.3 out-label 300\n[R3] static-lsp egress 1to3 incoming-interface GigabitEthernet0/0/0 in-label 300"
+        }
+      ],
+      "verify": [
+        {
+          "title": "标签在链路上只出现在去程",
+          "see": "R1 是 NULL/200，R2 是 200/300，R3 是 300/NULL。抓包时 1.1.1.1 到 3.3.3.3 的 Echo Request 带 Label 300、S=1。Reply 没有 MPLS 头，因为反方向没配 LSP。",
+          "code": "display mpls lsp\ndisplay mpls static-lsp"
+        }
+      ]
+    }
+  ],
+  "figures": []
+}

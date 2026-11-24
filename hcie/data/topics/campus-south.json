@@ -1,0 +1,247 @@
+{
+  "id": "campus-south",
+  "title": "园区南向：LLDP、SNMP、NETCONF",
+  "summary": "LLDP 负责把二层邻居交出来，SNMP 负责查和告警，NETCONF over SSH Callhome 让交换机自己去找 iMaster NCE-Campus。",
+  "source": "ThinkMo · Campus 南向业务管理与控制",
+  "mindmap": [
+    {
+      "t": "南向管理",
+      "c": [
+        {
+          "t": "LLDP",
+          "d": "802.1ab。邻居信息存成标准 MIB"
+        },
+        {
+          "t": "SNMP",
+          "d": "NMS、Agent、MIB。v3 才认证加密"
+        },
+        {
+          "t": "NETCONF",
+          "d": "Callhome 是交换机主动找 NCE-Campus"
+        }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "h",
+      "text": "这三样各自干什么"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "协议",
+        "解决什么",
+        "谁先开口"
+      ],
+      "rows": [
+        [
+          "LLDP",
+          "二层邻居和链路，网管才能画出真实拓扑",
+          "设备周期发给直连邻居"
+        ],
+        [
+          "SNMP",
+          "查询、修改参数，接收 Trap/Inform",
+          "NMS 问 Agent，告警是 Agent 主动发"
+        ],
+        [
+          "NETCONF",
+          "把配置模型化下发，园区交换机零配置上线",
+          "对接 NCE-Campus 时交换机主动 Callhome"
+        ]
+      ]
+    },
+    {
+      "type": "callout",
+      "kind": "fix",
+      "title": "备注页不要当正文",
+      "text": "这份课件每一页备注都粘了同一段 SD-WAN 架构说明，和 LLDP、SNMP、NETCONF 对不上。下面只按幻灯片正文记。"
+    },
+    {
+      "type": "h",
+      "text": "LLDP"
+    },
+    {
+      "type": "p",
+      "text": "LLDP 是 IEEE 802.1ab 的链路层发现协议。本端把管理地址、设备标识、接口标识发给邻居，邻居按标准 MIB 存下来，给网管查询。传统网管大多只能看到三层拓扑，看不出二层怎么连、配置冲不冲突。"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "单邻居：两个接口直接相连，每个接口只有一个邻居。",
+        "链路聚合：接口之间做了聚合，聚合里的每个接口仍然只有一个邻居。",
+        "MIB 里要看的是对象名字、访问权限、数据类型。LLDP 学到的邻居就放在这套标准 MIB 里。"
+      ]
+    },
+    {
+      "type": "h",
+      "text": "SNMP 四个角色"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "角色",
+        "是谁"
+      ],
+      "rows": [
+        [
+          "NMS",
+          "网管中心。发 Get/Set，也收 Trap"
+        ],
+        [
+          "Agent",
+          "设备上的代理。维护数据，应答 NMS，故障时主动上报"
+        ],
+        [
+          "被管对象",
+          "硬件，或者配在硬件、软件上的一组参数"
+        ],
+        [
+          "MIB",
+          "这些对象的数据库。查 MIB 是读状态，改 MIB 是设参数"
+        ]
+      ]
+    },
+    {
+      "type": "p",
+      "text": "OID 是树上的编号。system 是 1.3.6.1.2.1.1，interfaces 是 1.3.6.1.2.1.2。配 Agent 时可以用 MIB 视图把 NMS 能碰到的对象收成 MIB 的一个子集。"
+    },
+    {
+      "type": "table",
+      "caption": "课件把 v1 和 v2c 写成原理基本一致，再把 GetBulk、Inform 列在一起。GetBulk 和 Inform 是 v2c 才有的。",
+      "headers": [
+        "操作",
+        "干什么",
+        "哪个版本"
+      ],
+      "rows": [
+        [
+          "Get",
+          "取一个对象",
+          "v1 / v2c / v3"
+        ],
+        [
+          "GetNext",
+          "取下一个",
+          "v1 / v2c / v3"
+        ],
+        [
+          "Set",
+          "改一个对象",
+          "v1 / v2c / v3"
+        ],
+        [
+          "Trap",
+          "设备主动告警，不等确认",
+          "v1 / v2c / v3"
+        ],
+        [
+          "GetBulk",
+          "连续多次 GetNext",
+          "v2c 起"
+        ],
+        [
+          "Inform",
+          "告警，而且要 NMS 确认收到",
+          "v2c 起"
+        ]
+      ]
+    },
+    {
+      "type": "callout",
+      "kind": "exam",
+      "title": "v3 多出来的是身份验证和加密",
+      "text": "v1/v2c 靠团体字区分谁能访问，团体字在报文里是明文。v3 的 Get 流程和前两版一样，只是先做身份验证和加密。看到 v1 或 v2c 就是没有加密；看到 Inform 就是对方必须回确认，Trap 不用。"
+    },
+    {
+      "type": "h",
+      "text": "NETCONF：谁去找谁"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "模式",
+        "谁发起",
+        "网管是谁"
+      ],
+      "rows": [
+        [
+          "NETCONF over SSH Callhome",
+          "交换机主动",
+          "iMaster NCE-Campus"
+        ],
+        [
+          "NETCONF over SSH",
+          "网管主动",
+          "第三方网管"
+        ]
+      ]
+    },
+    {
+      "type": "p",
+      "text": "系统是 Client/Server：网管是客户端，设备是服务端。园区里要用的是 Callhome，交换机自己去注册。"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "注册查询中心保存设备的 NETCONF 使能状态和该归哪台控制器。NCE-Campus 把导入的设备同步过去，交换机来问，就能自动打开 NETCONF 并拿到控制器地址。",
+        "管理 VLAN：DHCP 服务器和交换机相连的那个 VLAN，由控制器维护和下发。",
+        "PnP VLAN：为即插即用准备的 VLAN，分有线和无线。有线 PnP VLAN 用来给交换机申请管理 IP。无线 PnP VLAN 是 AP 的管理 VLAN，下联是 AP 时，交换机把该端口 PVID 改成无线 PnP VLAN。PnP VLAN 和管理 VLAN 可以相同，也可以不同。"
+      ]
+    },
+    {
+      "type": "h",
+      "text": "Callhome 三阶段"
+    },
+    {
+      "type": "ol",
+      "items": [
+        "拿到「要不要开 NETCONF」和控制器地址。三条路：DHCP、邮件、命令行或 Web 手工配。",
+        "交换机拿地址或 URL 之后，主动向 NCE-Campus 注册，建 NETCONF 通道。",
+        "通道建成后控制器统一管理，交互数据加密。"
+      ]
+    },
+    {
+      "type": "p",
+      "text": "自建云、还没连上注册查询中心时，出口网关兼 DHCP 服务器，在 Option 148 里放 NETCONF 使能状态和 NCE-Campus 地址。交换机用 DHCP 打开 NETCONF 并完成注册。和 SD-WAN 那篇的 DHCP 开局是同一类 Option 148，对象换成园区交换机，控制器是 NCE-Campus。"
+    }
+  ],
+  "exam": [
+    "LLDP 是 802.1ab，邻居信息存成标准 MIB，给网管画二层拓扑。",
+    "SNMP 四件套：NMS、Agent、被管对象、MIB。",
+    "GetBulk、Inform 是 v2c。Inform 要确认，Trap 不要。",
+    "v3 比 v1/v2c 多的是身份验证和加密。",
+    "Callhome：交换机主动找 NCE-Campus。普通 NETCONF over SSH：网管主动，给第三方网管。",
+    "有线 PnP VLAN 给交换机要管理地址，无线 PnP VLAN 改的是下联 AP 端口的 PVID。"
+  ],
+  "mixups": [
+    {
+      "see": "Trap 和 Inform",
+      "mean": "都是设备主动告警。Inform 必须等 NMS 确认，Trap 不等。Inform 不是 v1 的操作。"
+    },
+    {
+      "see": "system 的 OID 1.3.6.1.2.1.1",
+      "mean": "MIB-2 下面的 system。interfaces 是 1.3.6.1.2.1.2。MIB 视图是把 NMS 能访问的对象收成子集。"
+    },
+    {
+      "see": "交换机自己向控制器注册",
+      "mean": "NETCONF over SSH Callhome，对端是 iMaster NCE-Campus。第三方网管是反过来，网管来建会话。"
+    },
+    {
+      "see": "Option 148",
+      "mean": "SD-WAN 开局和园区交换机上线都能用。这里看的是交换机是否使能 NETCONF、NCE-Campus 的地址，不是 CPE 的邮件开局。"
+    },
+    {
+      "see": "管理 VLAN 和 PnP VLAN",
+      "mean": "管理 VLAN 是 DHCP 服务器那一侧。PnP VLAN 是交换机注册后控制器下发的，有线用来要管理 IP，无线用来改 AP 端口 PVID。两者可以一样，也可以不一样。"
+    }
+  ],
+  "memory": [
+    "LLDP 交邻居，SNMP 查和告警，NETCONF 下配置。",
+    "v1 四操作：Get、GetNext、Set、Trap。v2c 再加 GetBulk 和 Inform。v3 加上认证加密。",
+    "Callhome = 设备找控制器。普通 SSH = 控制器找设备。"
+  ],
+  "labs": [],
+  "figures": []
+}

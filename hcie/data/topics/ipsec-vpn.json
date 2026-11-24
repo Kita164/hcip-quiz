@@ -1,0 +1,261 @@
+{
+  "id": "ipsec-vpn",
+  "title": "IPSec VPN",
+  "summary": "AH 只认证，ESP 能加密也能认证。网关之间用隧道模式。IPSec SA 单向成对，IKE SA 双向只有一条。穿越 NAT 时把 ESP 套进 UDP 4500。",
+  "source": "ThinkMo · IPSec VPN",
+  "mindmap": [
+    {
+      "t": "IPSec",
+      "c": [
+        {
+          "t": "安全",
+          "d": "源认证、加密、完整性、抗重放"
+        },
+        {
+          "t": "协议",
+          "d": "AH 51 只认证。ESP 50 认证加加密"
+        },
+        {
+          "t": "封装",
+          "d": "传输插在 IP 头后。隧道在外面再套一个 IP 头"
+        },
+        {
+          "t": "密钥",
+          "d": "手工，或 IKE。IKE SA 双向，IPSec SA 单向"
+        }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "h",
+      "text": "它补的是 IP 自己没有的安全"
+    },
+    {
+      "type": "p",
+      "text": "IPSec 不是一个协议，是一组：AH、ESP、密钥交换、认证和加密算法。两端建一条隧道，业务从隧道里过。四个结果：验证数据来源、加密、检查有没有被改、丢掉重放的旧包。"
+    },
+    {
+      "type": "h",
+      "text": "SA"
+    },
+    {
+      "type": "p",
+      "text": "安全联盟是双方对协议、感兴趣流、封装模式、算法、密钥和生存周期的约定。IPSec SA 用三元组标识：SPI、目的 IP、协议号（AH 或 ESP）。SPI 是 32 比特，放在 AH 和 ESP 头里。"
+    },
+    {
+      "type": "p",
+      "text": "IPSec SA 单向。双向至少一对，入向和出向各一条。建立方式两种：手工，或 IKE。不管哪种，顺序都是：选协议、选封装、选加密、选认证、交换密钥。"
+    },
+    {
+      "type": "h",
+      "text": "AH 和 ESP"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "",
+        "AH",
+        "ESP"
+      ],
+      "rows": [
+        [
+          "协议号",
+          "51",
+          "50"
+        ],
+        [
+          "加密",
+          "不做",
+          "做"
+        ],
+        [
+          "认证",
+          "做，范围包含 IP 头里除可变字段以外的部分",
+          "可选。范围不含最外层 IP 头"
+        ],
+        [
+          "建议算法",
+          "认证用 SHA2 或 SM3",
+          "加密用 AES、SM1、SM4。认证同样建议 SHA2、SM3"
+        ]
+      ]
+    },
+    {
+      "type": "p",
+      "text": "MD5 和 SHA1 课件标成不安全。DES、3DES 安全性低，不推荐。AES 常见 128、192、256。SM1 不公开，要走加密芯片。SM4 分组和密钥都是 128 位。认证用的是 HMAC：发送方算出 ICV，接收方再算一次，不一致就丢。"
+    },
+    {
+      "type": "h",
+      "text": "传输模式和隧道模式"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "传输模式：AH 或 ESP 插在原 IP 头和 TCP/UDP 之间，保护的是载荷。原 IP 头还在最外面，适合两端主机自己就是通信对等体。",
+        "隧道模式：在原 IP 头之前插入 AH 或 ESP，再套一个新 IP 头。原 IP 头被保护。网关之间保护两个子网，用这个模式。",
+        "AH 和 ESP 一起用时，先 ESP 再 AH。认证范围比加密范围大一圈。"
+      ]
+    },
+    {
+      "type": "h",
+      "text": "手工还是 IKE"
+    },
+    {
+      "type": "p",
+      "text": "手工把密钥配死，靠电话或邮件对齐。点到多点时工作量按平方涨，周期换密钥也做不到。IKE 用 DH，双方交换的材料算不出密钥本身，截获交换数据也算不出密钥。"
+    },
+    {
+      "type": "p",
+      "text": "IKE 跑在 ISAKMP 框架上，是 UDP 应用。先有一条双向的 IKE SA，在它的保护下再协商出一对 IPSec SA。两个对等体之间 IKE SA 只建一条。"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "",
+        "IKEv1",
+        "IKEv2"
+      ],
+      "rows": [
+        [
+          "阶段",
+          "阶段 1 建 IKE SA：主模式或野蛮模式。阶段 2 快速模式建一对 IPSec SA",
+          "初始交换就产出密钥并建立第一对 IPSec SA"
+        ],
+        [
+          "更多 SA",
+          "再跑一次快速模式",
+          "Create_Child_SA。开了 PFS 会再做一次 DH"
+        ],
+        [
+          "通知",
+          "通知消息",
+          "Informational，必须在 IKE SA 保护下"
+        ]
+      ]
+    },
+    {
+      "type": "p",
+      "text": "IKE 的身份认证可以是预共享密钥、RSA 证书，或数字信封。身份数据在密钥产生之后才加密发送。PFS 让 IPSec SA 的密钥不从上一把密钥推导，即使 IKE SA 的密钥泄露，已经协商出的 IPSec 密钥也不跟着泄露。"
+    },
+    {
+      "type": "h",
+      "text": "GRE over IPSec 和 NAT 穿越"
+    },
+    {
+      "type": "p",
+      "text": "GRE over IPSec 先做 GRE，再做 IPSec。封装可以是传输模式，也可以是隧道模式。传输模式把 AH/ESP 插在 GRE 的公网 IP 和 GRE 头之间。隧道模式再在最外面套一个新的公网 IP。组播、路由协议这些 GRE 能带、IPSec 感兴趣流不好直接匹配的流量，用这条顺序。"
+    },
+    {
+      "type": "p",
+      "text": "ESP 没有端口，PAT 改不了它。两边打开 NAT 穿越。IKE 协商时发现中间有 NAT，就把 ESP 套进 UDP，源和目的端口都是 4500。经过 NAPT 后源端口会变，例如变成 4891，目的端口仍是 4500。"
+    },
+    {
+      "type": "callout",
+      "kind": "fix",
+      "title": "手工例子图上的总部地址印重了",
+      "text": "正文写分支子网 10.1.1.0/24、总部子网 10.1.2.0/24，公网是 1.1.1.1/24 和 2.1.1.1/24。同一页图把总部内网接口也标成 10.1.1.1/24。按正文的两个子网记，感兴趣流是这两个网段互访，不要照着那一个重复的地址去写 ACL。"
+    }
+  ],
+  "exam": [
+    "IPSec SA 三元组：SPI、目的 IP、AH 或 ESP。单向，双向要一对。IKE SA 双向，只一条。",
+    "AH 协议 51，只认证。ESP 协议 50，能加密也能认证。",
+    "传输模式保留原 IP 头。隧道模式新 IP 头在最外，保护原 IP 头。网关用隧道模式。",
+    "MD5、SHA1、DES、3DES 不推荐。认证用 SHA2 或 SM3。",
+    "IKEv1：主模式或野蛮模式，然后快速模式。IKEv2 初始交换就能建第一对 IPSec SA。",
+    "NAT 穿越是 UDP 4500。NAPT 会改源端口，目的端口仍是 4500。",
+    "GRE over IPSec 是先 GRE 后 IPSec。"
+  ],
+  "mixups": [
+    {
+      "see": "AH 想加密业务",
+      "mean": "做不到。AH 只有认证。要加密用 ESP，协议号 50。"
+    },
+    {
+      "see": "两个网关保护两个子网",
+      "mean": "隧道模式。传输模式不保护原 IP 头，原地址还暴露在外面。"
+    },
+    {
+      "see": "只有一条 SA 却说双向流量都保护了",
+      "mean": "那是 IKE SA。IPSec SA 单向，入向出向各要一条。"
+    },
+    {
+      "see": "IKEv1 野蛮模式",
+      "mean": "仍是阶段 1，用来建 IKE SA。阶段 2 才是快速模式，建的是 IPSec SA。"
+    },
+    {
+      "see": "ESP 过 PAT 失败",
+      "mean": "ESP 没有传输层端口。打开 NAT 穿越，套 UDP 4500。"
+    },
+    {
+      "see": "GRE over IPSec 的封装顺序",
+      "mean": "先 GRE，再 IPSec。不是先加密再套 GRE。"
+    }
+  ],
+  "memory": [
+    "AH 51 只认证，ESP 50 能加密。网关之间用隧道模式。",
+    "IPSec SA 单向成对，IKE SA 双向一条。",
+    "手工五步：路由、ACL、提议、策略、接口。IKE 在策略前多一个对等体。",
+    "过 NAT 就套 UDP 4500。"
+  ],
+  "labs": [
+    {
+      "title": "手工 IPSec：分支 10.1.1.0/24 到总部 10.1.2.0/24",
+      "goal": "网关少，用手工隧道。感兴趣流用 ACL 圈出两个子网互访。",
+      "steps": [
+        {
+          "where": "RouterA",
+          "text": "总部侧 ACL 把 source 和 destination 对调。出方向 SPI 12345 在对端是入方向 SPI，字符串密钥也要进出对调。",
+          "code": "acl number 3101\n rule permit ip source 10.1.1.0 0.0.0.255 destination 10.1.2.0 0.0.0.255\nipsec proposal tran1\n esp authentication-algorithm sha2-256\n esp encryption-algorithm aes-128\nipsec policy map1 10 manual\n security acl 3101\n proposal tran1\n tunnel remote 2.1.1.1\n tunnel local 1.1.1.1\n sa spi outbound esp 12345\n sa spi inbound esp 54321\n sa string-key outbound esp cipher huawei\n sa string-key inbound esp cipher huawei\ninterface GigabitEthernet1/0/0\n ipsec policy map1"
+        }
+      ],
+      "verify": [
+        {
+          "title": "感兴趣流才进隧道",
+          "see": "10.1.1.0/24 和 10.1.2.0/24 之间的报文在公网接口上应变成 ESP。ACL 号是 3101。对端入方向 SPI 必须等于本端出方向 SPI 12345。",
+          "code": "display ipsec sa"
+        }
+      ]
+    },
+    {
+      "title": "改成 IKE 协商",
+      "goal": "同一对子网，密钥不再手工写死。策略引用 IKE 对等体。",
+      "steps": [
+        {
+          "where": "RouterA",
+          "text": "ike proposal 用 aes-128、sha2-256、DH group14。peer 上 undo version 2 是关掉 IKEv2，本例按 IKEv1 协商，对端也要同样关掉。预共享密钥和 remote-address 两边互指。",
+          "code": "ike proposal 5\n encryption-algorithm aes-128\n authentication-algorithm sha2-256\n dh group14\nike peer spub\n undo version 2\n ike-proposal 5\n pre-shared-key cipher huawei@123\n remote-address 2.1.1.1\nipsec policy map1 10 isakmp\n ike-peer spub\n proposal tran1\n security acl 3101\ninterface GigabitEthernet1/0/0\n ipsec policy map1"
+        }
+      ],
+      "verify": [
+        {
+          "title": "先有 IKE SA，再有一对 IPSec SA",
+          "see": "IKE SA 只有一条而且是双向的。IPSec SA 至少一进一出。没有流量触发时，IPSec SA 可能还没协商出来。本例 undo version 2 之后走的是 IKEv1。",
+          "code": "display ike sa\ndisplay ipsec sa"
+        }
+      ]
+    }
+  ],
+  "figures": [
+    {
+      "src": "images/ipsec-ah.jpg",
+      "caption": "传输模式下 AH 插在原 IP 头和 TCP 之间。认证范围盖住 IP 头和数据。AH 不加密。"
+    },
+    {
+      "src": "images/ipsec-esp.jpg",
+      "caption": "ESP 有头、尾和可选的认证数据。加密范围是载荷和尾，认证范围比加密范围再大一截，但不含最外层 IP 头。"
+    },
+    {
+      "src": "images/ipsec-tunnel.jpg",
+      "caption": "隧道模式在最外面再加一个新 IP 头，原 IP 头被保护。网关之间用这个模式。"
+    },
+    {
+      "src": "images/ipsec-gre.jpg",
+      "caption": "GRE over IPSec：先套 GRE，再套 IPSec。传输模式和隧道模式差在最外层还要不要再加一个公网 IP。"
+    },
+    {
+      "src": "images/ipsec-natt.jpg",
+      "caption": "NAT 穿越把 ESP 放进 UDP 4500。经过 NAPT 后源端口会变，图中从 4500 变成 4891，目的端口仍是 4500。"
+    }
+  ]
+}
