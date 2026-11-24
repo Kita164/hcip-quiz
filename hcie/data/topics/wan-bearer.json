@@ -1,0 +1,210 @@
+{
+  "id": "wan-bearer",
+  "title": "广域承载：从 MPLS 到 SRv6",
+  "summary": "承载可以是 MPLS LDP、MPLS TE、SR-MPLS 或 SRv6，四项都算。SR Policy 用头节点、Color、尾节点标识，下面有多条候选路径。绝对保证带宽的是 FlexE 切片，不是 SRv6 Policy，也不是 iFIT。",
+  "source": "Datacom 通用 V1.0 · 企业广域 IP 承载网络概述 / 企业广域承载网络架构与典型技术应用",
+  "mindmap": [
+    {
+      "t": "广域承载",
+      "c": [
+        {
+          "t": "演进",
+          "d": "LDP 到 RSVP-TE，再到 SR-MPLS，再到 SRv6"
+        },
+        {
+          "t": "Policy",
+          "d": "三元组。候选路径按优先级，列表按权重分担"
+        },
+        {
+          "t": "硬隔离",
+          "d": "FlexE 切片。iFIT 只负责测量"
+        }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "h",
+      "text": "网怎么分层"
+    },
+    {
+      "type": "p",
+      "text": "运营商给企业的广域连接就三种：Internet、MPLS 专线、传输专线。企业自己的 IP 承载网分成接入、汇聚、核心。接入是 CE 到 PE，接数据中心、分支和外联。汇聚是 PE 到 P，按地域把业务收进来。核心是 P，一般 Full-mesh 加双平面。两地三中心的图上：DC-P 做数据中心之间的高速互联，DC-PE 汇聚同城，DC-CE 接入；WAN-P 收各省上行，建议两台做双平面；BR-PE、BR-CE 是分支；RR 反射这块区域的路由。同城 P 之间用波分或裸纤，异地从成本上可以用 MSTP。"
+    },
+    {
+      "type": "p",
+      "text": "中小、没有隔离和流量工程需求的，用 IP 加 IGP 混在一张网上。大型企业用 MPLS：转发靠标签，业务靠 VPN 隔离，控制面是 MP-BGP。CloudWAN 把这张网往 IPv6+ 收：入云用 SRv6，硬隔离用切片，测量用 iFIT，调度用控制器看云和网两侧的负载。"
+    },
+    {
+      "type": "h",
+      "text": "四种承载都要选"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "技术",
+        "路径谁算",
+        "麻烦在哪"
+      ],
+      "rows": [
+        [
+          "MPLS LDP",
+          "没有自己的算路，跟着 IGP 最短路径",
+          "要单独维护 LDP 邻居。和 IGP 不同步会转发错误。不能规划路径"
+        ],
+        [
+          "MPLS TE / RSVP-TE",
+          "信令沿途建 CR-LSP",
+          "配置重，不做负载分担。每台设备只知道自己，靠 RSVP 报文维持状态"
+        ],
+        [
+          "SR-MPLS",
+          "头节点压入标签栈，沿途按栈转发",
+          "控制面是 IGP 扩展，不再单独跑 LDP 或 RSVP"
+        ],
+        [
+          "SRv6",
+          "指令是 IPv6 地址，不是 MPLS 标签",
+          "转发面用 IPv6 加 SRH。跨域不用在每个 AS 边界重配一整套 MPLS"
+        ]
+      ]
+    },
+    {
+      "type": "p",
+      "text": "多选「哪些属于广域承载技术」四项全选。VPN 那一层是另一回事：这门课重点是 VPWS、VPLS 和 BGP/MPLS IP VPN。GRE 和 IPSec 更多用在 Internet 上，机制见对应专题。广域 EVPN 可以坐在 LDP、TE、SR-MPLS 或 SRv6 隧道上，华为设备上二层和三层 EVPN 都用 l2vpn-family evpn 这一个地址族。"
+    },
+    {
+      "type": "h",
+      "text": "SR-MPLS 的三种隧道"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "BE：和 LDP 一样走 IGP 最短路径，标签栈只有目的节点一层。控制器故障、下发的隧道失效时，用它兜底。",
+        "TE：按约束算路，一般是多层标签，有主备。路径由控制器算好，下到头节点。",
+        "SR Policy：现在主流的写法。一个 Policy 由三元组标识，头节点、Color、尾节点，下面有多条候选路径。判断题这句是对的。",
+        "候选路径之间看优先级，数值大的当主。一条候选路径里可以有多条 Segment List，按权重做负载分担。控制器用 BGP 把头节点上的 Policy 发下去。"
+      ]
+    },
+    {
+      "type": "p",
+      "text": "SRv6 在 IPv6 头后面插入 SRH，里面是一段有序的 IPv6 地址。指针从栈底往上，逐跳减一，并按指针改写下一跳目的地址。中间节点不用保存每条隧道的状态。"
+    },
+    {
+      "type": "h",
+      "text": "绝对保证带宽的是 FlexE"
+    },
+    {
+      "type": "p",
+      "text": "单选「能够绝对保障关键业务带宽」选 FlexE 网络切片。SRv6 Policy 负责把流量带到指定路径，iFIT 和 Telemetry 负责测量和上报，它们都不把带宽切成独占的硬管道。"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "QoS 是逐跳行为，不改路径，也不能给某用户一块独立资源。队列和调度见 QoS 那两篇。华为设备上，入队时做拥塞避免，出队时做流量整形。CAR 在包转发引擎上，入方向和出方向都可以限速，超了就丢。",
+        "FlexE 在 MAC 和 PHY 之间加一层 Shim，把二者解开。Client 是用户口，带宽从 Group 里分。Group 把 PHY 收成资源池，粒度可以是 5 G，华为设备也支持 1 G。Shim 用日历把时隙分出去。",
+        "网络切片用全局唯一的 Slice ID。转发时插在 IPv6 头和 SRH 之间的逐跳选项里，沿途每一跳都按这个 ID 找预留好的子接口。ID 全程不变。缺省切片是 0，不插这个扩展头，报文格式和普通的 L3VPN over SRv6 Policy 一样。",
+        "切片跑在现有 SRv6 上，不用为切片再配 IP，IGP 和 BGP 也不改。业务从不同 VLAN 进不同 VRF。"
+      ]
+    },
+    {
+      "type": "h",
+      "text": "故障怎么切"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "保护",
+        "谁在用",
+        "发生故障时"
+      ],
+      "rows": [
+        [
+          "端到端",
+          "同一条 TE 的头尾之间建多条路径不同的 CR-LSP",
+          "头节点发现主用不可用再切到备用。热备份是主备一起建好。单靠这条，切换偏慢，要加 BFD"
+        ],
+        [
+          "局部 FRR",
+          "MPLS TE 的中间节点",
+          "先在故障点附近切到备份 CR-LSP，同时通知头节点重算。这是临时保护"
+        ],
+        [
+          "TI-LFA",
+          "SR 隧道的链路和节点保护",
+          "普通 LFA 算不出备份时仍能切。头节点用段列表把流量绕开故障点"
+        ],
+        [
+          "VPN FRR",
+          "CE 双归两台 PE",
+          "远端 PE 预先装好主用 PE 和备用 PE 两条转发路径，本端 PE 故障时私网路由快切"
+        ]
+      ]
+    },
+    {
+      "type": "p",
+      "text": "普通 LFA 失败的典型图：去往目的的最短路是 R1 到 R3，代价 10。R1 到 R3 断了以后，邻居 R2 自己的最短路在它学到故障之前仍然指向故障点，所以 R1 把流量交给 R2 也形不成备份。TI-LFA 不依赖邻居的最短路，直接在段列表里写上 R1、R2、R4、R3 这种绕行。"
+    },
+    {
+      "type": "h",
+      "text": "控制器靠什么看网"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "调优三步：采集拓扑、带宽、时延和流量，按代价、时延或带宽利用率算路径，再下发。下发可以是 NETCONF、PCEP 或 BGP SR Policy。MPLS 网络用 PCEP 采 TE 隧道，SRv6 用 BGP SR Policy。",
+        "拓扑和接口带宽：SNMP 采基础信息，BGP-LS 采 IGP 和 TE 拓扑。BGP-LS 是 BGP 里新增的链路状态 NLRI，把 IGP、TWAMP 测到的时延、TE 带宽和 SR 标签汇到控制器。",
+        "链路时延：TWAMP 测量，放进 IGP 泛洪，再由 BGP-LS 上报。",
+        "TWAMP 标准版用 TCP 协商、UDP 探帧。四个角色：Control-Client 发会话，Server 应答，Session-Sender 发探帧，Session-Reflector 反射。反射端要知道会话。",
+        "TWAMP Light 把控制端收成一台，没有控制面协商，反射端不用记会话，收到探帧就打上序号和时间戳送回。",
+        "iFIT 是随流检测：在真实业务报文里插入染色标记，逐包看，再用 Telemetry 收上来。链路时延等于本节点收到的时间减上一节点发出的时间。丢包位置靠各节点上报的计数对比。Ping、TWAMP 是带外探帧，路径可能和业务不一致。iFIT 的丢包检测精度课件写到 10 的负 6 次方。"
+      ]
+    },
+    {
+      "type": "p",
+      "text": "隧道选哪条，由设备上的隧道管理模块决定。它把 LSP、MPLS TE、GRE、SR-MPLS Policy、SRv6 Policy 的状态告诉 VPN，再按隧道策略挑一条。P 设备没有 MPLS、只有 IP 时，公网隧道可以用 GRE 代替 LSP。"
+    }
+  ],
+  "exam": [
+    "广域承载四项都是：SR-MPLS、SRv6、MPLS LDP、MPLS TE。",
+    "SR Policy 由头节点、Color、尾节点标识，包含多条候选路径。这句是对的。",
+    "候选路径按优先级分主备。同一条候选路径里的 Segment List 按权重分担。",
+    "绝对保障关键业务带宽的是 FlexE 网络切片。",
+    "SR-MPLS BE 只有一层标签，用来在控制器故障时兜底。",
+    "TI-LFA 用段列表绕开故障。普通 LFA 在邻居的最短路仍经过故障点时算不出备份。",
+    "iFIT 量的是真实业务。TWAMP 量的是 UDP 探帧。"
+  ],
+  "mixups": [
+    {
+      "see": "SRv6 Policy 被选成绝对保证带宽",
+      "mean": "它只规定路径。把带宽切成独占资源的是 FlexE 切片。iFIT 和 Telemetry 只测量、上报。"
+    },
+    {
+      "see": "SR-MPLS BE 和 SR-MPLS TE",
+      "mean": "BE 跟着 IGP，一层标签，是容灾隧道。TE 由控制器下发多层标签，用来约束路径。"
+    },
+    {
+      "see": "候选路径和 Segment List",
+      "mean": "路径之间比优先级，是主备。一条路径里的多条 Segment List 比权重，是分担。"
+    },
+    {
+      "see": "Slice ID 写进了 SRH",
+      "mean": "插在 IPv6 头和 SRH 之间的逐跳选项里。缺省切片 ID 是 0，不插这个头。"
+    },
+    {
+      "see": "TWAMP 和 TWAMP Light",
+      "mean": "标准版有 TCP 控制面，反射端要记会话。Light 没有控制面协商，反射端无状态。"
+    },
+    {
+      "see": "用 Ping 的时延代表业务时延",
+      "mean": "探帧路径可以和业务不一样。业务路径和丢包要用 iFIT。"
+    }
+  ],
+  "memory": [
+    "四项承载都算：LDP、TE、SR-MPLS、SRv6。",
+    "Policy 是头、Color、尾。路径看优先级，列表看权重。",
+    "要带宽硬保证找 FlexE。要看真实丢包找 iFIT。"
+  ],
+  "labs": [],
+  "figures": []
+}

@@ -57,11 +57,23 @@
       "id": "sdwan",
       "title": "SD-WAN",
       "source": "SD-WAN 概述与设备开局",
-      "blurb": "架构和三种通道、应用与安全，以及邮件 / DHCP 开局。",
+      "blurb": "架构和三种通道、应用与安全、邮件和 DHCP 开局，以及组网和可靠性怎么设计。",
       "topics": [
         "sdwan-arch",
         "sdwan-functions",
-        "sdwan-onboard"
+        "sdwan-onboard",
+        "sdwan-design"
+      ]
+    },
+    {
+      "id": "wan",
+      "title": "广域",
+      "source": "Datacom 通用 V1.0 · 广域互联 / 广域承载 / CloudWAN",
+      "blurb": "专线和 VPN 怎么选，GRE 与 L2TP，以及从 MPLS 到 SRv6 的承载网。",
+      "topics": [
+        "wan-overview",
+        "gre-l2tp",
+        "wan-bearer"
       ]
     },
     {
