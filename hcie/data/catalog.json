@@ -72,10 +72,45 @@
     {
       "id": "vpn",
       "title": "VPN",
-      "source": "ThinkMo · IPSec VPN",
-      "blurb": "AH 与 ESP、隧道模式、IKE，以及 GRE over IPSec 和 NAT 穿越。",
+      "source": "ThinkMo · IPSec VPN；Datacom 通用 V1.0 · MPLS VPN / EVPN",
+      "blurb": "IPSec，BGP/MPLS IP VPN 的实例、组网和跨域，以及 EVPN。",
       "topics": [
-        "ipsec-vpn"
+        "ipsec-vpn",
+        "mpls-l3vpn",
+        "mpls-vpn-deploy",
+        "mpls-vpn-interas",
+        "evpn"
+      ]
+    },
+    {
+      "id": "ipv6",
+      "title": "IPv6",
+      "source": "ICMPv6 基础；Datacom 通用 V1.0 · IPv6 路由 / 过渡技术",
+      "blurb": "邻居发现和无状态配置，OSPFv3、IS-IS、BGP4+，以及 6PE、6VPE 和 NAT64。",
+      "topics": [
+        "ipv6-nd",
+        "ipv6-routing",
+        "ipv6-transition"
+      ]
+    },
+    {
+      "id": "qos",
+      "title": "QoS",
+      "source": "Datacom 通用 V1.0 · QoS 基本原理",
+      "blurb": "DiffServ 的分类、监管和整形、WRED，以及队列调度和 HQoS。",
+      "topics": [
+        "qos-traffic",
+        "qos-queue"
+      ]
+    },
+    {
+      "id": "ops",
+      "title": "运维和排障",
+      "source": "Datacom 通用 V1.0 · 网络运维 / 网络故障排除",
+      "blurb": "日常检查和信息中心，以及结构化排障、环路和邻居故障。",
+      "topics": [
+        "net-ops",
+        "net-troubleshoot"
       ]
     }
   ]

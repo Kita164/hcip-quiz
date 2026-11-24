@@ -1,0 +1,147 @@
+{
+  "id": "qos-traffic",
+  "title": "QoS：分类、监管、整形和丢弃",
+  "summary": "现网用 DiffServ。复杂分类做在 DS 边界入方向。监管超了就丢，整形超了先缓存。主动丢弃是尾丢弃、RED 和 WRED，没有 MRED。",
+  "source": "Datacom 通用 V1.0 · QoS 基本原理",
+  "mindmap": [
+    {
+      "t": "DiffServ",
+      "c": [
+        {
+          "t": "分类",
+          "d": "简单看优先级。复杂用 MQC，在边界入方向"
+        },
+        {
+          "t": "限速",
+          "d": "监管丢，整形缓存。令牌桶三种"
+        },
+        {
+          "t": "拥塞避免",
+          "d": "尾丢弃、RED、WRED。出方向"
+        }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "h",
+      "text": "三种模型"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "模型",
+        "做什么"
+      ],
+      "rows": [
+        [
+          "Best-Effort",
+          "尽力转发，不区分"
+        ],
+        [
+          "IntServ",
+          "沿路预留资源，要信令，扩展性差"
+        ],
+        [
+          "DiffServ",
+          "边界分类标记，域内按标记处理。现网用这个"
+        ]
+      ]
+    },
+    {
+      "type": "p",
+      "text": "没有 Network Service 这种模型。多选题选前三个。DiffServ 里常用的是限速、拥塞避免、拥塞管理。分类和标记一般在入方向，监管通常也在入方向。拥塞避免、拥塞管理、整形通常在出方向。"
+    },
+    {
+      "type": "h",
+      "text": "分类和标记"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "简单分类：信任接口上的 802.1p 或 DSCP，再用 qos map-table 映到内部优先级。",
+        "复杂分类：MQC。traffic classifier 匹配 ACL 或其他条件，traffic behavior 做动作，traffic policy 把两者绑上，再应用到接口。",
+        "复杂分类一般部署在 DS 域边界的入方向。判断题这句是对的。",
+        "能当标记的有 EXP、802.1p、DSCP、IP Precedence。四个都算。"
+      ]
+    },
+    {
+      "type": "h",
+      "text": "监管和整形"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "",
+        "流量监管 CAR",
+        "流量整形"
+      ],
+      "rows": [
+        [
+          "超限",
+          "缺省丢弃",
+          "缺省缓存"
+        ],
+        [
+          "方向",
+          "入和出都可以",
+          "只在出方向"
+        ],
+        [
+          "典型用途",
+          "按合同限速",
+          "让发出去的速率适配下游，减少丢包"
+        ]
+      ]
+    },
+    {
+      "type": "p",
+      "text": "令牌桶三种：单桶单速双色，双桶单速三色，双桶双速三色。没有单桶三速。单桶单速可以配合监管和整形。双桶只配合监管。判断题「整形缓存、监管丢弃」是对的。"
+    },
+    {
+      "type": "h",
+      "text": "拥塞避免"
+    },
+    {
+      "type": "p",
+      "text": "尾丢弃简单，但会让多条 TCP 一起降速，叫全局同步，而且不区分优先级。RED 在队列涨起来之前按概率丢，减轻同步。WRED 按优先级用不同的丢弃曲线。主动丢弃机制选尾丢弃、RED、WRED。MRED 不是这项技术。"
+    },
+    {
+      "type": "code",
+      "title": "MQC 骨架",
+      "code": "traffic classifier c1\n if-match acl 2000\ntraffic behavior b1\n car cir 8000\ntraffic policy p1\n classifier c1 behavior b1\ninterface GigabitEthernet0/0/0\n traffic-policy p1 inbound"
+    }
+  ],
+  "exam": [
+    "三种模型：Best-Effort、IntServ、DiffServ。没有 Network Service。",
+    "复杂分类在 DS 边界入方向。标记可以是 EXP、802.1p、DSCP、IP Precedence。",
+    "监管缺省丢，可入可出。整形缺省缓存，只在出方向。",
+    "令牌桶：单桶单速、双桶单速、双桶双速。没有单桶三速。",
+    "主动丢弃：尾丢弃、RED、WRED。没有 MRED。"
+  ],
+  "mixups": [
+    {
+      "see": "超限后报文进了缓冲而不是被丢",
+      "mean": "这是整形。监管超限缺省丢。"
+    },
+    {
+      "see": "整形配在入方向",
+      "mean": "不行。整形只做出方向。监管两个方向都能做。"
+    },
+    {
+      "see": "WRED",
+      "mean": "是丢弃，不是调度。调度看下一篇的 PQ、WFQ、FIFO。"
+    },
+    {
+      "see": "单桶三速",
+      "mean": "没有这种桶。三种是单桶单速、双桶单速、双桶双速。"
+    }
+  ],
+  "memory": [
+    "边界打标，域内按标记转发。",
+    "监管丢，整形等。整形只在出门。",
+    "丢弃三种：尾、RED、WRED。MRED 划掉。"
+  ],
+  "labs": [],
+  "figures": []
+}

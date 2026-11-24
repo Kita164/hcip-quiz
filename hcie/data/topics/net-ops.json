@@ -1,0 +1,87 @@
+{
+  "id": "net-ops",
+  "title": "日常维护和信息中心",
+  "summary": "日常维护是预防，要按检查表做，并留下基线。信息中心把 Log、Trap、Debug 分到 10 条通道。抓包可以打在屏幕上，也可以存成文件。",
+  "source": "Datacom 通用 V1.0 · 网络运维",
+  "mindmap": [
+    {
+      "t": "维护",
+      "c": [
+        {
+          "t": "检查",
+          "d": "环境、基本信息、运行、接口、业务。再备份软件和配置"
+        },
+        {
+          "t": "信息中心",
+          "d": "Log、Trap、Debug。10 条通道"
+        },
+        {
+          "t": "采集",
+          "d": "capture-packet 可进终端或文件。LLDP 不看三层是否同网段"
+        }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "h",
+      "text": "维护分两种"
+    },
+    {
+      "type": "p",
+      "text": "日常维护是有计划的预防，用来发现隐患、形成网络基线。故障处理是事件触发的。维护既是技术也是管理，操作要规范，不是只靠个人技术。多选题里「规范性要求不高」是错的，其余三条是对的。"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "检查表：设备环境、基本信息、运行状态、接口、业务运行。",
+        "周期性备份软件和配置，极端情况下用备份恢复。",
+        "信息中心产出 Log、Trap、Debug。一共 10 条通道，按类别和级别送到控制台、日志主机、陷阱缓存或文件。"
+      ]
+    },
+    {
+      "type": "h",
+      "text": "抓包和 LLDP"
+    },
+    {
+      "type": "p",
+      "text": "capture-packet 可以 destination terminal，也可以 destination file。判断题「只能在命令行显示、不能存文件」是错的。抓包有速率限制，突发流量可能丢采样，不代表链路上真的丢了。"
+    },
+    {
+      "type": "p",
+      "text": "LLDP 的原理在园区南向那篇。运维这里只记一条：两台设备直连，接口 IP 不在同一网段，仍然能学到对端 Hostname。判断题「无法获取」是错的。流量统计用 MQC：classifier 匹配 ACL，behavior 里 statistic enable，再 display traffic policy statistics interface。"
+    },
+    {
+      "type": "code",
+      "title": "抓到文件，而不是只看屏幕",
+      "code": "capture-packet interface GigabitEthernet0/0/0 destination file capture.cap packet-num 100"
+    }
+  ],
+  "exam": [
+    "日常维护是预防，能形成基线，也是管理工作。",
+    "信息中心三种信息、10 条通道。",
+    "抓包可以存文件。",
+    "LLDP 不要求两端 IP 同网段。"
+  ],
+  "mixups": [
+    {
+      "see": "capture-packet destination file",
+      "mean": "报文可以落成文件。不是只能在终端滚动。"
+    },
+    {
+      "see": "抓包计数比接口计数少",
+      "mean": "先看是不是超过 car 限速。采样丢了，不等于业务丢了。"
+    },
+    {
+      "see": "接口 IP 不同网段",
+      "mean": "LLDP 仍能交换 Hostname。它是二层协议。"
+    }
+  ],
+  "memory": [
+    "维护是预防，排障是出事之后。",
+    "Log、Trap、Debug，10 条通道。",
+    "抓包：屏幕或文件。LLDP：不看 IP 是否同网段。"
+  ],
+  "labs": [],
+  "figures": []
+}

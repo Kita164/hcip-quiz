@@ -1,0 +1,119 @@
+{
+  "id": "mpls-vpn-interas",
+  "title": "L3VPN 跨域 Option A/B/C",
+  "summary": "Option A 把对端 ASBR 当 CE，中间不跑 MPLS。Option B 在 ASBR 之间传带标签的 VPNv4，流量仍过 ASBR。Option C 只在 PE 或 RR 之间传 VPNv4，ASBR 不存 CE 路由。",
+  "source": "Datacom 通用 V1.0 · MPLS L3VPN 跨域",
+  "mindmap": [
+    {
+      "t": "跨域",
+      "c": [
+        {
+          "t": "A",
+          "d": "ASBR 互相当 CE，每 VPN 一个接口，不跑 MPLS"
+        },
+        {
+          "t": "B",
+          "d": "ASBR 之间 MP-EBGP 传标签 VPNv4"
+        },
+        {
+          "t": "C",
+          "d": "PE 或 RR 多跳传 VPNv4。ASBR 只传带标签的公网路由"
+        }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "h",
+      "text": "三种方案"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "",
+        "ASBR 之间",
+        "ASBR 有没有 CE 路由",
+        "标签",
+        "适合"
+      ],
+      "rows": [
+        [
+          "Option A",
+          "普通 EBGP 传 IPv4。不跑 MPLS，也不做跨域专用配置",
+          "有。每个 VPN 要单独接口或子接口",
+          "域内仍是两层，ASBR 之间没有 MPLS 标签",
+          "VPN 少，配置简单"
+        ],
+        [
+          "Option B",
+          "MP-EBGP 传带标签的 VPNv4",
+          "有 VPNv4。不用为每个 VPN 建接口",
+          "ASBR 之间一层 VPN 标签，域内再加公网标签。流量都过 ASBR",
+          "VPN 多，又要在边界控流量"
+        ],
+        [
+          "Option C",
+          "PE 之间，或 RR 之间，多跳 MP-EBGP 传 VPNv4",
+          "没有。ASBR 只交换带标签的公网 IPv4，用来找到对端 PE",
+          "方式一在域内可以到三层：VPN 标签、BGP 标签、LDP 标签",
+          "规模大，ASBR 不能再背私网"
+        ]
+      ]
+    },
+    {
+      "type": "callout",
+      "kind": "exam",
+      "title": "两道单选都是 C",
+      "text": "ASBR 不用保存 CE 侧路由的是 Option C。只靠 LDP 和 BGP 分标签、转发时可能用到三层标签的是 Option C 方式一。方式二让 RR 反射 VPNv4，转发仍不经过 RR。"
+    },
+    {
+      "type": "h",
+      "text": "Option C 方式二的两句关键命令"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "RR 上对 VPNv4 邻居 next-hop-invariable，下一跳保持原来的 PE，流量不绕到 RR。",
+        "RR 自己没有 VRF，要 undo policy vpn-target，否则按 RT 把路由滤光。",
+        "ASBR 把 PE 和 RR 的 Loopback 用带标签的 IPv4 传给对端：route-policy 里 apply mpls-label，邻居上 label-route-capability。",
+        "ASBR 互联接口要开 MPLS。给这些带标签的公网路由建 LDP LSP。"
+      ]
+    },
+    {
+      "type": "code",
+      "title": "RR 不改下一跳，ASBR 发出带标签的公网路由",
+      "code": "bgp 100\n ipv4-family vpnv4\n  undo policy vpn-target\n  peer 10.0.8.8 enable\n  peer 10.0.8.8 next-hop-invariable\nroute-policy policy1 permit node 1\n apply mpls-label\nbgp 100\n peer 10.0.34.4 route-policy policy1 export\n peer 10.0.34.4 label-route-capability\n network 10.0.1.1 32"
+    }
+  ],
+  "exam": [
+    "A：对端 ASBR 当 CE，中间无 MPLS。",
+    "B：ASBR 之间传标签 VPNv4，流量过 ASBR。",
+    "C：ASBR 不存 CE 路由。方式一可以有三层标签。",
+    "方式二：RR 上 next-hop-invariable，并且 undo policy vpn-target。"
+  ],
+  "mixups": [
+    {
+      "see": "ASBR 上没有私网路由，跨域还通",
+      "mean": "Option C。私网路由在 PE 或 RR 之间多跳传递，ASBR 只提供到对端 PE 的带标签公网路由。"
+    },
+    {
+      "see": "每个 VPN 在 ASBR 上有一个子接口",
+      "mean": "Option A。B 和 C 不用按 VPN 建接口。"
+    },
+    {
+      "see": "报文上三层标签",
+      "mean": "Option C 方式一：最内 VPN，中间 BGP，最外 LDP。不是 Option A。"
+    },
+    {
+      "see": "RR 把 VPNv4 下一跳改成自己",
+      "mean": "流量会绕进 RR。跨域方式二要 next-hop-invariable。"
+    }
+  ],
+  "memory": [
+    "A 当 CE，B 在边界换标签，C 把私网交给 PE。",
+    "问谁不存 CE 路由，答 C。问三层标签，答 C 的方式一。",
+    "RR 两件套：下一跳不变，关掉 vpn-target 过滤。"
+  ],
+  "labs": [],
+  "figures": []
+}
