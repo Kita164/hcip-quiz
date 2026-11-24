@@ -1,0 +1,315 @@
+{
+  "id": "isis-fast-control",
+  "title": "IS-IS 快速收敛和路由控制",
+  "summary": "节点变化用 I-SPF，叶子变化用 PRC。LSP 可以在算路前先扩散。等价可以负载分担，也可以用 weight 指定主路径。缺省看 ATT 位，也可以手工发布。",
+  "source": "Datacom 通用 V1.0 · IGP高级特性",
+  "mindmap": [
+    {
+      "t": "IS-IS 收敛和选路",
+      "c": [
+        {
+          "t": "I-SPF",
+          "d": "只重算受影响的节点。和 PRC 一起用"
+        },
+        {
+          "t": "LSP 快速扩散",
+          "d": "算路前先把少量新 LSP 扩散出去"
+        },
+        {
+          "t": "等价",
+          "d": "weight 越小越优先。设了 weight 就不再分担"
+        },
+        {
+          "t": "缺省",
+          "d": "ATT 位，或 default-route-advertise。不写 level 就是 Level-2"
+        }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "h",
+      "text": "和 OSPF 相同的部分"
+    },
+    {
+      "type": "p",
+      "text": "IS-IS 也有 PRC、智能定时器和 Auto FRR，也能跟 BFD 联动。算法和 OSPF 那篇一样，这里不重复命令。IS-IS 多出来的是 I-SPF 和 LSP 快速扩散。"
+    },
+    {
+      "type": "h",
+      "text": "I-SPF：只重算变化的节点"
+    },
+    {
+      "type": "p",
+      "text": "普通 SPF 在一个节点变化时把所有节点重算一遍。I-SPF 除了第一次要算全图，以后只算受影响的节点，得到的最短路径树和全量 SPF 一样。"
+    },
+    {
+      "type": "p",
+      "text": "例子：R5 下面新加一台 R6，两台都开 IS-IS。R1 收到新 LSP 后只对 R5 和 R6 做 I-SPF，别的节点不动。去 R6 的出接口和下一跳，跟原来去 R5 的相同。"
+    },
+    {
+      "type": "callout",
+      "kind": "tip",
+      "title": "I-SPF 和 PRC 怎么配合",
+      "text": "树变了：PRC 只处理变化节点上的全部叶子。树没变：比如某节点只是新开了一个 IS-IS 接口，PRC 只更新这片叶子。IS-IS 里两个一起用。OSPF 那篇的 PRC 是「只加叶子」；I-SPF 这个名字在本课归 IS-IS。"
+    },
+    {
+      "type": "h",
+      "text": "LSP 快速扩散"
+    },
+    {
+      "type": "p",
+      "text": "正常情况：收到比本地更新的 LSP，先改 LSDB，再等定时器周期性地扩散。flash-flood 改成：路由计算之前，先把不超过指定数量的新 LSP 扩散出去，让全网 LSDB 更快对齐。"
+    },
+    {
+      "type": "code",
+      "title": "算路前先扩散",
+      "code": "isis 1\n flash-flood\n flash-flood 5 max-timer-interval 10 level-1"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "lsp-count 是每个接口一次扩散的最大条数，范围 1～15，缺省 5。要发的比这个数多，就只发这么多。",
+        "max-timer-interval 范围 10～50000 毫秒，缺省 10 毫秒。定时器还没到就先扩散；到点了再发。",
+        "不写 level-1 或 level-2，两个 Level 一起开。"
+      ]
+    },
+    {
+      "type": "h",
+      "text": "等价路由：分担，或者指定谁优先"
+    },
+    {
+      "type": "p",
+      "text": "多条等开销路径时有两种处理。负载分担把流量摊开，利用率高，但业务不好管。配了下一跳 weight 之后不再分担，流量只走 weight 最小的那条，其余当备用。"
+    },
+    {
+      "type": "p",
+      "text": "等价路由的条数比 maximum load-balancing 还多时，按这个顺序挑够条数：weight 小的优先；weight 相同就比下一跳设备的 System ID，小的优先；System ID 也相同就比本端出接口索引，小的优先。"
+    },
+    {
+      "type": "code",
+      "title": "两条命令不要同时理解成「又分担又指定」",
+      "code": "isis 1\n maximum load-balancing 2\n# weight 越小越优先。范围 1～254。设了之后路由表里只走这一条\n nexthop 10.1.13.3 weight 1\n nexthop 10.1.12.2 weight 2"
+    },
+    {
+      "type": "h",
+      "text": "缺省路由三条路"
+    },
+    {
+      "type": "ol",
+      "items": [
+        "Level-1-2 设备决定自己的 Level-1 LSP 里 ATT 位置不置位。",
+        "Level-1 设备可以拒绝根据 ATT 位生成缺省。",
+        "边界设备用 default-route-advertise 主动发布 0.0.0.0/0。"
+      ]
+    },
+    {
+      "type": "p",
+      "text": "ATT（Attachment）在 LSP 里占 4 bit，华为数通只用了 1 bit。协议规则：Level-1-2 设备如果判断经 Level-2 能到达的区域比经 Level-1 更多，就在自己发出的 Level-1 LSP 里把 ATT 置位。Level-1 路由器收到后，生成一条指向这台 Level-1-2 的缺省路由。"
+    },
+    {
+      "type": "code",
+      "title": "ATT 位两边都可以管",
+      "code": "isis 1\n# 只在 Level-1-2 上生效。always 永远置位，never 永不置位\n attached-bit advertise never\n# 配在 Level-1 设备上：收到置位的 LSP 也不写缺省进路由表\n attached-bit avoid-learning"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "ATT 只会在 Level-1 LSP 里被置位，而且只有 Level-1-2 设备会置。命令 attached-bit advertise 只对 Level-1-2 有效。",
+        "不让 Level-1 学缺省，两处都能做：在 Level-1-2 上 advertise never，或者在指定的 Level-1 上 avoid-learning。后者适合只拦某一台。"
+      ]
+    },
+    {
+      "type": "p",
+      "text": "边界上发布缺省，比在每台设备写静态缺省省事。另一种做法是把外部路由逐条引进 IS-IS，路由表会大。发布缺省时，域内去外部的流量都先到这台边界设备。"
+    },
+    {
+      "type": "code",
+      "title": "不写 level，缺省只进 Level-2",
+      "code": "isis 1\n default-route-advertise always\n# 路由表里已有其他协议或其他 IS-IS 进程的缺省才发：\n default-route-advertise match default\n# 路由表里有符合策略的外部路由才发，避免边界已经失去出口还在吸引流量：\n default-route-advertise route-policy HAS-EXIT\n default-route-advertise always cost 10 level-1 avoid-learning"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "always：无条件发，下一跳是自己。",
+        "match default：路由表里要有别的协议或别的 IS-IS 进程产生的缺省。",
+        "route-policy：有匹配的外部路由才发。这条策略不影响 IS-IS 引入外部路由，只决定发不发缺省。",
+        "不写 level-1 / level-2 / level-1-2，生成的是 Level-2 缺省。",
+        "配在 Level-1 设备上时，只会向 Level-1 区域发，不会发进 Level-2。",
+        "avoid-learning：不把其他协议或其他进程的缺省装进路由表。原来已经活跃的，会被置成不活跃。",
+        "cost 的范围看 cost-style：narrow、narrow-compatible、compatible 是 0～63；wide、wide-compatible 是 0～4261412864。",
+        "tag 只有 cost-style 为 wide、wide-compatible 或 compatible 时才会放进 LSP。范围 1～4294967295。"
+      ]
+    }
+  ],
+  "exam": [
+    "I-SPF 重算受影响的节点；PRC 重算叶子。树不变时 PRC 只更新变化的叶子。",
+    "flash-flood 缺省一次 5 条，间隔缺省 10 毫秒，不写 Level 就是 Level-1 和 Level-2 都开。",
+    "等价挑路顺序：weight 小、System ID 小、出接口索引小。",
+    "nexthop weight 越小越优先。一旦配置，不再负载分担。",
+    "ATT 只由 Level-1-2 写进 Level-1 LSP。Level-1 据此产生指向它的缺省。",
+    "advertise never 配在 Level-1-2；avoid-learning 配在 Level-1。",
+    "default-route-advertise 不写 level 就是 Level-2。",
+    "narrow 的 cost 最大 63，wide 才能用大 cost。tag 要 wide 系的 cost-style 才携带。"
+  ],
+  "mixups": [
+    {
+      "see": "IS-IS 新增一台路由器",
+      "mean": "I-SPF 重算这几个节点。只是老路由器上新增一条前缀，树不变，走 PRC 加叶子。"
+    },
+    {
+      "see": "选项「LSP 快速扩散」出现在 OSPF 题里",
+      "mean": "划掉。命令是 IS-IS 视图的 flash-flood。"
+    },
+    {
+      "see": "nexthop 10.1.13.3 weight 1 和 weight 2 都配了",
+      "mean": "路由表里只剩 weight 1 那条。weight 小的优先，而且不再对这两条做负载分担。"
+    },
+    {
+      "see": "等价路由比 maximum load-balancing 多",
+      "mean": "先留 weight 小的，再留下一跳 System ID 小的，再留出接口索引小的。"
+    },
+    {
+      "see": "Level-1 路由器突然有了一条缺省，没人配 default-route-advertise",
+      "mean": "邻居 Level-1-2 的 Level-1 LSP 把 ATT 置位了。要停掉：对端 advertise never，或本机 avoid-learning。"
+    },
+    {
+      "see": "attached-bit advertise 配在纯 Level-1 上",
+      "mean": "不生效。只有 Level-1-2 会置 ATT。"
+    },
+    {
+      "see": "default-route-advertise always 之后 Level-1 区域没缺省",
+      "mean": "没写 level 时缺省发的是 Level-2。要进 Level-1 就加 level-1 或 level-1-2。"
+    },
+    {
+      "see": "边界设备外部链路断了，域内还在把流量交给它",
+      "mean": "用了 always。改成 route-policy，路由表里没有匹配的外部路由就停止发布缺省。"
+    }
+  ],
+  "memory": [
+    "节点 I-SPF，叶子 PRC。扩散在算路之前，缺省 5 条、10 毫秒。",
+    "weight 越小越优先，写了 weight 就不再分担。",
+    "ATT：L1/2 写在 L1 LSP 里，L1 路由器就生成指向它的缺省。never 在 L1/2，avoid-learning 在 L1。",
+    "手工缺省不写级别 = 只给 Level-2。"
+  ],
+  "labs": [
+    {
+      "title": "先分担，再改成优选 R1–R3",
+      "goal": "R1 到 R3 环回口 10.1.3.3/32 有两条开销都是 10 的路。先允许两条都进路由表，再给下一跳写 weight，只留直连 R3 的那条。",
+      "topo": {
+        "caption": "和 OSPF 等价实验同一张图。协议换成 IS-IS，路由来源显示 ISIS-L2，优先级 15。",
+        "nodes": [
+          {
+            "id": "R1",
+            "x": 20,
+            "y": 70,
+            "label": "R1"
+          },
+          {
+            "id": "R2",
+            "x": 200,
+            "y": 10,
+            "label": "R2"
+          },
+          {
+            "id": "R3",
+            "x": 200,
+            "y": 140,
+            "label": "R3"
+          }
+        ],
+        "links": [
+          {
+            "a": "R1",
+            "b": "R3",
+            "label": "cost 10"
+          },
+          {
+            "a": "R1",
+            "b": "R2",
+            "label": "cost 5"
+          },
+          {
+            "a": "R2",
+            "b": "R3",
+            "label": "cost 5"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "where": "R1 负载分担",
+          "code": "isis 1\n maximum load-balancing 2"
+        },
+        {
+          "where": "R1 改优先级",
+          "text": "10.1.13.3 是直连 R3 的下一跳，weight 1。经 R2 的 10.1.12.2 是 weight 2。",
+          "code": "isis 1\n nexthop 10.1.13.3 weight 1\n nexthop 10.1.12.2 weight 2"
+        }
+      ],
+      "verify": [
+        {
+          "title": "分担时两条，写了 weight 只剩一条",
+          "see": "没写 weight 时，10.1.3.3/32 有两条 ISIS-L2，优先级 15，开销 10。写完 weight 后只剩下一跳 10.1.13.3、出接口 GE0/0/0。",
+          "code": "[R1] display ip routing-table\n10.1.3.3/32  ISIS-L2  15  10  D  10.1.13.3  GE0/0/0\n             ISIS-L2  15  10  D  10.1.12.2  GE0/0/1\n# 配置 weight 之后第二行消失"
+        }
+      ]
+    },
+    {
+      "title": "边界 R2 向两边都发缺省",
+      "goal": "R1–R2 跑 OSPF，R2–R3 跑 IS-IS。R3 要访问 OSPF 侧，R2 在 IS-IS 里发缺省。反过来 OSPF 侧也要一条缺省。",
+      "topo": {
+        "nodes": [
+          {
+            "id": "R1",
+            "x": 20,
+            "y": 60,
+            "label": "R1",
+            "sub": "OSPF"
+          },
+          {
+            "id": "R2",
+            "x": 190,
+            "y": 60,
+            "label": "R2",
+            "sub": "边界"
+          },
+          {
+            "id": "R3",
+            "x": 360,
+            "y": 60,
+            "label": "R3",
+            "sub": "IS-IS"
+          }
+        ],
+        "links": [
+          {
+            "a": "R1",
+            "b": "R2",
+            "label": "OSPF"
+          },
+          {
+            "a": "R2",
+            "b": "R3",
+            "label": "IS-IS"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "where": "R2",
+          "text": "IS-IS 不写 level，发的是 Level-2 缺省，和课件里 R2、R3 都是 L2 一致。OSPF 侧用 always。",
+          "code": "isis 1\n default-route-advertise always\nospf 1\n default-route-advertise always"
+        }
+      ],
+      "verify": [
+        {
+          "title": "R3 的缺省来自 IS-IS",
+          "see": "0.0.0.0/0 协议 ISIS-L2，优先级 15，下一跳 10.1.23.2，出接口是连 R2 的 GE0/0/2。",
+          "code": "[R3] display ip routing-table\n0.0.0.0/0  ISIS-L2  15  10  D  10.1.23.2  GE0/0/2"
+        }
+      ]
+    }
+  ],
+  "figures": []
+}

@@ -1,0 +1,385 @@
+{
+  "id": "isis-fragment-gr",
+  "title": "IS-IS 多进程、LSP 分片和 GR",
+  "summary": "一个 System ID 最多 256 片 LSP。分片不够就加虚拟系统。Mode-2 的虚拟系统不参加 SPF。GR 看 IIH 里的 211 号 TLV，Restarting 保 FIB，Starting 不保。",
+  "source": "Datacom 通用 V1.0 · IGP高级特性",
+  "mindmap": [
+    {
+      "t": "IS-IS 扩展和 GR",
+      "c": [
+        {
+          "t": "多进程 / 多实例",
+          "d": "多进程共用公网路由表。绑了 VPN，VPN 删除进程也删除"
+        },
+        {
+          "t": "LSP 分片",
+          "d": "分片号 1 字节。最多 50 个虚拟系统"
+        },
+        {
+          "t": "Mode-1 / Mode-2",
+          "d": "Mode-1 虚拟系统参加 SPF。Mode-2 不参加"
+        },
+        {
+          "t": "GR",
+          "d": "211 TLV。T1 等确认，T2 等 LSDB，T3 等整次 GR"
+        }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "h",
+      "text": "多实例和多进程"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "",
+        "多进程",
+        "多实例"
+      ],
+      "rows": [
+        [
+          "是什么",
+          "同一个 VPN 或同在公网下多个 IS-IS 进程",
+          "多个 VPN 实例，每个绑一个进程"
+        ],
+        [
+          "路由表",
+          "多个进程共用这一张路由表（公网或该 VPN）",
+          "每个 VPN 自己一张路由表"
+        ],
+        [
+          "互相影响",
+          "进程之间不自动交换，要互相引入",
+          "VPN 之间隔离"
+        ]
+      ]
+    },
+    {
+      "type": "ul",
+      "items": [
+        "一个进程可以绑定一组接口，协议行为只发生在这组接口上。",
+        "创建时不写进程号，就是进程 1。进程号 1～65535。",
+        "绑了 VPN 的进程只处理这个 VPN 里的事件。VPN 实例被删除，IS-IS 进程跟着删。",
+        "PE 上两个客户都跑 IS-IS：isis 100 vpn-instance VPN1 和 isis 200 vpn-instance VPN2。"
+      ]
+    },
+    {
+      "type": "h",
+      "text": "为什么要分片扩展"
+    },
+    {
+      "type": "p",
+      "text": "LSP ID 里的分片号只有 1 字节，一个 System ID 最多 256 个分片。信息放不下就会丢。分片扩展是再分配附加 System ID，每个附加 ID 再拥有 256 片。"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "名字",
+        "是什么"
+      ],
+      "rows": [
+        [
+          "初始系统",
+          "真正在跑 IS-IS 的那台路由器"
+        ],
+        [
+          "Normal System-ID",
+          "初始系统自己的 System ID"
+        ],
+        [
+          "虚拟系统",
+          "用附加 System ID 标识，用来发出扩展分片"
+        ],
+        [
+          "Additional System-ID",
+          "管理员分配，全路由域唯一。每个可以再发 256 片"
+        ],
+        [
+          "24 号 TLV（IS Alias ID）",
+          "放在 LSP 里，说明这个虚拟系统和哪个初始系统是一家"
+        ]
+      ]
+    },
+    {
+      "type": "p",
+      "text": "使能之后如果还有因为报文装满而装不下的信息，系统会提示重启 IS-IS。重启后初始系统尽量自己装，装不下的放进虚拟系统的 LSP，并用 24 号 TLV 告诉别人它们的关系。附加 System ID 和本机 System ID 都必须全网唯一。一个进程最多 50 个虚拟系统，所以最多 51×256 = 13056 片。"
+    },
+    {
+      "type": "h",
+      "text": "Mode-1 和 Mode-2"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "",
+        "Mode-1",
+        "Mode-2"
+      ],
+      "rows": [
+        [
+          "什么时候用",
+          "网里还有不认识分片扩展的旧路由器",
+          "所有路由器都支持"
+        ],
+        [
+          "别人怎么看虚拟系统",
+          "当成三台独立路由器。旧设备不认识 24 号 TLV，所以虚拟系统的 LSP 必须长得像普通路由器发出的",
+          "通过 24 号 TLV 知道这些 LSP 都属于初始系统，合在一起算"
+        ],
+        [
+          "参不参加 SPF",
+          "参加",
+          "不参加"
+        ],
+        [
+          "度量",
+          "虚拟系统指向初始系统的 metric 是最大值减 1；初始系统指向虚拟系统的 metric 是 0。这样别人算路时虚拟系统一定在初始系统下游",
+          "不把虚拟系统当节点"
+        ],
+        [
+          "其他 TLV",
+          "区域地址、过载位，以及其他特性 TLV，虚拟系统和初始系统要一致",
+          "零分片里也必须有 24 号 TLV"
+        ]
+      ]
+    },
+    {
+      "type": "callout",
+      "kind": "exam",
+      "title": "两种模式都要带 24 号 TLV",
+      "text": "无论 Mode-1 还是 Mode-2，初始系统和虚拟系统的 LSP 零分片都必须包含 IS Alias ID TLV（24），用来指明初始系统是谁。判断题「Mode-2 下虚拟系统不参加 SPF，全网都知道这些 LSP 实际属于初始系统」是对的。"
+    },
+    {
+      "type": "p",
+      "text": "开销为 0 的那条链路，让 R2 到 R1、到 R1 的虚拟系统 R1-1、R1-2 的距离相同。Mode-1 下 R2 对三份 LSP 分开算路由；Mode-2 下 R2 把三份都当成 R1 的信息，只算一次。"
+    },
+    {
+      "type": "code",
+      "title": "两条命令都配，然后必须重启进程",
+      "code": "isis 1\n lsp-fragments-extend mode-2 level-1-2\n virtual-system 0000.0000.0001\n# 不写 mode 和 level 就是 mode-1、level-1-2\n# 虚拟系统 ID 要 reset 之后才生效\nquit\nreset isis all"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "只配了 virtual-system、没有 lsp-fragments-extend，或者配完没有 reset isis all，附加 System ID 不生效。",
+        "virtual-system-id 格式 XXXX.XXXX.XXXX，6 字节。至少配一个，最多 50 个。"
+      ]
+    },
+    {
+      "type": "h",
+      "text": "GR：211 号 TLV，外加三个定时器"
+    },
+    {
+      "type": "p",
+      "text": "不支持 GR 时，重启设备发出的 Hello 里邻居列表是空的。对端按两次握手发现列表里没有自己，就拆邻接，再泛洪新 LSP，全网重算。RFC 3847 用 Restart TLV 让邻居在重启期间维持邻接。这个 TLV 是 211，放在 IIH 里。支持 GR 的设备，所有 IIH 都带它。"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "位",
+        "名字",
+        "置位表示"
+      ],
+      "rows": [
+        [
+          "RR",
+          "Restart Request",
+          "我正在 Restarting 或 Starting，请保持邻接，并回 CSNP"
+        ],
+        [
+          "RA",
+          "Restart Acknowledgement",
+          "我收到了你的 RR。RA 置位时 Remaining Time 必须带"
+        ],
+        [
+          "SA",
+          "Suppress adjacency advertisement",
+          "请先不要对外发布和我的邻接，免得路由黑洞"
+        ]
+      ]
+    },
+    {
+      "type": "p",
+      "text": "Remaining Time 单位是秒，是邻居保持邻接不重置的时间。"
+    },
+    {
+      "type": "table",
+      "caption": "协议初值和华为命令缺省值不是同一个数，分开记。",
+      "headers": [
+        "定时器",
+        "谁维护",
+        "干什么",
+        "缺省"
+      ],
+      "rows": [
+        [
+          "T1",
+          "每个接口一个。Level-1-2 的广播接口每个 Level 一个",
+          "发出 RR=1 的 IIH 之后，等 Helper 回 RA=1。超时就重发。收到确认，或超时满 3 次，取消 T1",
+          "3 秒"
+        ],
+        [
+          "T2",
+          "每个 Level 的 LSDB 一个",
+          "从重启开始，到本 Level 的 LSDB 同步完。两个 Level 都取消才触发 SPF",
+          "命令缺省 60 秒，可配 30～1800"
+        ],
+        [
+          "T3",
+          "整台设备一个",
+          "这次 GR 允许的最长时间。超时就是 GR 失败。收到 RA 之后，改成各 IIH 里 Remaining Time 的最小值",
+          "协议初值 65535 秒；华为 graceful-restart interval 的缺省是 300 秒"
+        ]
+      ]
+    },
+    {
+      "type": "callout",
+      "kind": "warn",
+      "title": "T3 要大于 T2",
+      "text": "否则 LSDB 还没同步，T3 先超时，GR 失败。命令范围都是 30～1800 秒。"
+    },
+    {
+      "type": "h",
+      "text": "Restarting：主备倒换或重启进程，FIB 保留"
+    },
+    {
+      "type": "ol",
+      "items": [
+        "Restarter 同时启动 T1、T2、T3。所有接口发 IIH：RR=1，RA=0，SA=0。",
+        "Helper 维持邻接，刷新 Holdtime，回 IIH：RR=0，RA=1，Remaining Time 填「现在到 Holdtime 超时还剩多久」。再把 CSNP 和全部 LSP 发给 Restarter。邻居不会 GR 的话，就忽略 Restart TLV，按正常流程拆邻接。",
+        "Restarter 把 T3 改成 min(当前 T3, Remaining Time)。这个接口收到确认和 CSNP 后取消 T1。收不到就一直重发，T1 超时次数过了阈值就放弃，改走正常 IS-IS。",
+        "所有接口的 T1 都取消、CSNP 收齐、LSP 收齐，就认为本 Level 同步完，取消 T2。单 Level 直接 SPF。Level-1-2 要等另一个 Level 的 T2 也取消。",
+        "各层 T2 都取消后取消 T3，更新 FIB，重新生成并泛洪自己的 LSP。重启前残留的、自己产生的旧 LSP 这时可以删。GR 结束。"
+      ]
+    },
+    {
+      "type": "h",
+      "text": "Starting：整机重启，FIB 不保留"
+    },
+    {
+      "type": "p",
+      "text": "Starting 的设备没有旧 FIB。它希望邻居先把邻接重置，同时在一段时间内不要对外发布这条邻接。"
+    },
+    {
+      "type": "ol",
+      "items": [
+        "先只启动每层的 T2。发出 IIH：RR=0，SA=1。RR 清除表示 Starting 这一下已经起来了；SA 置位是请邻居在看到 SA 清除之前，不要发布和我的邻接。",
+        "邻居支持 GR：重新初始化邻接，发出的 LSP 里先去掉这台 Restarter，SPF 也不走这条链路，直到收到 SA 清除的 IIH。邻居不支持：忽略 TLV，重置邻接，回一个不带 Restart TLV 的 IIH；点到点链路上还会发一份 CSNP。",
+        "某条邻接到 Up 之后，这个接口才启动 T1。然后发 RR=1、SA=1 的 IIH。",
+        "邻居回 RR=0、RA=1，并送 CSNP。Restarter 收到后取消 T1，开始同步 LSDB。收不到就重发，超过次数就强制取消 T1，走正常同步。",
+        "本 Level 同步完取消 T2。所有 T2 都取消后做 SPF，重新生成并泛洪 LSP。Starting 结束。"
+      ]
+    },
+    {
+      "type": "code",
+      "title": "IS-IS 的 GR 不用先开 Opaque",
+      "code": "isis 1\n graceful-restart\n# 不把邻居 Holdtime 抬到至少 60 秒\n graceful-restart no-impact-holdtime\n# T3，缺省 300 秒\n graceful-restart interval 300\n# T2，缺省 60 秒\n graceful-restart t2-interval 60\n graceful-restart suppress-sa"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "开了 GR 之后，邻居 Holdtime 如果小于 60 秒会被改成 60 秒，否则保持原值。故障检测至少变慢到 60 秒。no-impact-holdtime 让 Holdtime 保持原配置，非 GR 期间还能快速发现邻居失效。",
+        "suppress-sa 用来抑制 Restart TLV 里的 SA 位。第一次启动之外的再次启动，网上可能还留着这台设备序列号更高的旧 LSP，新产生的 LSP 看起来更「旧」，会出暂时黑洞。让邻居先不要发布邻接，直到新 LSP 发出去，可以避开这个窗口。",
+        "查看：display isis graceful-restart status，可以加 level-1 / level-2、进程号或 vpn-instance。"
+      ]
+    }
+  ],
+  "exam": [
+    "LSP 分片号 1 字节，一个 System ID 256 片。虚拟系统最多 50 个，总共 13056 片。",
+    "24 号 TLV 表示虚拟系统和初始系统的关系。零分片必须带。",
+    "Mode-1 虚拟系统参加 SPF，到初始系统的 metric 是最大值减 1，反向是 0。给旧路由器兼容用。",
+    "Mode-2 虚拟系统不参加 SPF。判断题这句是对的。",
+    "lsp-fragments-extend 和 virtual-system 都配完，还要 reset isis all 才生效。不写参数就是 mode-1、level-1-2。",
+    "多进程共用一张路由表；多实例各用 VPN 路由表。删 VPN 会把绑定的 IS-IS 进程一起删掉。",
+    "211 号 TLV：RR 请求，RA 应答，SA 抑制发布邻接。",
+    "Restarting 保 FIB，IIH 是 RR=1 SA=0。Starting 不保 FIB，先发 SA=1。",
+    "T1 缺省 3 秒，T2 缺省 60 秒，华为 T3 命令缺省 300 秒。T3 应大于 T2。",
+    "开 GR 会把小于 60 秒的 Holdtime 抬到 60。no-impact-holdtime 可以不抬。"
+  ],
+  "mixups": [
+    {
+      "see": "Mode-2，问虚拟系统参不参加 SPF",
+      "mean": "不参加。全网通过 24 号 TLV 把虚拟系统的 LSP 算到初始系统头上。"
+    },
+    {
+      "see": "Mode-1 里虚拟系统到初始系统的 metric",
+      "mean": "虚拟系统指向初始系统是最大值减 1，初始系统指向虚拟系统是 0。反过来记就会把虚拟系统算成上游。"
+    },
+    {
+      "see": "配了 virtual-system 但 LSP 还是装不下",
+      "mean": "没配 lsp-fragments-extend，或者没 reset isis all。两条命令配套，重启进程后才生效。"
+    },
+    {
+      "see": "IIH 里 RR=1 RA=0 SA=0",
+      "mean": "Restarting。FIB 还在。Helper 应回 RA=1 并送 CSNP。"
+    },
+    {
+      "see": "IIH 里 RR=0 SA=1",
+      "mean": "Starting 的第一下。请邻居先不要发布邻接。FIB 不保留。"
+    },
+    {
+      "see": "T3 配成 60 秒，T2 也是 60 秒",
+      "mean": "容易失败。T3 是整次 GR 的上限，应大于等待 LSDB 的 T2。"
+    },
+    {
+      "see": "开了 IS-IS GR 之后，链路断了要 60 秒才拆邻居",
+      "mean": "Holdtime 被抬到至少 60 秒。加上 graceful-restart no-impact-holdtime。"
+    },
+    {
+      "see": "IS-IS GR 要不要先配 opaque-capability",
+      "mean": "不要。那是 OSPF Type9 Grace LSA 的前提。IS-IS 用的是 IIH 里的 211 号 TLV。"
+    }
+  ],
+  "memory": [
+    "分片：1 字节 256 片，虚拟系统最多 50，Mode-1 当邻居算，Mode-2 不当节点。配完 reset isis all。",
+    "零分片必带 24 号 TLV。",
+    "GR 三位：RR 我要重启，RA 我收到了，SA 先别宣传我。",
+    "Restarting 保 FIB（RR=1）。Starting 不保（先 SA=1）。",
+    "T1 接口 3 秒，T2 每层 60 秒，T3 整机命令缺省 300 秒，而且 T3 > T2。"
+  ],
+  "labs": [
+    {
+      "title": "R1 以 GR 重启 IS-IS",
+      "goal": "R1、R2 都是双主控，Area 10，中间 10.1.12.0/30。要求 R1 重启 IS-IS 进程或主备倒换时转发不中断。",
+      "topo": {
+        "nodes": [
+          {
+            "id": "R1",
+            "x": 30,
+            "y": 50,
+            "label": "R1"
+          },
+          {
+            "id": "R2",
+            "x": 220,
+            "y": 50,
+            "label": "R2"
+          }
+        ],
+        "links": [
+          {
+            "a": "R1",
+            "b": "R2",
+            "label": "IS-IS Area 10"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "where": "两台都配",
+          "code": "isis 1\n graceful-restart\n graceful-restart no-impact-holdtime"
+        }
+      ],
+      "verify": [
+        {
+          "title": "看 GR 状态",
+          "see": "进程已经具备 GR 能力。重启进程或倒换期间邻居不应因为空的 Hello 邻居列表被拆掉。Holdtime 因为加了 no-impact-holdtime，保持原来的值。",
+          "code": "display isis 1 graceful-restart status"
+        }
+      ]
+    }
+  ],
+  "figures": []
+}

@@ -1,0 +1,420 @@
+{
+  "id": "bgp-features",
+  "title": "ORF、对等体组、安全和 4 字节 AS",
+  "summary": "ORF 把入口前缀策略推给对方，让对方少发。对等体组用来少写重复配置。MD5/Keychain 防非法邻居，GTSM 防 TTL 不够的报文打 CPU。4 字节 AS 用 23456 占住 2 字节字段。",
+  "source": "Datacom 通用 V1.0 · BGP高级特性",
+  "mindmap": [
+    {
+      "t": "BGP 特性",
+      "c": [
+        {
+          "t": "ORF",
+          "d": "两端都开。import 前缀推给对端当出口过滤"
+        },
+        {
+          "t": "对等体组",
+          "d": "group internal/external，成员可以再写自己的策略"
+        },
+        {
+          "t": "安全",
+          "d": "认证管邻居，GTSM 管 TTL。两者不是一回事"
+        },
+        {
+          "t": "4 字节 AS",
+          "d": "AS_TRANS=23456。点分 x.y = x*65536+y"
+        }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "h",
+      "text": "ORF：把「我只收这些」告诉对方"
+    },
+    {
+      "type": "p",
+      "text": "R2 在收方向过滤，只要 10.1.1.1/32。被丢掉的 10.1.2.2/32 本来就不用从 R1 发出来。基于前缀的 ORF 把本端的入口前缀策略放进 Route-Refresh，送给邻居。邻居拿它做成自己的出口策略，发送时就过滤。本端少收垃圾路由，对端也少写一套出口策略，链路上的更新变少。"
+    },
+    {
+      "type": "callout",
+      "kind": "exam",
+      "title": "两端都要开",
+      "text": "只开一边，ORF 协商不成。要收路由的那一端用 send，把策略推出去；要发路由的那一端用 receive。也可以两边都写 both。"
+    },
+    {
+      "type": "code",
+      "title": "R2 推送，R1 接收",
+      "code": "ip ip-prefix 1 permit 10.1.1.1 32\nbgp 102\n peer 10.1.12.1 as-number 101\n peer 10.1.12.1 ip-prefix 1 import\n peer 10.1.12.1 capability-advertise orf ip-prefix send\n#\nbgp 101\n peer 10.1.12.2 as-number 102\n peer 10.1.12.2 capability-advertise orf ip-prefix receive\n network 10.1.1.1 32\n network 10.1.2.2 32\n network 10.1.3.3 32"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "capability-advertise orf 在 BGP 视图。ip-prefix import/export 也可以写在 ipv4-family unicast 里，课件的例子写在 BGP 视图，对 IPv4 单播生效。",
+        "send / receive / both。non-standard-compatible 用来迁就不按标准实现的设备。standard-match 按 RFC 的前缀匹配规则。",
+        "R1 上 display bgp peer 10.1.12.2 orf ip-prefix 能看到收到 1 条：Permit 10.1.1.1/32。R2 上 received-routes 只有这一条。"
+      ]
+    },
+    {
+      "type": "h",
+      "text": "对等体组"
+    },
+    {
+      "type": "p",
+      "text": "一组邻居策略相同时，把命令写在组上，成员跟着变。组成员仍然可以再写自己的收发策略，那条会盖住组里的对应项。"
+    },
+    {
+      "type": "code",
+      "title": "IBGP 组，源地址用 Loopback",
+      "code": "bgp 102\n peer 10.1.12.1 as-number 101\n group in internal\n peer 10.1.3.3 group in\n peer 10.1.4.4 group in\n peer 10.1.5.5 group in\n peer in connect-interface LoopBack 0"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "group 名字后面 internal 是 IBGP 组，external 是 EBGP 组。",
+        "IBGP 组的 AS 号就是本地 AS，不用再给组写 as-number。EBGP 组如果成员 AS 相同，用 peer 组名 as-number。",
+        "成员加入用 peer 地址 group 组名。connect-interface 可以写在组上，三个成员一起用 Loopback0 做源。",
+        "对端也要 peer x connect-interface LoopBack 0，并且 Loopback 路由互相可达。课件里 AS 内部靠静态或 OSPF，配置略去。",
+        "display bgp group in 能看到 Remote AS、Type internal、三个成员都是 Established。"
+      ]
+    },
+    {
+      "type": "h",
+      "text": "两种攻击，两套办法"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "攻击",
+        "现象",
+        "用什么挡"
+      ],
+      "rows": [
+        [
+          "假邻居",
+          "和你建上 IBGP，灌假路由",
+          "MD5 或 Keychain。GTSM 挡不住这件事"
+        ],
+        [
+          "大量假 BGP 报文",
+          "报文送给 CPU，CPU 升高",
+          "GTSM。按 TTL 把不够跳数的报文丢掉，不送 CPU"
+        ]
+      ]
+    },
+    {
+      "type": "p",
+      "text": "判断题「GTSM 可以预防非法 BGP 邻居建立」是错的。防非法邻居的是认证。"
+    },
+    {
+      "type": "h",
+      "text": "MD5 和 Keychain"
+    },
+    {
+      "type": "p",
+      "text": "BGP 跑在 TCP 上。源地址、目的地址、端口和序号都对，BGP 就认为报文有效，这些字段攻击者拿得到。认证做在 TCP 上。"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "MD5：peer 上设一个密码，TCP 用 MD5 选项校验。密码是单一的，要换就人工改。",
+        "Keychain：一组 key-id，每个有自己的算法和密码，可以按配置自动切换。两端 keychain 的算法和密码必须一致，TCP 才能起来。配置比 MD5 繁，用在要求更高的地方。",
+        "MD5 和 Keychain 互斥，一个邻居不能两个一起开。"
+      ]
+    },
+    {
+      "type": "code",
+      "title": "二选一",
+      "code": "bgp 100\n peer 10.1.12.2 password cipher Huawei@123\n# 或者\n peer 10.1.12.2 keychain KC1"
+    },
+    {
+      "type": "h",
+      "text": "GTSM：只收 TTL 落在窗口里的报文"
+    },
+    {
+      "type": "p",
+      "text": "合法 BGP 发言者把 TTL 设为 255。每经过一台路由器减 1。攻击者如果在几跳之外伪造，报文到你这里时 TTL 已经变小。GTSM 规定一个窗口，窗口外的丢弃。"
+    },
+    {
+      "type": "p",
+      "text": "valid-ttl-hops hops 的窗口是 [255−hops+1, 255]。hops 范围 1～255，不写数字时缺省 255，窗口几乎是全部，等于没拦。直连邻居写 1，窗口只有 255。中间隔一台路由器写 2，窗口是 254～255。"
+    },
+    {
+      "type": "callout",
+      "kind": "warn",
+      "title": "两边一起配，而且 hops 按真实跳数",
+      "text": "只配一边，对端会把你的报文丢掉，邻居建立不起来。直连写成 2 不会马上断（254 和 255 都收），但窗口变宽，拦截变松。隔了一台还写成 1，合法报文 TTL 是 254，会被丢掉。"
+    },
+    {
+      "type": "code",
+      "title": "R1 与 R2 直连用 1，R1 与 R3 隔一跳用 2",
+      "code": "bgp 101\n peer 10.1.2.2 valid-ttl-hops 1\n peer 10.1.3.3 valid-ttl-hops 2\n# 可选。没匹配到 GTSM 策略的报文，缺省 pass\ngtsm default-action drop\ngtsm log drop-packet all"
+    },
+    {
+      "type": "p",
+      "text": "display bgp peer 10.1.3.3 verbose 里会有一行 GTSM has been enabled, valid-ttl-hops: 2。"
+    },
+    {
+      "type": "h",
+      "text": "4 字节 AS 号"
+    },
+    {
+      "type": "p",
+      "text": "2 字节 AS 是 1～65535。4 字节把范围扩到 1～4294967295，并且要和只会 2 字节的旧设备互通。"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "说法",
+        "意思"
+      ],
+      "rows": [
+        [
+          "New Speaker",
+          "支持 4 字节 AS"
+        ],
+        [
+          "Old Speaker",
+          "不支持"
+        ],
+        [
+          "New Session",
+          "两个 New Speaker 之间"
+        ],
+        [
+          "Old Session",
+          "只要有一边是 Old Speaker"
+        ],
+        [
+          "AS_TRANS",
+          "保留 AS 23456。2 字节字段里放不下真实 AS 时用它占位"
+        ]
+      ]
+    },
+    {
+      "type": "p",
+      "text": "点分形式 x.y。整数 = x×65536+y。x 是 1～65535，y 是 0～65535。2.3 = 2×65536+3 = 131075。1.1 = 65537。两种写法在设备内部都是同一个整数。"
+    },
+    {
+      "type": "p",
+      "text": "Open 报文里的 My AS Number 只有 2 字节。New Speaker 的 AS 大于 65535 时，这个字段填 23456，真实的 4 字节 AS 放在可选能力里，能力码 0x41。对方从能力里知道你是否支持 4 字节。"
+    },
+    {
+      "type": "p",
+      "text": "传递路径时还有两个可选传递属性：AS4_Path 和 AS4_Aggregator。New Speaker 之间的 Update 里，AS_Path 按 4 字节编码。发给 Old Speaker 时，大于 65535 的 AS 在 AS_Path 里写成 23456，真实顺序放在 AS4_Path。Old Speaker 不认识 AS4_Path，但属性是可传递的，它原样转给下一跳。下一跳如果是 New Speaker，用 AS_Path 和 AS4_Path 把真实路径拼回来。"
+    },
+    {
+      "type": "table",
+      "caption": "课件那条从左到右穿过 65001 → 1.1 → 2.2 → 65002（Old）→ 65003 的路径。",
+      "headers": [
+        "观察点",
+        "AS_Path",
+        "AS4_Path"
+      ],
+      "rows": [
+        [
+          "65001 发出",
+          "65001",
+          "无"
+        ],
+        [
+          "1.1 发给下游",
+          "1.1 65001",
+          "无"
+        ],
+        [
+          "2.2 发给 Old Speaker 65002",
+          "23456 23456 65001",
+          "2.2 1.1 65001"
+        ],
+        [
+          "65002 原样再发出",
+          "65002 23456 23456 65001",
+          "2.2 1.1 65001 不变"
+        ],
+        [
+          "65003 重构之后",
+          "65002 2.2 1.1 65001",
+          "用完即还原"
+        ]
+      ]
+    },
+    {
+      "type": "code",
+      "title": "点分 AS 的配法。提示符带 ~ 是 NetEngine 8000 的待提交视图",
+      "code": "bgp 1.1\n peer 10.1.2.2 as-number 1.1\n peer 10.1.2.2 connect-interface LoopBack 0"
+    },
+    {
+      "type": "callout",
+      "kind": "warn",
+      "title": "改显示格式会让原来的正则失效",
+      "text": "4 字节 AS 可以按整数显示，也可以按点分显示。已经写好的 AS_Path 正则和扩展团体过滤器是按当时的字符串匹配的。改了显示格式，这些规则要重写，否则路由匹配不上，该拒绝的放出去、该放行的被丢掉。"
+    }
+  ],
+  "exam": [
+    "ORF 两端都开。收路由的一侧 send，发路由的一侧 receive。",
+    "display bgp peer x orf ip-prefix 看收到的前缀策略。",
+    "对等体组：group 名字 internal|external，peer 地址 group 名字。成员还能写自己的策略。",
+    "GTSM 不能防非法邻居。防非法邻居用 MD5 或 Keychain，两者互斥。",
+    "valid-ttl-hops 1 表示只收 TTL 255。窗口是 [255−hops+1, 255]。",
+    "直连 hops 1，隔一跳 hops 2。两边都要配。",
+    "AS_TRANS = 23456。1.1 = 65537，2.3 = 131075。",
+    "Open 的 My AS 填 23456，真实 4 字节 AS 在能力码 0x41。",
+    "Old Speaker 透明传递 AS4_Path。New Speaker 负责把 23456 还原成真实 AS。"
+  ],
+  "mixups": [
+    {
+      "see": "只在 R2 配了 ORF send，R1 什么都没配",
+      "mean": "协商不成。R1 要 capability-advertise orf ip-prefix receive。"
+    },
+    {
+      "see": "R2 上 received-routes 只有 10.1.1.1/32，R1 却 network 了三条",
+      "mean": "ORF 已经让 R1 在出口把另外两条滤掉了。不是 R2 的入口 ACL 又滤了一次那么简单，链路上就没发出来。"
+    },
+    {
+      "see": "GTSM 可以预防非法邻居",
+      "mean": "错。非法邻居靠 MD5 或 Keychain。GTSM 丢的是 TTL 不在窗口里的报文。"
+    },
+    {
+      "see": "同一邻居又 password 又 keychain",
+      "mean": "互斥，只能留一个。"
+    },
+    {
+      "see": "valid-ttl-hops 1 配在隔了一台路由器的两端",
+      "mean": "合法报文到达时 TTL 是 254，不在 [255,255] 里，邻居起不来。隔一跳写 2。"
+    },
+    {
+      "see": "只给 R1 配了 GTSM，R2 没配",
+      "mean": "不对称。R2 不检查，R1 却把 R2 发来的、或自己发出后被要求的行为搞乱。课件要求对等体两边同时使能。"
+    },
+    {
+      "see": "AS_Path 里连续两个 23456",
+      "mean": "路径上有两个 4 字节 AS，被 AS_TRANS 替换过。真实顺序在 AS4_Path 里。Old Speaker 不会改 AS4_Path。"
+    },
+    {
+      "see": "点分 1.1",
+      "mean": "整数 65537，不是 1，也不是 11。公式是 x×65536+y。"
+    },
+    {
+      "see": "把 4 字节 AS 的显示从整数改成点分之后，原来的 as-path-filter 不生效",
+      "mean": "正则匹配的是显示出来的字符串。改格式后要重写 AS_Path 正则和扩展团体过滤器。"
+    }
+  ],
+  "memory": [
+    "ORF：我要的前缀，我告诉你，你别的别发。两端都开，收的一侧 send。",
+    "组：先 group，再把 peer 拉进组。IBGP 组不用再写 AS。",
+    "认证认人，GTSM 认 TTL。GTSM 不管非法邻居。",
+    "hops 1 = 只收 255，hops 2 = 254 和 255。",
+    "23456 是占位。点分换算 x×65536+y。"
+  ],
+  "labs": [
+    {
+      "title": "R2 只要 10.1.1.1/32，用 ORF 让 R1 别的不发",
+      "goal": "R1 在 AS 101，network 了三条环回。R2 在 AS 102，只想收 /32 的 10.1.1.1。",
+      "topo": {
+        "nodes": [
+          {
+            "id": "R1",
+            "x": 30,
+            "y": 50,
+            "label": "R1",
+            "sub": "AS 101"
+          },
+          {
+            "id": "R2",
+            "x": 230,
+            "y": 50,
+            "label": "R2",
+            "sub": "AS 102"
+          }
+        ],
+        "links": [
+          {
+            "a": "R1",
+            "b": "R2",
+            "label": "10.1.12.0/24"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "where": "R2",
+          "code": "ip ip-prefix 1 permit 10.1.1.1 32\nbgp 102\n peer 10.1.12.1 as-number 101\n peer 10.1.12.1 ip-prefix 1 import\n peer 10.1.12.1 capability-advertise orf ip-prefix send"
+        },
+        {
+          "where": "R1",
+          "code": "bgp 101\n peer 10.1.12.2 as-number 102\n peer 10.1.12.2 capability-advertise orf ip-prefix receive\n network 10.1.1.1 32\n network 10.1.2.2 32\n network 10.1.3.3 32"
+        }
+      ],
+      "verify": [
+        {
+          "title": "R1 看到被要求提供的前缀，R2 只收到一条",
+          "see": "ORF 表 Index 10、Action Permit、Prefix 10.1.1.1、MaskLen 32。R2 的 received-routes 总数是 1。",
+          "code": "[R1] display bgp peer 10.1.12.2 orf ip-prefix\nIndex  Action  Prefix    MaskLen\n10     Permit  10.1.1.1  32\n\n[R2] display bgp routing-table peer 10.1.12.1 received-routes\n*> 10.1.1.1/32  10.1.12.1  101i"
+        }
+      ]
+    },
+    {
+      "title": "IBGP 全互联上按跳数开 GTSM",
+      "goal": "R1、R2、R3 在 AS 101，用 Loopback 建 IBGP。R1–R2、R2–R3 直连，R1–R3 中间隔着 R2。",
+      "topo": {
+        "nodes": [
+          {
+            "id": "R1",
+            "x": 20,
+            "y": 50,
+            "label": "R1"
+          },
+          {
+            "id": "R2",
+            "x": 190,
+            "y": 50,
+            "label": "R2"
+          },
+          {
+            "id": "R3",
+            "x": 360,
+            "y": 50,
+            "label": "R3"
+          }
+        ],
+        "links": [
+          {
+            "a": "R1",
+            "b": "R2",
+            "label": "直连 hops 1"
+          },
+          {
+            "a": "R2",
+            "b": "R3",
+            "label": "直连 hops 1"
+          },
+          {
+            "a": "R1",
+            "b": "R3",
+            "label": "隔一跳 hops 2",
+            "dashed": true
+          }
+        ]
+      },
+      "steps": [
+        {
+          "where": "三台先建邻居",
+          "text": "每台 peer 对端 Loopback，as-number 101，connect-interface LoopBack 0。内部互通靠 OSPF 或静态，略。",
+          "code": "bgp 101\n peer 10.1.2.2 as-number 101\n peer 10.1.2.2 connect-interface LoopBack 0"
+        },
+        {
+          "where": "按跳数写 hops，对端写同样的数",
+          "code": "# R1\n peer 10.1.2.2 valid-ttl-hops 1\n peer 10.1.3.3 valid-ttl-hops 2\n# R2 对 R1、对 R3 都是 1\n# R3 对 R2 是 1，对 R1 是 2"
+        }
+      ],
+      "verify": [
+        {
+          "title": "verbose 里看 hops",
+          "see": "和 10.1.3.3 的邻居是 Established，并且有 GTSM has been enabled, valid-ttl-hops: 2。直连那条是 1。",
+          "code": "[R1] display bgp peer 10.1.3.3 verbose\nGTSM has been enabled, valid-ttl-hops: 2"
+        }
+      ]
+    }
+  ],
+  "figures": []
+}

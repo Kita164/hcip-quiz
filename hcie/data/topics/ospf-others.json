@@ -1,0 +1,454 @@
+{
+  "id": "ospf-others",
+  "title": "OSPF 多进程、FA、GR 和 NSR",
+  "summary": "多进程用来隔离 VPN。FA 用来改外部路由的下一跳。GR 让邻居帮着重启，NSR 让备板自己接上，两者对同一协议互斥。",
+  "source": "Datacom 通用 V1.0 · IGP高级特性",
+  "mindmap": [
+    {
+      "t": "OSPF 其他特性",
+      "c": [
+        {
+          "t": "多进程",
+          "d": "进程之间当不同协议。一个接口只能进一个进程"
+        },
+        {
+          "t": "与 BGP 联动",
+          "d": "stub-router on-startup，度量 65535，缺省撑 500 秒"
+        },
+        {
+          "t": "FA",
+          "d": "非 0 就按 FA 转发。四个条件全满足才不为 0"
+        },
+        {
+          "t": "GR",
+          "d": "Type9 Grace LSA。先 opaque-capability enable"
+        },
+        {
+          "t": "NSR",
+          "d": "主备都不断。和 GR 互斥，但还能当别人的 Helper"
+        }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "h",
+      "text": "多进程"
+    },
+    {
+      "type": "p",
+      "text": "同一台路由器可以跑多个 OSPF 进程，彼此独立。进程之间交换路由，相当于两个不同协议之间引入，不会自动共享。一个接口只能属于一个 OSPF 进程。"
+    },
+    {
+      "type": "p",
+      "text": "典型场景是 PE 上两个 VPN 客户都用 OSPF。创建时带了 vpn-instance，进程就属于这个 VPN；不带就属于公网。"
+    },
+    {
+      "type": "code",
+      "title": "一台 PE，两个 VPN",
+      "code": "ospf 100 vpn-instance VPN1\nospf 200 vpn-instance VPN2"
+    },
+    {
+      "type": "h",
+      "text": "和 BGP 联动：重启后先当 Stub"
+    },
+    {
+      "type": "p",
+      "text": "IGP 比 BGP 收敛快。R2 重启恢复后，OSPF 先通，R1 已经把去 10.1.5.5/32 的流量交给 R2；R2 的 BGP 还没学到这条路由，流量就在 R2 上丢掉。"
+    },
+    {
+      "type": "p",
+      "text": "解决办法是让 R2 在一段时间内当 Stub 路由器：它发出的 LSA 里链路度量改成 65535，别人尽量不把流量交给它。等定时器结束，度量恢复，此时 BGP 应该已经学完。"
+    },
+    {
+      "type": "code",
+      "title": "重启后当 500 秒 Stub",
+      "code": "ospf 1\n stub-router on-startup 500\n# 不写 on-startup：永远是 Stub，所有从这台出去的度量都是 65535"
+    },
+    {
+      "type": "callout",
+      "kind": "fix",
+      "title": "它不看 BGP 是否收敛完",
+      "text": "课件的故事说「直到 BGP 收敛完成才把流量交回来」。命令本身不是这个机制。stub-router on-startup 是重启或故障后固定当一段时间的 Stub，interval 范围 5～65535 秒，不写数字就用缺省 500 秒。时间到了就恢复，不管 BGP 学完没有。BGP 比 500 秒慢，时间一到仍可能丢流量；BGP 很快学完，定时器结束前别人也还是绕开这台。"
+    },
+    {
+      "type": "h",
+      "text": "转发地址 FA"
+    },
+    {
+      "type": "p",
+      "text": "Type5 和 Type7 里都有 Forwarding Address。FA 是 0.0.0.0 时，数据包发给产生这条 LSA 的 ASBR。FA 不是 0 时，数据包发给 FA 指的那台设备，下一跳等于「到达这个 FA 的下一跳」。"
+    },
+    {
+      "type": "p",
+      "text": "没有 FA 时的次优路径：R2 和 R3 都连着外部路由器 R1 的同一网段 10.1.123.0/24，但只有 R2 把静态路由引进 OSPF。R3、R4 学到的 Type5 下一跳是 R2，于是 R4 去 10.1.1.1/32 要绕 R3–R2–R1，即使 R3 和 R1 直接通。"
+    },
+    {
+      "type": "p",
+      "text": "把 FA 写成 R2 自己到达该外部路由的下一跳 10.1.123.1。R3 看到 FA 非 0，下一跳改成 10.1.123.1，流量直接交给 R1。"
+    },
+    {
+      "type": "callout",
+      "kind": "exam",
+      "title": "FA 要同时满足四条才不是 0",
+      "text": "ASBR 在外部路由的出接口上启用了 OSPF；这个接口不是 silent；网络类型是 Broadcast 或 NBMA；接口地址落在 OSPF network 覆盖的网段里。少一条，FA 就是 0.0.0.0。另外，收到 LSA 的路由器必须能用区域内或区域间路由（不能是外部路由）到达这个 FA，才会把 LSA 装进路由表。"
+    },
+    {
+      "type": "h",
+      "text": "NSSA 里 FA 还能改 7 转 5 之后的出口"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "Type7 转 Type5 的转换路由器，缺省是本 NSSA 里 Router ID 最大的 ABR。",
+        "只有 P-bit 置位并且 FA 不是 0 的 Type7，才会转成 Type5。",
+        "ABR 自己产生的 Type7 缺省，P-bit 不置位，所以不会转成 Type5 缺省。",
+        "P-bit 在所有 LSA 头部的 Options 里，不是 Type7 私有的一个字段名。"
+      ]
+    },
+    {
+      "type": "p",
+      "text": "多个 ABR 时：不看 FA 的话，Router ID 大的 R3 做 7 转 5，R1 会认为必须经过 R3，流量被带到低带宽的 R1–R3–R4。ASBR（R4）把 FA 设成自己访问目的网段的下一跳 10.1.45.5，R3 转换时继续带这个 FA。R1 在 OSPF 路由表里查到 FA，下一跳改成去 FA 的下一跳，于是走高带宽的 R1–R2–R4。"
+    },
+    {
+      "type": "h",
+      "text": "GR：转发不停，邻居帮着把 LSDB 补回来"
+    },
+    {
+      "type": "p",
+      "text": "GR（Graceful Restart）用在主备倒换和升级。转发平面继续按原来的 FIB 转发；控制平面重建邻居和路由，不把抖动扩散出去。"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "角色",
+        "是谁",
+        "要会什么"
+      ],
+      "rows": [
+        [
+          "GR Restarter",
+          "被命令或故障触发、协议重启的那台",
+          "能做 GR。可配成完全 GR 或部分 GR"
+        ],
+        [
+          "GR Helper",
+          "它的邻居",
+          "帮 Restarter 维持邻接。可只支持有计划的，或按策略选择帮谁"
+        ],
+        [
+          "GR Session",
+          "两边交换能力的过程",
+          "重启通告和重启期间的报文"
+        ]
+      ]
+    },
+    {
+      "type": "p",
+      "text": "OSPF 用新增的 Type9 Opaque LSA（Grace LSA）通告 GR。所以进程必须先能收发 Opaque LSA。Grace LSA 在 GR 开始和结束时告诉邻居：时长、原因、接口地址。"
+    },
+    {
+      "type": "table",
+      "caption": "三个 TLV。前两个必须带。",
+      "headers": [
+        "TLV",
+        "Type",
+        "长度",
+        "干什么"
+      ],
+      "rows": [
+        [
+          "Grace Period",
+          "1",
+          "4 字节",
+          "Helper 最多帮多久。超时还没完成，邻居不再当 Helper"
+        ],
+        [
+          "Graceful Restart Reason",
+          "2",
+          "1 字节",
+          "0 未知，1 软件重启，2 软件加载/升级，3 主备倒换"
+        ],
+        [
+          "IP Interface Address",
+          "3",
+          "4 字节",
+          "发出这条 Grace LSA 的接口地址，用来在网上唯一认出这台重启设备"
+        ]
+      ]
+    },
+    {
+      "type": "table",
+      "headers": [
+        "分法",
+        "看到什么行为"
+      ],
+      "rows": [
+        [
+          "完全 GR（缺省）",
+          "有一个邻居不支持 GR，整台路由器退出 GR"
+        ],
+        [
+          "部分 GR（partial）",
+          "不支持的那个邻居所在接口退出，其他接口继续"
+        ],
+        [
+          "有计划 GR",
+          "倒换前先发 Grace LSA。命令或人工触发"
+        ],
+        [
+          "无计划 GR",
+          "故障直接倒换，倒换前不发 Grace LSA。备板起来之后才进入 GR，后面的步骤和有计划的一样"
+        ]
+      ]
+    },
+    {
+      "type": "p",
+      "text": "GR 最长不超过 1800 秒。成功或失败都可以提前结束，不用把定时器耗完。同一网段同一时间只能有一台做 GR。"
+    },
+    {
+      "type": "h",
+      "text": "Restarter 和 Helper 各自干什么"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "有计划：Restarter 先向每个邻居发 Grace LSA（周期和原因），再倒换。避免备板起来太慢导致邻居先断。",
+        "备板起来后进入 GR，接口恢复马上再发 Grace LSA，然后连续发 5 个。连续 5 个是实现上的保险，不是协议规定必须 5 个。FIB 不老化，所以业务还通。不支持 GR 的设备会直接老化 FIB。",
+        "然后走正常邻接：Down → Init → Exstart，交换 DD，同步 LSDB。",
+        "同步时如果 Helper 发来的 Type1/Type2 里没有指向自己的链路，说明拓扑变了或对端不肯当 Helper，GR 失败，改走正常重启。",
+        "每和一个邻居到 Full 就做一次路由计算，更新路由表，但先不刷 FIB。",
+        "和倒换前的所有邻居都到 Full 之后，把所有 Grace LSA 以 age 3600 泛洪出去，正常退出。然后重产生 Router LSA（自己是 DR 的网段再产生 Network LSA），重算路由，这时才更新 FIB、删掉失效项。",
+        "定时器先超时，也是失败，退出后正常重启。"
+      ]
+    },
+    {
+      "type": "ul",
+      "items": [
+        "Helper 收到 Grace LSA 后，和 Restarter 相关的 LSA 没变化，并且过了过滤策略，才进入 Helper。拓扑已经变了、Grace LSA 已老化、或者自己也是 Restarter，都不能当 Helper。",
+        "Helper 继续发 Hello，邻接先保持。Restarter 进入 Exstart 后会发 DD，Helper 在 Full 状态下收到 DD 会产生 SeqMismatch，邻居状态从 Full 掉到 Exstart，再 Exchange，很快回到 Full，并把自己的 LSA 同步给 Restarter。",
+        "中途又收到周期不同的 Grace LSA，只更新倒计时，不重新建一次。",
+        "收到 age 3600 的 Grace LSA 且邻居仍是 Full，Helper 正常退出，并在相连网段重发 Router LSA；自己是 DR 就再发 Network LSA。"
+      ]
+    },
+    {
+      "type": "table",
+      "headers": [
+        "结果",
+        "Restarter 侧",
+        "Helper 侧"
+      ],
+      "rows": [
+        [
+          "成功",
+          "超时前和倒换前的所有邻居都重新到齐",
+          "收到 age 3600 的 Grace LSA 时，和 Restarter 的邻居状态是 Full"
+        ],
+        [
+          "失败",
+          "超时还没恢复；双向检查失败；自己接口状态变了；同一网段另一台也发了 Grace LSA；同一网段邻居之间 DR/BDR 不一致",
+          "超时前没收到 Grace LSA；自己接口状态变了；收到和本地库不一致的 LSA（可用 ignore-external-lsa 放宽 Type5/Type7 检查）；同一网段两台同时发 Grace LSA；和其他路由器的邻居关系变了"
+        ]
+      ]
+    },
+    {
+      "type": "code",
+      "title": "先开 Opaque，再开 GR",
+      "code": "ospf 1\n opaque-capability enable\n graceful-restart\n# period 1～1800 秒，缺省 120\n# planned-only：只做有计划的。缺省有计划+无计划都做\n# partial：部分 GR。缺省是完全 GR\n graceful-restart period 120 planned-only partial\n# Helper 侧。never 表示不给任何人当 Helper\n graceful-restart helper-role ignore-external-lsa\n graceful-restart helper-role never"
+    },
+    {
+      "type": "p",
+      "text": "Helper 还可以用 ip-prefix 或 ACL 决定帮谁。ignore-external-lsa 表示不检查 Type5 和 Type7，缺省是检查的。查看用 display ospf graceful-restart，加 verbose 看更细。"
+    },
+    {
+      "type": "h",
+      "text": "NSR：邻居不用配合，路由和转发都不停"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "",
+        "NSF（靠 GR）",
+        "NSR"
+      ],
+      "rows": [
+        [
+          "倒换时什么不停",
+          "转发不停。路由要向邻居重新要",
+          "路由和转发都不停"
+        ],
+        [
+          "靠什么",
+          "邻居当 Helper，从邻居把 LSDB 同步回来",
+          "倒换前已经把邻居和拓扑备份到备板"
+        ],
+        [
+          "要不要邻居支持",
+          "要。邻居不支持就做不了",
+          "不要，也不影响对端"
+        ],
+        [
+          "收敛",
+          "要重新同步，更慢",
+          "更快"
+        ],
+        [
+          "什么时候用",
+          "对丢包和收敛速度要求都不高",
+          "对丢包和收敛速度要求都高"
+        ]
+      ]
+    },
+    {
+      "type": "callout",
+      "kind": "exam",
+      "title": "互斥，但 Helper 还能做",
+      "text": "同一协议在本机倒换时，NSR 和 GR 只能选一个。本机开了 NSR，仍然可以给邻居当 GR Helper。课件说 OSPF、IS-IS、BGP 的 NSR 原理相同，这里用 OSPF 讲。"
+    },
+    {
+      "type": "p",
+      "text": "三个阶段：批量备份、实时备份、倒换升主。主用主控板是 AMB，备用是 SMB，中间的备份通道叫 HA。接口板是 LPU，转发在接口板上。"
+    },
+    {
+      "type": "ol",
+      "items": [
+        "批量备份：NSR 打开且备板起来时，主板把路由和转发信息整批拷到备板。这一阶段还不能做 NSR 倒换。拷完才进入冗余保护。拷到一半主板坏了，备板数据不全，做不了 NSR，设备整机重启。",
+        "实时备份：之后控制平面和转发平面的任何变化都马上从主板拷到备板。邻居状态或路由一变：主板经 HA 送过去，备板回确认。",
+        "倒换：主板故障后，备板从硬件通道感知到，自己升主，并切换接口板上送报文的通道。因为切换够短，路由协议不会和邻居断连。升主后接口板把倒换期间变化的状态送给新主板。新的主板再向新的备板做备份。"
+      ]
+    },
+    {
+      "type": "code",
+      "title": "系统视图，缺省是 NSF",
+      "code": "switchover mode nonstop-routing\n# 改回只保证转发：\nswitchover mode nonstop-forwarding\ndisplay switchover mode\ndisplay ip routing-table\ndisplay fib"
+    }
+  ],
+  "exam": [
+    "一个接口只能属于一个 OSPF 进程。带 vpn-instance 才进 VPN 路由表。",
+    "stub-router 把度量设成 65535。on-startup 缺省 500 秒；不写 on-startup 就一直是 Stub。",
+    "FA 为 0 发给 ASBR；非 0 发给 FA。四个条件缺一不可。到达 FA 的路由必须是区域内或区域间路由。",
+    "7 转 5：Router ID 最大的 ABR，且 Type7 必须 P-bit 置位并且 FA 非 0。ABR 的 Type7 缺省不置 P-bit。",
+    "判断题「Type5 的 FA 一定是 0.0.0.0」是错的。",
+    "GR 用 Type9 Grace LSA，必须先 opaque-capability enable。period 缺省 120 秒，最大 1800。",
+    "完全 GR：一个邻居不支持，整机退出。部分 GR：只退出那个接口。",
+    "成功退出时 Grace LSA 的 age 是 3600。同一网段不能两台同时 GR。",
+    "NSR 和 GR 对本机倒换互斥。缺省 switchover mode 是 nonstop-forwarding。批量备份没完成不能 NSR 倒换。"
+  ],
+  "mixups": [
+    {
+      "see": "FA 字段是 0.0.0.0",
+      "mean": "下一跳就是产生这条 Type5/Type7 的 ASBR，不是「没有下一跳」。"
+    },
+    {
+      "see": "Type5 的 FA 一定为 0",
+      "mean": "错。出接口启用 OSPF、非 silent、广播或 NBMA、地址被 network 覆盖，四条都在，FA 就可以是下一跳地址。"
+    },
+    {
+      "see": "NSSA 有两台 ABR",
+      "mean": "缺省 Router ID 大的那台做 7 转 5。流量会跟着这台 ABR 走，除非 FA 把下一跳指到真正的转发地址。"
+    },
+    {
+      "see": "Type7 缺省要不要转成 Type5",
+      "mean": "不转。ABR 产生的 Type7 缺省没有把 P-bit 置上。"
+    },
+    {
+      "see": "配了 graceful-restart 但 Grace LSA 发不出去",
+      "mean": "缺 opaque-capability enable。Type9 是 Opaque LSA。"
+    },
+    {
+      "see": "display ospf peer 里 State 仍是 Full，旁边 GR State: Doing GR",
+      "mean": "这就是 GR 正在进行。邻居没断。GR 失败或没开时，重启进程会看到邻居掉下去。"
+    },
+    {
+      "see": "Last exit reason 里 On graceful restart : successful exit",
+      "mean": "Restarter 自己正常退出。Helper 那台会在 On Helper : successful exit。两边各记各的。"
+    },
+    {
+      "see": "stub-router on-startup",
+      "mean": "固定时间，缺省 500 秒，度量 65535。不是「BGP 收敛完自动解除」。"
+    },
+    {
+      "see": "本机 switchover mode nonstop-routing",
+      "mean": "本协议倒换走 NSR，不再走 GR。仍可以给邻居当 GR Helper。"
+    },
+    {
+      "see": "备板正在批量备份时主板故障",
+      "mean": "不能 NSR 升主，设备整机重启。只有进入冗余保护之后，备板才有完整数据。"
+    }
+  ],
+  "memory": [
+    "FA 四条件：接口开 OSPF、不 silent、广播或 NBMA、地址在 network 里。",
+    "7 转 5：RID 最大的 ABR，还要 P 位置上且 FA 非 0。",
+    "GR 三步命令：opaque-capability enable → graceful-restart → 要用时 reset ospf 1 process graceful-restart。",
+    "成功看 age 3600；失败看超时、双向检查、DR/BDR 变了、同网段两台一起 GR。",
+    "NSR 口诀：先批量，再实时，然后硬件升主。没批量完不能倒。缺省模式是 NSF。"
+  ],
+  "labs": [
+    {
+      "title": "R1 做 GR，R2 上看邻居不掉",
+      "goal": "三台都是双主控。R1 以 GR 方式重启 OSPF 进程时，R2 上的邻居保持 Full，并显示 Doing GR。结束后两边的退出原因都是 successful exit。",
+      "topo": {
+        "caption": "R1 GE0/0/0 — R3 在 Area 0（10.1.13.0/30）。R1 GE0/0/1 — R2 在 Area 1（10.1.12.0/30）。",
+        "nodes": [
+          {
+            "id": "R3",
+            "x": 20,
+            "y": 20,
+            "label": "R3",
+            "sub": "Area 0"
+          },
+          {
+            "id": "R1",
+            "x": 180,
+            "y": 80,
+            "label": "R1"
+          },
+          {
+            "id": "R2",
+            "x": 340,
+            "y": 20,
+            "label": "R2",
+            "sub": "Area 1"
+          }
+        ],
+        "links": [
+          {
+            "a": "R1",
+            "b": "R3",
+            "label": "Area 0"
+          },
+          {
+            "a": "R1",
+            "b": "R2",
+            "label": "Area 1"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "where": "三台都配",
+          "text": "R2、R3 同样两句。不写 period 就是 120 秒，有计划和非计划都支持，Restarter 是完全 GR。",
+          "code": "ospf 1\n opaque-capability enable\n graceful-restart"
+        }
+      ],
+      "verify": [
+        {
+          "title": "重启前看能力",
+          "see": "capability enabled；support 是 planned and un-planned, totally；Helper 是 strict lsa check；Current GR state 是 normal；period 120 seconds。",
+          "code": "<R1> display ospf 1 graceful-restart"
+        },
+        {
+          "title": "GR 方式重启进程，同时在 R2 看邻居",
+          "see": "R2 上邻居 State 仍是 Full，GR State 是 Doing GR。这就是「重启了但邻居没断」。",
+          "code": "<R1> reset ospf 1 process graceful-restart\n<R2> display ospf 1 peer\nRouter ID: 10.1.13.1   GR State: Doing GR\nState: Full"
+        },
+        {
+          "title": "结束后看谁成功退出",
+          "see": "R1 的 On graceful restart 是 successful exit。R2 的 On Helper 是 successful exit。Current GR state 回到 normal。",
+          "code": "<R1> display ospf 1 graceful-restart\nLast exit reason:\n On graceful restart : successful exit\n On Helper           : none\n\n<R2> display ospf 1 graceful-restart\n On graceful restart : none\n On Helper           : successful exit"
+        }
+      ]
+    }
+  ],
+  "figures": []
+}

@@ -55,6 +55,22 @@ header {
   z-index: 5;
 }
 h1 { font-size: 1.2rem; margin: 0 0 2px; font-weight: 700; }
+.head-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.head-row h1 { margin: 0; }
+a.site-switch {
+  flex: none;
+  text-decoration: none;
+  font-weight: 750;
+  font-size: .82rem;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--accent2) 55%, var(--border));
+  color: var(--accent2);
+  background: color-mix(in srgb, var(--accent2) 12%, var(--card));
+  white-space: nowrap;
+}
+a.site-switch:hover { border-color: var(--accent2); }
+a.site-switch:focus-visible { outline: 2px solid var(--accent2); outline-offset: 2px; }
 .sub { color: var(--muted); font-size: .8rem; margin: 0 0 8px; }
 .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .tabs { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -554,7 +570,10 @@ footer.note-end { color: var(--muted); font-size: .75rem; text-align: center; ma
 </head>
 <body class="mode-q">
 <header>
-  <h1>HCIP 题库笔记</h1>
+  <div class="head-row">
+    <h1>HCIP 题库笔记</h1>
+    <a class="site-switch" href="hcie/">HCIE 笔记</a>
+  </div>
   <p class="sub">H12-821 486 题 · H12-831 379 题。左侧先做题再对答案；点题目，右侧滚到对应笔记。右侧只整理本题库里被肯定的说法、被否定的说法和直接答案，不另补教材解释。</p>
   <div class="toolbar">
     <div class="tabs" role="tablist" id="banks" aria-label="题库">

@@ -1,0 +1,263 @@
+{
+  "id": "bgp-community",
+  "title": "Community 属性",
+  "summary": "用团体把一批路由打上同一个标记，后面按标记过滤，不用再背前缀。缺省不把 Community 发给邻居。一行里的多个团体是与，多行是或。",
+  "source": "Datacom 通用 V1.0 · BGP高级特性",
+  "mindmap": [
+    {
+      "t": "Community",
+      "c": [
+        {
+          "t": "格式",
+          "d": "32 位。十进制或 AA:NN"
+        },
+        {
+          "t": "四个知名团体",
+          "d": "internet / no-export / no-advertise / no-export-subconfed"
+        },
+        {
+          "t": "发出去",
+          "d": "必须 advertise-community。additive 才是追加"
+        },
+        {
+          "t": "过滤器",
+          "d": "基本 1～99，高级 100～199。whole-match 只对基本过滤器"
+        }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "h",
+      "text": "为什么用它"
+    },
+    {
+      "type": "p",
+      "text": "Community 是可选传递属性。它给一批路由贴同一个标记，后面按标记匹配，不用关心前缀散不散、AS 号多不多。缺省所有路由都属于 internet。"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "名字",
+        "值",
+        "收到之后"
+      ],
+      "rows": [
+        [
+          "internet",
+          "0（0x00000000）",
+          "可以发给任何 BGP 邻居。缺省大家都是它"
+        ],
+        [
+          "no-export",
+          "4294967041（0xFFFFFF01）",
+          "不发给 AS 外面。联盟里可以发给其他子 AS"
+        ],
+        [
+          "no-advertise",
+          "4294967042（0xFFFFFF02）",
+          "不发给任何 BGP 邻居"
+        ],
+        [
+          "no-export-subconfed",
+          "4294967043（0xFFFFFF03）",
+          "不发给 AS 外面，联盟里也不发给其他子 AS"
+        ]
+      ]
+    },
+    {
+      "type": "p",
+      "text": "一个团体值 32 位。可以写成十进制，也可以写成 AA:NN，AA 习惯上是 AS 号，NN 自己编，两边都是 0～65535。一条 apply 命令最多 32 个团体号。"
+    },
+    {
+      "type": "h",
+      "text": "打标记，并且真的发给邻居"
+    },
+    {
+      "type": "code",
+      "title": "不配 advertise-community，对端看不到",
+      "code": "ip ip-prefix 1 permit 10.1.1.1 32\nroute-policy Community permit node 10\n if-match ip-prefix 1\n apply community 101:1\nroute-policy Community permit node 20\nbgp 101\n peer 10.1.12.2 as-number 102\n peer 10.1.12.2 route-policy Community export\n peer 10.1.12.2 advertise-community\n network 10.1.1.1 32\n network 10.1.2.2 32"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "node 20 是空的 permit。没有它，10.1.2.2/32 会被路由策略默认拒绝，根本发不出去。",
+        "apply community 不加 additive 是替换原来的团体。要在 101:1 后面再加 no-export，必须写 additive。",
+        "advertise-community 缺省关闭。只 apply、不 advertise，更新报文里没有 Community，后面的过滤器也匹配不到。"
+      ]
+    },
+    {
+      "type": "code",
+      "title": "中间那一跳追加 no-export",
+      "code": "route-policy Community permit node 10\n if-match ip-prefix 1\n apply community no-export additive\nroute-policy Community permit node 20\nbgp 102\n peer 10.1.23.3 as-number 103\n peer 10.1.23.3 advertise-community\n peer 10.1.23.3 route-policy Community export"
+    },
+    {
+      "type": "p",
+      "text": "R3 上 display bgp routing-table 10.1.1.1 能看到 Community:<101:1>, no-export。因为带了 no-export，R3 不会再把它发给自己的 EBGP 邻居。回显里会有 Not advertised to any peer yet。"
+    },
+    {
+      "type": "h",
+      "text": "Community Filter"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "类型",
+        "编号",
+        "匹配什么"
+      ],
+      "rows": [
+        [
+          "基本",
+          "1～99，或 basic 名字",
+          "团体号或知名团体。一行里写多个是与：路由要同时带上这些"
+        ],
+        [
+          "高级",
+          "100～199，或 advanced 名字",
+          "正则。例如 ^10 匹配以 10 开头的团体值"
+        ]
+      ]
+    },
+    {
+      "type": "ul",
+      "items": [
+        "同一过滤器的多条规则之间是或。permit 100:1 再写一行 permit 200:1 300:1，表示带 100:1，或者同时带 200:1 和 300:1。",
+        "一行 permit 100:1 200:1 300:1 是与，三个都要有。",
+        "if-match community-filter 后面的 whole-match 只对基本过滤器有效：路由上的团体必须和规则完全一样，不能多也不能少。",
+        "名字长度 1～51，不能是纯数字。"
+      ]
+    },
+    {
+      "type": "code",
+      "title": "与、或、正则",
+      "code": "ip community-filter 1 permit 100:1 200:1 300:1\nip community-filter 1 permit 100:1\nip community-filter 1 permit 200:1 300:1\nip community-filter 100 permit ^10\n#\nroute-policy Community deny node 10\n if-match community-filter 1\nroute-policy Community permit node 20\nbgp 102\n peer 10.1.23.3 route-policy Community export"
+    },
+    {
+      "type": "p",
+      "text": "上面后一个例子是：过滤器 1 只 permit 101:1 这一条时，策略 node 10 deny 掉匹配的路由，node 20 放行其余。R3 就收得到 10.1.2.2/32（团体 101:2），收不到 10.1.1.1/32（团体 101:1）。"
+    }
+  ],
+  "exam": [
+    "四个知名团体的值，尤其 no-export 和 no-advertise 谁更严。",
+    "no-export 还能在联盟内发给其他子 AS；no-export-subconfed 不能。",
+    "缺省不发送 Community。要 peer advertise-community。",
+    "不加 additive 是覆盖。追加必须 additive。",
+    "基本过滤器 1～99，高级 100～199。一行多个是与，多行是或。",
+    "whole-match 只对基本过滤器。",
+    "路由策略记得写一个空的 permit node，否则没匹配上的路由被默认拒绝。"
+  ],
+  "mixups": [
+    {
+      "see": "no-export 和 no-advertise",
+      "mean": "no-export 只是不出 AS（联盟内的其他子 AS 还可以发）。no-advertise 是谁都不发。"
+    },
+    {
+      "see": "no-export-subconfed",
+      "mean": "连联盟里的其他子 AS 也不发。比 no-export 更严。"
+    },
+    {
+      "see": "apply community 101:1 之后又 apply community no-export",
+      "mean": "后一条把前一条替换掉，除非写 additive。"
+    },
+    {
+      "see": "本机 display 能看到 Community，邻居看到的是空的",
+      "mean": "没配 advertise-community。缺省不发给任何邻居。"
+    },
+    {
+      "see": "ip community-filter 1 permit 100:1 200:1",
+      "mean": "一条路由要同时带 100:1 和 200:1。想要「有其中一个就行」，分成两行 permit。"
+    },
+    {
+      "see": "whole-match",
+      "mean": "只对基本过滤器。路由携带的团体集合要和规则完全一致。"
+    },
+    {
+      "see": "R3 的 BGP 表里没有 10.1.1.1/32，但有 10.1.2.2/32",
+      "mean": "出口策略按团体 101:1 把它 deny 了。先在 R2 上 display bgp routing-table 10.1.1.1 确认团体还在，再看 community-filter。"
+    }
+  ],
+  "memory": [
+    "发出去两步：apply community，再 peer advertise-community。追加加 additive。",
+    "知名四个：internet 谁都能发，no-export 不出 AS，no-advertise 谁都不发，no-export-subconfed 连子 AS 都不发。",
+    "过滤器：一行是与，多行是或。1～99 基本，100～199 高级正则。"
+  ],
+  "labs": [
+    {
+      "title": "给 10.1.1.1/32 打上 101:1，再到 R2 追加 no-export",
+      "goal": "R1（AS 101）只给 10.1.1.1/32 加团体 101:1，10.1.2.2/32 不加。R2（AS 102）把 no-export 追加进去发给 R3（AS 103）。",
+      "topo": {
+        "nodes": [
+          {
+            "id": "R1",
+            "x": 20,
+            "y": 50,
+            "label": "R1",
+            "sub": "AS 101"
+          },
+          {
+            "id": "R2",
+            "x": 190,
+            "y": 50,
+            "label": "R2",
+            "sub": "AS 102"
+          },
+          {
+            "id": "R3",
+            "x": 360,
+            "y": 50,
+            "label": "R3",
+            "sub": "AS 103"
+          }
+        ],
+        "links": [
+          {
+            "a": "R1",
+            "b": "R2",
+            "label": ".12"
+          },
+          {
+            "a": "R2",
+            "b": "R3",
+            "label": ".23"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "where": "R1",
+          "code": "ip ip-prefix 1 permit 10.1.1.1 32\nroute-policy Community permit node 10\n if-match ip-prefix 1\n apply community 101:1\nroute-policy Community permit node 20\nbgp 101\n peer 10.1.12.2 as-number 102\n peer 10.1.12.2 route-policy Community export\n peer 10.1.12.2 advertise-community\n network 10.1.1.1 32\n network 10.1.2.2 32"
+        },
+        {
+          "where": "R2",
+          "code": "ip ip-prefix 1 permit 10.1.1.1 32\nroute-policy Community permit node 10\n if-match ip-prefix 1\n apply community no-export additive\nroute-policy Community permit node 20\nbgp 102\n peer 10.1.12.1 as-number 101\n peer 10.1.23.3 as-number 103\n peer 10.1.23.3 advertise-community\n peer 10.1.23.3 route-policy Community export"
+        }
+      ],
+      "verify": [
+        {
+          "title": "在 R3 看两个团体都在",
+          "see": "Community 一行同时有 <101:1> 和 no-export。AS-path 是 102 101。Not advertised to any peer yet 是因为 no-export，R3 不会再往 AS 外发。",
+          "code": "[R3] display bgp routing-table 10.1.1.1\nCommunity:<101:1>, no-export\nAS-path 102 101, origin igp"
+        }
+      ]
+    },
+    {
+      "title": "按团体把 10.1.1.1/32 从发给 R3 的更新里拿掉",
+      "goal": "R2 收到两条：10.1.1.1/32 团体 101:1，10.1.2.2/32 团体 101:2。出口只丢掉带 101:1 的。",
+      "steps": [
+        {
+          "where": "R2",
+          "code": "ip community-filter 1 permit 101:1\nroute-policy Community deny node 10\n if-match community-filter 1\nroute-policy Community permit node 20\nbgp 102\n peer 10.1.23.3 route-policy Community export"
+        }
+      ],
+      "verify": [
+        {
+          "title": "R2 自己还有，R3 只有另一条",
+          "see": "R2 上 10.1.1.1/32 仍显示 Community:<101:1>，但 Not advertised to any peer yet。R3 的 BGP 表 Total Number of Routes 是 1，只剩 10.1.2.2/32。",
+          "code": "[R2] display ip community-filter 1\npermit 101:1\n[R2] display bgp routing-table 10.1.1.1\n[R3] display bgp routing-table\n*>  10.1.2.2/32  10.1.23.2  102 101i"
+        }
+      ]
+    }
+  ],
+  "figures": []
+}

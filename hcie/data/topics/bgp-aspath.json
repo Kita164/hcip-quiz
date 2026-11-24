@@ -1,0 +1,282 @@
+{
+  "id": "bgp-aspath",
+  "title": "AS_Path 过滤和正则",
+  "summary": "AS_Path 是空格分开的 AS 号字符串。过滤器同一编号里多条规则是或，没被 permit 到的最终丢弃。拒绝某个起源 AS 之后，记得再 permit .* 。",
+  "source": "Datacom 通用 V1.0 · BGP高级特性",
+  "mindmap": [
+    {
+      "t": "AS_Path",
+      "c": [
+        {
+          "t": "正则",
+          "d": "^ $ _ . * + ? []"
+        },
+        {
+          "t": "过滤器",
+          "d": "同号规则是或。默认行为是 deny"
+        },
+        {
+          "t": "怎么用",
+          "d": "peer 上 import/export，或 route-policy 里 if-match"
+        },
+        {
+          "t": "怎么查",
+          "d": "display ip as-path-filter；display bgp routing-table regular-expression"
+        }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "h",
+      "text": "它在整套路由策略里的位置"
+    },
+    {
+      "type": "p",
+      "text": "BGP 先用匹配工具圈出路由，再用策略决定收还是发、改什么属性。匹配工具有 ACL、地址前缀、AS_Path Filter、Community Filter。策略工具是 Filter-Policy 和 Route-Policy。ACL、前缀列表和 Route-Policy 的写法在 HCIP 核心课。这一课只把 AS_Path 和 Community 补全。"
+    },
+    {
+      "type": "p",
+      "text": "AS_Path 是公认必遵属性，每条 BGP 路由都有。它按经过的顺序记下 AS 号，可以是空的（本 AS 始发、还没离开过），也可以有一串。字符串里 AS 号用空格隔开。最右边是起源 AS。"
+    },
+    {
+      "type": "h",
+      "text": "正则里真正要会的符号"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "符号",
+        "匹配什么",
+        "放到 AS_Path 上怎么记"
+      ],
+      "rows": [
+        [
+          "^",
+          "开头",
+          "^101 表示路径从 101 开始，101 是最近加上的 AS"
+        ],
+        [
+          "$",
+          "结尾",
+          "_101$ 或 101$ 表示起源 AS 是 101"
+        ],
+        [
+          "_",
+          "分隔符",
+          "空格、逗号、括号、花括号，也包含字符串的开头和结尾。所以 _101_ 能夹出中间那个 101"
+        ],
+        [
+          ".",
+          "任意一个字符",
+          "10. 能匹配 100 到 109，也能匹配 10 后面再跟一个字符"
+        ],
+        [
+          "*",
+          "+ / ?",
+          "前面的东西：* 是 0 次或多次，+ 至少 1 次，? 是 0 次或 1 次。星号只重复它前面那一个原子，abc*d 管的是 c，不是 abc"
+        ],
+        [
+          "|",
+          "或",
+          "100|200 是 100 或 200。要限制整段范围就加括号"
+        ],
+        [
+          "\\",
+          "把下一个符号当成普通字符",
+          "\\(65000\\) 才匹配带括号的 (65000)"
+        ],
+        [
+          "[123]",
+          "括号里任意一个字符",
+          "[^123] 是除这些以外"
+        ],
+        [
+          "^$",
+          "空字符串",
+          "本 AS 始发、AS_Path 里还没有任何 AS 号"
+        ],
+        [
+          ".*",
+          "任意内容",
+          "放行其余全部路由时用"
+        ]
+      ]
+    },
+    {
+      "type": "table",
+      "caption": "课件上的对照。左边是表达式，右边是 AS_Path 字符串。",
+      "headers": [
+        "表达式",
+        "匹配到的 AS_Path"
+      ],
+      "rows": [
+        [
+          "^$",
+          "空路径，本 AS 的路由"
+        ],
+        [
+          ".*",
+          "任何路由"
+        ],
+        [
+          "^100$",
+          "只有 100。不是 100 200"
+        ],
+        [
+          "^(100|200)$",
+          "只有 100，或者只有 200。不是 100 200"
+        ],
+        [
+          "_101$",
+          "以 101 结尾，101 是起源 AS"
+        ],
+        [
+          "^103_",
+          "以 103 开头"
+        ],
+        [
+          "^10[012349]$",
+          "100、101、102、103、104、109"
+        ],
+        [
+          "^10[^0-6]$",
+          "10 后面一个字符，但不是 0 到 6"
+        ],
+        [
+          "^12(_34)?_56$",
+          "12 56，以及 12 34 56"
+        ]
+      ]
+    },
+    {
+      "type": "callout",
+      "kind": "exam",
+      "title": "单选题就考这个",
+      "text": "ip as-path-filter 1 permit ^(100|200)$ 匹配的是 AS_Path 100，或者 AS_Path 200。不匹配 100 200。四个选项里选「100 或 200」那一项。"
+    },
+    {
+      "type": "h",
+      "text": "过滤器怎么匹配"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "同一编号（或同一个名字）下面可以写多条 permit/deny。这些条是「或」：有一条通过，这组过滤器就算通过。",
+        "过滤器的默认行为是 deny。一条规则都没 permit 到的路由，最后被拒绝。",
+        "如果写出来的全是 deny，没有任何路由能通过。拒绝一部分之后，要用 permit .* 把剩下的放行。",
+        "编号 1～256。名字长度 1～51，不能是纯数字。"
+      ]
+    },
+    {
+      "type": "code",
+      "title": "创建和应用",
+      "code": "ip as-path-filter 1 deny _101$\nip as-path-filter 1 permit .*\n#\nbgp 102\n peer 10.1.23.3 as-number 103\n ipv4-family unicast\n  peer 10.1.23.3 as-path-filter 1 export\n# 或者放进路由策略\nroute-policy AS_Path permit node 10\n if-match as-path-filter 1\nbgp 102\n ipv4-family unicast\n  peer 10.1.23.3 route-policy AS_Path export"
+    },
+    {
+      "type": "p",
+      "text": "peer 上的 as-path-filter 写在地址族视图。import 过滤收进来的，export 过滤发出去的。路由策略方式下，if-match 没匹配上会落到后面的 node；一个 node 都没写 permit 空节点的话，其余路由按路由策略的默认拒绝处理。直接用 as-path-filter 时，靠过滤器自己的 permit .* 放行。"
+    },
+    {
+      "type": "code",
+      "title": "查看",
+      "code": "display ip as-path-filter 1\ndisplay bgp routing-table regular-expression _101$"
+    }
+  ],
+  "exam": [
+    "^$ 是本 AS 路由，.* 是全部。",
+    "^(100|200)$ 只匹配单独的 100 或单独的 200。",
+    "_101$ 是起源 AS 为 101。最右边那个 AS 是起源。",
+    "同一过滤器编号里多条是或。没被 permit 就是丢。全 deny 时要补 permit .* 。",
+    "应用位置：地址族下 peer x as-path-filter N import|export，或 route-policy 里 if-match as-path-filter。"
+  ],
+  "mixups": [
+    {
+      "see": "^(100|200)$",
+      "mean": "整条路径恰好是 100，或恰好是 200。中间没有别的 AS，也不是 100 后面跟着 200。"
+    },
+    {
+      "see": "_101$ 和 ^101$",
+      "mean": "_101$ 只要以 101 结尾。^101$ 是路径里只有 101 这一个 AS。"
+    },
+    {
+      "see": "abc*d",
+      "mean": "星号只重复它前面的 c。abd、abcd、abccd 都中。不是把 abc 重复多次。"
+    },
+    {
+      "see": "只写了 ip as-path-filter 1 deny _101$",
+      "mean": "默认行为是 deny，这条后面没有 permit，结果所有路由都被拒绝，不只是起源 101 的。补一行 permit .* 。"
+    },
+    {
+      "see": "display bgp routing-table regular-expression _101$",
+      "mean": "这是在本机 BGP 表里把匹配该正则的路由列出来，用来核对过滤器会打中谁。不是显示过滤器本身。过滤器用 display ip as-path-filter。"
+    }
+  ],
+  "memory": [
+    "右端是起源。挡起源 AS 101 就写 deny _101$，然后 permit .* 。",
+    "同号是或，不写 permit 就是丢。",
+    "^ 开头，$ 结尾，_ 是分隔也包含头尾，.* 是全部，^$ 是自己始发。"
+  ],
+  "labs": [
+    {
+      "title": "R2 不把起源于 AS 101 的路由发给 R3",
+      "goal": "R1 在 AS 101，把 10.1.1.1/32 发给 R2（AS 102）。R2 自己还有别的路由要给 R3（AS 103）。只拒绝路径以 101 结尾的那些。",
+      "topo": {
+        "nodes": [
+          {
+            "id": "R1",
+            "x": 20,
+            "y": 60,
+            "label": "R1",
+            "sub": "AS 101"
+          },
+          {
+            "id": "R2",
+            "x": 190,
+            "y": 60,
+            "label": "R2",
+            "sub": "AS 102"
+          },
+          {
+            "id": "R3",
+            "x": 360,
+            "y": 60,
+            "label": "R3",
+            "sub": "AS 103"
+          }
+        ],
+        "links": [
+          {
+            "a": "R1",
+            "b": "R2",
+            "label": "10.1.12.0/24"
+          },
+          {
+            "a": "R2",
+            "b": "R3",
+            "label": "10.1.23.0/24"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "where": "R2 直接调用",
+          "code": "ip as-path-filter 1 deny _101$\nip as-path-filter 1 permit .*\nbgp 102\n peer 10.1.23.3 as-number 103\n ipv4-family unicast\n  peer 10.1.23.3 as-path-filter 1 export"
+        },
+        {
+          "where": "R2 改用路由策略",
+          "text": "过滤器和上面一样，先 deny _101$ 再 permit .*。node 10 是 permit，并且 if-match 这组过滤器。过滤器拒绝的路由匹配不上 node 10，后面又没有别的节点，路由策略默认拒绝，所以起源于 101 的路由发不出去。被 permit .* 放行的路由命中 node 10，照常发出。",
+          "code": "route-policy AS_Path permit node 10\n if-match as-path-filter 1\nbgp 102\n ipv4-family unicast\n  peer 10.1.23.3 route-policy AS_Path export"
+        }
+      ],
+      "verify": [
+        {
+          "title": "过滤器里有两条，BGP 表里打中一条",
+          "see": "as-path-filter 1 显示 deny _101$ 和 permit .*。regular-expression _101$ 能看到 10.1.1.1/32，Path 是 101。这条不会再发给 R3，R2 自己始发的路由还在。",
+          "code": "[R2] display ip as-path-filter 1\n deny   _101$\n permit .*\n\n[R2] display bgp routing-table regular-expression _101$\n*>  10.1.1.1/32  10.1.12.1  101i"
+        }
+      ]
+    }
+  ],
+  "figures": []
+}

@@ -1,0 +1,26 @@
+{
+  "title": "HCIE-Datacom 学习笔记",
+  "decks": [
+    {
+      "id": "igp",
+      "title": "IGP 高级特性",
+      "source": "Datacom 通用 V1.0 · 2020.05 / 2021.07",
+      "blurb": "OSPF 和 IS-IS 的快速收敛、路由控制，以及 FA、GR、NSR、LSP 分片。",
+      "topics": ["ospf-fast", "ospf-control", "ospf-others", "isis-fast-control", "isis-fragment-gr"]
+    },
+    {
+      "id": "bgp",
+      "title": "BGP 高级特性",
+      "source": "Datacom 通用 V1.0 · 2020.06 / 2021.07",
+      "blurb": "AS_Path 与 Community、ORF、对等体组、安全、4 字节 AS，以及路由反射器怎么组。",
+      "topics": ["bgp-aspath", "bgp-community", "bgp-features", "bgp-rr"]
+    },
+    {
+      "id": "sdwan",
+      "title": "SD-WAN 概述与开局",
+      "source": "SD-WAN 概述与设备开局",
+      "blurb": "架构和三种通道、应用与安全，以及邮件 / DHCP 开局。",
+      "topics": ["sdwan-arch", "sdwan-functions", "sdwan-onboard"]
+    }
+  ]
+}

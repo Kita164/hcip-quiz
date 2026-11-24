@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="dark light" />
+<title>HCIE-Datacom 学习笔记</title>
+<link rel="stylesheet" href="css/notes.css" />
+</head>
+<body>
+<div class="app">
+  <aside class="side" id="side">
+    <div class="side-head">
+      <a class="switch" href="../">← HCIP 题库</a>
+      <div class="brand">
+        <h1>HCIE 笔记</h1>
+        <p>笔试 H12-891 · 实验 H12-892</p>
+      </div>
+      <label class="search">
+        <span class="sr">搜索笔记</span>
+        <input id="q" type="search" placeholder="搜概念、命令、回显…" autocomplete="off" enterkeyhint="search" />
+      </label>
+      <div class="progress-row">
+        <span id="prog">已学 0 / 0</span>
+        <button type="button" id="only-todo" class="text-btn" aria-pressed="false">只看未学</button>
+      </div>
+      <div id="hits" class="hits" hidden></div>
+    </div>
+    <nav id="nav" aria-label="专题目录"></nav>
+  </aside>
+  <div class="main">
+    <header class="topbar">
+      <button type="button" id="menu" aria-controls="side" aria-expanded="false">目录</button>
+      <a class="switch" href="../">HCIP 题库</a>
+      <span class="top-title" id="top-title">HCIE 笔记</span>
+    </header>
+    <article id="article" tabindex="-1"></article>
+  </div>
+</div>
+<div class="backdrop" id="backdrop" hidden></div>
+<script src="js/app.js"></script>
+</body>
+</html>
