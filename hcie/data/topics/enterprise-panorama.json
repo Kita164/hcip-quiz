@@ -1,0 +1,99 @@
+{
+  "id": "enterprise-panorama",
+  "title": "企业网络全景",
+  "summary": "企业网分成园区、广域和数据中心。对应的方案是 CloudCampus、CloudWAN、CloudFabric。能做 SD-WAN 的控制器是 NCE-Campus 和 NCE-WAN。",
+  "source": "Datacom 通用 V1.0 · 企业网络全景概述",
+  "mindmap": [
+    {
+      "t": "企业网",
+      "c": [
+        {
+          "t": "三张网",
+          "d": "园区、广域、数据中心"
+        },
+        {
+          "t": "三套方案",
+          "d": "CloudCampus、CloudWAN、CloudFabric"
+        },
+        {
+          "t": "控制器",
+          "d": "Campus、Fabric、IP、WAN。SD-WAN 是前两个里的 Campus 和 WAN"
+        }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "h",
+      "text": "三张网各干什么"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "网络",
+        "给谁用",
+        "方案",
+        "控制器"
+      ],
+      "rows": [
+        [
+          "园区",
+          "办公、校园、工厂内部",
+          "CloudCampus 3.0",
+          "iMaster NCE-Campus"
+        ],
+        [
+          "广域承载",
+          "5G 和云业务的骨干",
+          "CloudWAN 3.0",
+          "iMaster NCE-IP"
+        ],
+        [
+          "数据中心",
+          "计算和存储之间",
+          "CloudFabric 3.0",
+          "iMaster NCE-Fabric"
+        ],
+        [
+          "SD-WAN",
+          "多园区互联，叠在广域上",
+          "园区方案里的广域部分",
+          "NCE-Campus，也可以是 NCE-WAN"
+        ]
+      ]
+    },
+    {
+      "type": "p",
+      "text": "iMaster NCE 是管理、控制、分析和 AI 放在一起的平台。园区控制器能做体验可视（NCE-CampusInsight）和 SD-WAN 选路。课件写园区控制器最大管理约 20 万网元。没有叫 iMaster NCE-SD-WAN 的产品。"
+    },
+    {
+      "type": "callout",
+      "kind": "exam",
+      "title": "SD-WAN 控制器只选两个",
+      "text": "多选题选 iMaster NCE-Campus 和 iMaster NCE-WAN。NCE-IP 是广域承载 CloudWAN 的控制器，不是 SD-WAN。NCE-SD-WAN 这个名字不存在。"
+    }
+  ],
+  "exam": [
+    "园区 NCE-Campus，数据中心 NCE-Fabric，广域承载 NCE-IP。",
+    "SD-WAN 控制器是 NCE-Campus 和 NCE-WAN。"
+  ],
+  "mixups": [
+    {
+      "see": "iMaster NCE-IP",
+      "mean": "CloudWAN，广域承载。不是 SD-WAN 选路那台。"
+    },
+    {
+      "see": "iMaster NCE-SD-WAN",
+      "mean": "没有这个产品名。SD-WAN 看 Campus 和 WAN。"
+    },
+    {
+      "see": "iMaster NCE-Fabric",
+      "mean": "数据中心 CloudFabric，不拿来管园区接入交换机。"
+    }
+  ],
+  "memory": [
+    "园区 Campus，数据中心 Fabric，广域 IP。SD-WAN 是 Campus 加 WAN。"
+  ],
+  "labs": [],
+  "figures": []
+}

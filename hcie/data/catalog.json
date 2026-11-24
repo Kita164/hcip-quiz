@@ -39,12 +39,15 @@
     {
       "id": "campus",
       "title": "园区",
-      "source": "Campus 南向 · 网络准入控制",
-      "blurb": "LLDP、SNMP、NETCONF 上线，以及 802.1X、MAC、Portal 和策略联动。",
+      "source": "Datacom 通用 V1.0 · 企业网络 / 园区 / VXLAN；ThinkMo · 南向",
+      "blurb": "企业网和园区架构、南向与准入、VXLAN 虚拟化。",
       "topics": [
+        "enterprise-panorama",
+        "campus-arch",
         "campus-south",
         "nac-auth",
-        "nac-deploy"
+        "nac-deploy",
+        "vxlan-campus"
       ]
     },
     {
@@ -106,11 +109,12 @@
     {
       "id": "ops",
       "title": "运维和排障",
-      "source": "Datacom 通用 V1.0 · 网络运维 / 网络故障排除",
-      "blurb": "日常检查和信息中心，以及结构化排障、环路和邻居故障。",
+      "source": "Datacom 通用 V1.0 · 网络运维 / 故障排除 / 网络割接",
+      "blurb": "日常检查和信息中心，结构化排障，以及割接流程。",
       "topics": [
         "net-ops",
-        "net-troubleshoot"
+        "net-troubleshoot",
+        "net-cutover"
       ]
     }
   ]
