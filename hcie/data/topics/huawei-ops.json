@@ -13,11 +13,11 @@
         },
         {
           "t": "方法",
-          "d": "GET、PUT、POST、DELETE 都支持"
+          "d": "GET\nPUT\nPOST\nDELETE 都支持"
         },
         {
           "t": "脚本",
-          "d": "上传、安装、运行"
+          "d": "上传\n安装\n运行"
         }
       ]
     }

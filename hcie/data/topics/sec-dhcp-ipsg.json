@@ -9,11 +9,11 @@
       "c": [
         {
           "t": "信任口",
-          "d": "非信任口丢掉 Offer、Ack、Nak"
+          "d": "非信任口丢掉：\nOffer\nAck\nNak"
         },
         {
           "t": "绑定表",
-          "d": "从 Ack 里摘 IP、MAC、接口、VLAN、租期"
+          "d": "从 Ack 里摘：\nIP\nMAC\n接口\nVLAN\n租期"
         },
         {
           "t": "饿死",

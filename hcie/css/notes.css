@@ -367,7 +367,8 @@ pre {
 .fig .edge { stroke: var(--muted); fill: none; stroke-width: 1.6; }
 .fig .arrow-head { fill: var(--muted); }
 .fig .n-text, .fig .mind-t, .fig .edge-t { fill: var(--text); font-size: 13px; font-family: inherit; }
-.fig .n-sub, .fig .mind-d { fill: var(--muted); font-size: 11px; font-family: inherit; }
+.fig .n-sub { fill: var(--muted); font-size: 11px; font-family: inherit; }
+.fig .mind-d { fill: var(--muted); font-size: 13px; font-family: inherit; }
 .fig .ico { fill: var(--card); stroke-width: 1.6; }
 .fig .ico-r { stroke: var(--accent); }
 .fig .ico-sw { stroke: var(--accent2); }

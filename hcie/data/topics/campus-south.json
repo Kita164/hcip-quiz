@@ -13,7 +13,7 @@
         },
         {
           "t": "SNMP",
-          "d": "NMS、Agent、MIB。v3 才认证加密"
+          "d": "NMS\nAgent\nMIB\nv3 才认证加密"
         },
         {
           "t": "NETCONF",

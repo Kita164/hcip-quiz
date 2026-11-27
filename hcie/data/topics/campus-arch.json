@@ -9,11 +9,11 @@
       "c": [
         {
           "t": "架构",
-          "d": "接入、汇聚、核心。CloudCampus 一套控制器管 LAN 和 WAN"
+          "d": "接入\n汇聚\n核心\nCloudCampus 一套控制器管 LAN 和 WAN"
         },
         {
           "t": "可靠",
-          "d": "Eth-Trunk、iStack、CSS。MSTP 按 VLAN 分树"
+          "d": "Eth-Trunk\niStack\nCSS\nMSTP 按 VLAN 分树"
         },
         {
           "t": "出口 VPN",

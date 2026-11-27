@@ -13,7 +13,7 @@
         },
         {
           "t": "VGMP",
-          "d": "Initialize、Load Balance、Active、Standby"
+          "d": "Initialize\nLoad Balance\nActive\nStandby"
         },
         {
           "t": "虚拟系统",

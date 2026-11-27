@@ -9,7 +9,7 @@
       "c": [
         {
           "t": "三种角色",
-          "d": "RR、Client、Non-Client。客户机不知道自己是客户机"
+          "d": "RR\nClient\nNon-Client\n客户机不知道自己是客户机"
         },
         {
           "t": "发布规则",
@@ -21,7 +21,7 @@
         },
         {
           "t": "组网",
-          "d": "备份 RR、同级多集群、分级 RR。同 Cluster ID 会丢掉彼此的反射路由"
+          "d": "备份 RR\n同级多集群\n分级 RR\n同 Cluster ID 会丢掉彼此的反射路由"
         }
       ]
     }

@@ -19,8 +19,7 @@
   }
 
   function svgWrap(w, h, body, label) {
-    const min = Math.max(520, Math.min(w, 920));
-    return '<svg class="fig" viewBox="0 0 ' + w + " " + h + '" role="img" aria-label="' + esc(label || "图") + '" style="min-width:' + min + 'px">' + body + "</svg>";
+    return '<svg class="fig" viewBox="0 0 ' + w + " " + h + '" role="img" aria-label="' + esc(label || "图") + '" style="min-width:' + Math.ceil(w) + 'px">' + body + "</svg>";
   }
 
   function frame(title, caption, inner) {
@@ -50,28 +49,63 @@
     return '<circle class="ico ico-r" cx="26" cy="20" r="13"/><path class="ico-line" d="M26 7 V13 M26 27 V33 M13 20 H19 M33 20 H39"/>';
   }
 
+  function wrapLines(text, maxW) {
+    const out = [];
+    String(text || "").split("\n").forEach((para) => {
+      let rest = para.trim();
+      while (rest) {
+        if (measure(rest) <= maxW) {
+          out.push(rest);
+          break;
+        }
+        let cut = 0;
+        let width = 0;
+        let lastBreak = -1;
+        for (let i = 0; i < rest.length; i++) {
+          const ch = rest[i];
+          const cw = ch.charCodeAt(0) > 255 ? 13 : 7.2;
+          if (width + cw > maxW) break;
+          width += cw;
+          cut = i + 1;
+          if ("，。；、, ".indexOf(ch) >= 0) lastBreak = i + 1;
+        }
+        if (lastBreak > 8 && lastBreak < rest.length) cut = lastBreak;
+        const line = rest.slice(0, cut).trim();
+        if (!line) break;
+        out.push(line);
+        rest = rest.slice(cut).trim();
+      }
+    });
+    return out;
+  }
+
   function mind(topicId, roots, off) {
     if (!roots || !roots.length) return "";
     const root = roots.length === 1 ? roots[0] : { t: "本篇", c: roots };
+    const textW = 300;
     function layout(node, path) {
       const kids = node.c || [];
       const closed = !!(off && off.has(topicId + "|" + path) && kids.length);
-      const title = node.t || "";
-      const detail = clip(node.d || "", 22);
-      const tw = Math.min(220, Math.max(measure(title), measure(detail)) + 28);
-      const th = detail ? 48 : 32;
+      const titleLines = wrapLines(node.t || "", textW);
+      const detailLines = wrapLines(node.d || "", textW);
+      const widest = Math.max.apply(null, titleLines.concat(detailLines).map(measure).concat([96]));
+      const tw = widest + (kids.length ? 56 : 28);
+      const th = 14 + titleLines.length * 18 + (detailLines.length ? 4 + detailLines.length * 17 : 0) + 12;
       const laid = closed ? [] : kids.map((c, i) => layout(c, path + "/" + i));
-      const gap = 12;
+      const gap = 16;
       const inner = laid.reduce((s, c) => s + c.boxH, 0) + Math.max(0, laid.length - 1) * gap;
       const boxH = Math.max(th, inner);
-      return { node: node, path: path, title: title, detail: detail, tw: tw, th: th, boxH: boxH, kids: laid, closed: closed, n: kids.length };
+      return {
+        node: node, path: path, titleLines: titleLines, detailLines: detailLines,
+        tw: tw, th: th, boxH: boxH, kids: laid, closed: closed, n: kids.length,
+      };
     }
     const tree = layout(root, "0");
     function place(box, x, y) {
       box.x = x;
       box.y = y + (box.boxH - box.th) / 2;
       let cy = y;
-      const gap = 12;
+      const gap = 16;
       box.kids.forEach((k) => {
         place(k, x + box.tw + 46, cy);
         cy += k.boxH + gap;
@@ -99,20 +133,27 @@
       });
       const cls = depth === 0 ? "mind-node root" : "mind-node";
       const click = box.n ? ' data-mind-path="' + esc(topicId + "|" + box.path) + '" tabindex="0" role="button"' : "";
-      parts.push('<g class="' + cls + '"' + click + '><title>' + esc(box.node.t + (box.node.d ? "：" + box.node.d : "")) + "</title>");
+      parts.push('<g class="' + cls + '"' + click + ">");
       parts.push('<rect x="' + box.x + '" y="' + box.y + '" width="' + box.tw + '" height="' + box.th + '" rx="10"/>');
-      parts.push('<text class="mind-t" x="' + (box.x + 12) + '" y="' + (box.y + (box.detail ? 20 : 21)) + '">' + esc(box.title) + "</text>");
-      if (box.detail) parts.push('<text class="mind-d" x="' + (box.x + 12) + '" y="' + (box.y + 38) + '">' + esc(box.detail) + "</text>");
+      box.titleLines.forEach((line, i) => {
+        parts.push('<text class="mind-t" x="' + (box.x + 14) + '" y="' + (box.y + 22 + i * 18) + '">' + esc(line) + "</text>");
+      });
+      const detailTop = box.y + 22 + box.titleLines.length * 18 + 2;
+      box.detailLines.forEach((line, i) => {
+        parts.push('<text class="mind-d" x="' + (box.x + 14) + '" y="' + (detailTop + i * 17) + '">' + esc(line) + "</text>");
+      });
       if (box.n) {
         const badge = box.closed ? "+" + box.n : "−";
-        parts.push('<circle class="mind-badge" cx="' + (box.x + box.tw - 4) + '" cy="' + (box.y + box.th / 2) + '" r="9"/><text class="mind-badge-t" x="' + (box.x + box.tw - 4) + '" y="' + (box.y + box.th / 2 + 4) + '" text-anchor="middle">' + badge + "</text>");
+        const bx = box.x + box.tw - 14;
+        const by = box.y + box.th / 2;
+        parts.push('<circle class="mind-badge" cx="' + bx + '" cy="' + by + '" r="9"/><text class="mind-badge-t" x="' + bx + '" y="' + (by + 4) + '" text-anchor="middle">' + badge + "</text>");
       }
       parts.push("</g>");
     }
     draw(tree, 0);
     const w = tree.maxX + 24;
     const h = tree.maxY + 16;
-    return frame("思维导图", "点带加减号的节点可以折叠。悬停可看完整说明。", svgWrap(w, h, parts.join(""), "思维导图"));
+    return frame("思维导图", "点带加减号的节点可以折叠。说明在节点里全文显示。", svgWrap(w, h, parts.join(""), "思维导图"));
   }
 
   function renderNet(spec) {

@@ -9,11 +9,11 @@
       "c": [
         {
           "t": "四个面",
-          "d": "呈现、管理、控制、转发"
+          "d": "呈现\n管理\n控制\n转发"
         },
         {
           "t": "四个部件",
-          "d": "iMaster NCE、RR、CPE/vCPE、GW"
+          "d": "iMaster NCE\nRR\nCPE/vCPE\nGW"
         },
         {
           "t": "两张网",

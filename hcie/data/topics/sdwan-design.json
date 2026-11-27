@@ -9,7 +9,7 @@
       "c": [
         {
           "t": "拓扑",
-          "d": "Hub-Spoke、Full-mesh、Partial-mesh、分层，四个都要"
+          "d": "Hub-Spoke\nFull-mesh\nPartial-mesh\n分层，四个都要"
         },
         {
           "t": "隧道",

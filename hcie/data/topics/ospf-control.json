@@ -9,7 +9,7 @@
       "c": [
         {
           "t": "等价路由",
-          "d": "同协议、同目的、同开销。maximum load-balancing 限制条数"
+          "d": "同协议\n同目的\n同开销\nmaximum load-balancing 限制条数"
         },
         {
           "t": "缺省路由",

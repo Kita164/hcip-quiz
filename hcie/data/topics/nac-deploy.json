@@ -9,7 +9,7 @@
       "c": [
         {
           "t": "授权",
-          "d": "VLAN、ACL、UCL。授权 VLAN 盖过接口 VLAN"
+          "d": "VLAN\nACL\nUCL\n授权 VLAN 盖过接口 VLAN"
         },
         {
           "t": "免认证",
