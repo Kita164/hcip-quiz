@@ -1,0 +1,269 @@
+{
+  "id": "sr-mpls",
+  "title": "SR-MPLS：标签、SRGB 和 SBFD",
+  "summary": "Prefix SID 通告的是 SRGB 里的偏移，不是标签本身。各台用自己的 SRGB 加这个偏移算出入标签。OSPF 用 Type 10 Opaque LSA 带 Node SID。SBFD 缺省端口是 4784 和 7784。",
+  "source": "Datacom 通用 V1.0 · Segment Routing 简介",
+  "mindmap": [
+    {
+      "t": "SR-MPLS",
+      "c": [
+        {
+          "t": "两种 SID",
+          "d": "Prefix/Node 全局有效。Adj 只在本机有效"
+        },
+        {
+          "t": "三种路径",
+          "d": "BE 无隧道口。TE 有隧道口。Policy 靠 Color"
+        },
+        {
+          "t": "检测",
+          "d": "SBFD 源端口 4784，目的端口 7784"
+        }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "h",
+      "text": "源节点把路径写进标签栈"
+    },
+    {
+      "type": "p",
+      "text": "Segment 是沿途要执行的一条指令，SID 是它的编号。SR-MPLS 里 SID 就是 MPLS 标签，或者 SRGB 里的一个索引。源节点选好路径，把有序的 Segment List 压进报文，后面的设备只按栈顶做，不再靠 LDP 或 RSVP 逐跳协商。LDP 和 RSVP-TE 为什么重，见广域承载那篇，这里不重复。"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "SID",
+        "表示什么",
+        "有效范围"
+      ],
+      "rows": [
+        [
+          "Prefix SID",
+          "一个目的前缀。IGP 扩散",
+          "全局可见，全局有效。通告的是索引，不是最终标签"
+        ],
+        [
+          "Node SID",
+          "Prefix SID 的特例，配在环回地址上",
+          "用来代表这台设备。OSPF 放在 Type 10 LSA 里"
+        ],
+        [
+          "Adjacency SID",
+          "某一条邻接，相当于出接口",
+          "全局可见，只在本机有意义。标签在 SRGB 之外"
+        ]
+      ]
+    },
+    {
+      "type": "h",
+      "text": "标签等于本机 SRGB 起点加索引"
+    },
+    {
+      "type": "p",
+      "text": "SRGB 是留给 SR 的一段全局标签，因为别的协议比如 LDP 已经占了一部分标签空间。每台用 IGP 通告自己的 SRGB。别人通告 Prefix SID 索引之后，每台用自己的 SRGB 算出入标签。建议全网用同一段 SRGB，不然同一条 LSP 上每一跳的标签都不一样，排障时对不齐。"
+    },
+    {
+      "type": "p",
+      "text": "课件上的例子：索引 30。R1 的 SRGB 从 16000 起，入标签是 16030。R2 从 12000 起，入标签是 12030。报文从 R1 到 R2 时，R1 把栈顶换成 R2 的出标签 12030。BE 的转发动作和 LDP 一样：入节点 Push，中间 Swap，离开 SR 域时 Pop。BE 由 IGP 最短路径算出来，没有 Tunnel 口。"
+    },
+    {
+      "type": "callout",
+      "kind": "exam",
+      "title": "OSPF 的 Node SID 在 Type 10",
+      "text": "单选是 Type 10，不是 Router LSA（Type 1），也不是 NSSA 的 Type 7。Type 10 是区域范围的 Opaque LSA。进程下要先 opaque-capability enable，否则这种 LSA 发不出去。"
+    },
+    {
+      "type": "h",
+      "text": "三种路径，引流方式不一样"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "路径",
+        "谁算",
+        "流量怎么引进去"
+      ],
+      "rows": [
+        [
+          "SR-MPLS BE",
+          "IGP 最短路径，一层标签",
+          "没有隧道口。隧道策略选 sr-lsp，或者静态路由、BGP 的下一跳迭代到目的地址"
+        ],
+        [
+          "SR-MPLS TE",
+          "约束算路，一般多层标签，有主备",
+          "有隧道口。隧道策略、静态路由写出接口、自动路由，或者策略路由指定出接口"
+        ],
+        [
+          "SR-MPLS Policy",
+          "控制器按 Color 算，BGP SR Policy（SAFI 73）下发",
+          "没有隧道口。业务路由的 Color 和下一跳一起匹配到 Policy"
+        ]
+      ]
+    },
+    {
+      "type": "p",
+      "text": "路径可以来自转发器自己的 SPF 或 CSPF、手工写的显式路径，或者控制器。控制器下发时，课件推荐 BGP：BGP-LS 收拓扑，BGP SR Policy 下路径。PCEP 能用，但各厂隧道模型不统一。NETCONF 把路径当配置下，性能最差，不推荐拿来下隧道。NETCONF 仍然用来下别的配置。"
+    },
+    {
+      "type": "p",
+      "text": "Binding SID 代表整条 SR-MPLS Policy。一条 Policy 配一个。不同 Policy 的 Binding SID 必须不同。头节点收到这个标签，就把报文绑到对应 Policy 上，用来做标签粘连，或者 LDP 和 SR 互通过渡。"
+    },
+    {
+      "type": "h",
+      "text": "SBFD 和防微环"
+    },
+    {
+      "type": "p",
+      "text": "SBFD 把 BFD 的状态机简化了。发起端只有 Up 和 Down。反射端没有状态机，不主动发探测，只把收到的报文环回去。环回的状态只有 Up 或 Admin Down。发起端收到 Up 才把自己置成 Up；收到 Admin Down，或者定时器超时，就置成 Down。"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "发起端先把报文发往目的端口 7784，源端口 4784。目的 IP 是用户配置的 127 网段里的任意地址，源 IP 是本机 LSR ID。",
+        "反射端反过来：源端口 7784，目的端口 4784，源 IP 换成自己的 LSR ID。",
+        "多选「缺省 SBFD 报文使用哪些端口」选 4784 和 7784。3784 是普通 BFD 的控制端口，不在这道题里。"
+      ]
+    },
+    {
+      "type": "p",
+      "text": "微环是 IGP 各自收敛、时间不一致造成的暂时环路，全网收敛完会自己消失。TI-LFA 已经把修复标签压进报文之后，如果本机先收敛、把修复列表拿掉，邻居还没收敛，流量会在这一跳打转。防微环是本机启动定时器，在这段时间里继续按 TI-LFA 的修复列表转发，等别人跟上。"
+    },
+    {
+      "type": "callout",
+      "kind": "fix",
+      "title": "实验页的接口提示符印错了",
+      "text": "命令写的是 interface LoopBack0，下一行提示符却是 LoopBack1。Prefix SID 要配在 Node 前缀所在的接口上。这台 PE 的环回是 LoopBack0 的 10.0.1.1，索引 1 就写在这个接口下。"
+    }
+  ],
+  "exam": [
+    "Prefix SID 通告索引。入标签 = 本机 SRGB 起点 + 索引。",
+    "Node SID 用 OSPF Type 10 通告。要先打开 opaque-capability。",
+    "Adj SID 在 SRGB 外面，只在本机有效。",
+    "BE 没有隧道口。Policy 用 Color 加下一跳引流，下发走 BGP SR Policy。",
+    "SBFD 缺省端口是 4784 和 7784。发起端目的端口是 7784。"
+  ],
+  "mixups": [
+    {
+      "see": "两台设备 SRGB 不一样，同一条 LSP 标签对不上",
+      "mean": "正常。每台用自己的 SRGB 加同一个索引。全网配成同一段，标签才前后一致。"
+    },
+    {
+      "see": "display tunnel-info 里没有 sr-te 口，但 srbe-lsp 是 Up",
+      "mean": "BE 本来就没有隧道接口。用隧道策略或下一跳迭代引流，不要去找 Tunnel 口。"
+    },
+    {
+      "see": "SBFD 反射端没有邻居状态",
+      "mean": "反射端不维护状态机。只看发起端是 Up 还是 Down。"
+    },
+    {
+      "see": "TI-LFA 切过去之后又出现几秒环路",
+      "mean": "本机收敛比邻居快，过早丢掉了修复列表。要开防微环，定时器没到就继续走修复路径。"
+    }
+  ],
+  "memory": [
+    "索引加上本机 SRGB，才是标签。",
+    "Node SID 看 Type 10。Adj SID 只在本地有意义。",
+    "SBFD：出去 7784，回来 4784。"
+  ],
+  "labs": [
+    {
+      "title": "L3VPN 走 SR-MPLS BE",
+      "goal": "PE1 10.0.1.1 和 PE2 10.0.3.3 之间用 OSPF 的 SR-MPLS BE 承载 vpna。P 的环回是 10.0.2.2。CE1 10.1.4.4 要能到 CE2 10.1.5.5。",
+      "topo": {
+        "caption": "AS 100。PE1 index 1，P index 2，PE2 index 3。三台 SRGB 都是 16000 到 23999。",
+        "nodes": [
+          {
+            "id": "ce1",
+            "label": "CE1",
+            "sub": "10.1.4.4",
+            "x": 16,
+            "y": 36
+          },
+          {
+            "id": "pe1",
+            "label": "PE1",
+            "sub": "10.0.1.1",
+            "x": 150,
+            "y": 36
+          },
+          {
+            "id": "p",
+            "label": "P",
+            "sub": "10.0.2.2",
+            "x": 290,
+            "y": 36
+          },
+          {
+            "id": "pe2",
+            "label": "PE2",
+            "sub": "10.0.3.3",
+            "x": 420,
+            "y": 36
+          },
+          {
+            "id": "ce2",
+            "label": "CE2",
+            "sub": "10.1.5.5",
+            "x": 560,
+            "y": 36
+          }
+        ],
+        "links": [
+          {
+            "a": "ce1",
+            "b": "pe1",
+            "label": "vpna"
+          },
+          {
+            "a": "pe1",
+            "b": "p",
+            "label": "SR-BE"
+          },
+          {
+            "a": "p",
+            "b": "pe2",
+            "label": "SR-BE"
+          },
+          {
+            "a": "pe2",
+            "b": "ce2",
+            "label": "vpna"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "where": "PE1，P 和 PE2 同样做",
+          "text": "先有 LSR ID 和 MPLS，再打开 SR。OSPF 要能发 Opaque LSA。SRGB 三台配成同一段。P 的 index 是 2，PE2 是 3。",
+          "code": "ospf 1\n opaque-capability enable\nmpls lsr-id 10.0.1.1\nmpls\nsegment-routing\nospf 1\n segment-routing mpls\n segment-routing global-block 16000 23999\ninterface LoopBack0\n ospf prefix-sid index 1"
+        },
+        {
+          "where": "PE1 对 PE2",
+          "text": "VPNv4 邻居用环回建。实例 vpna 的 RD 是 100:1，RT 111:1 双向。CE1 在 AS 65000。",
+          "code": "bgp 100\n peer 10.0.3.3 as-number 100\n peer 10.0.3.3 connect-interface LoopBack0\n ipv4-family vpnv4\n  peer 10.0.3.3 enable\nip vpn-instance vpna\n ipv4-family\n  route-distinguisher 100:1\n  vpn-target 111:1 both\nbgp 100\n ipv4-family vpn-instance vpna\n  peer 10.0.14.4 as-number 65000"
+        },
+        {
+          "where": "PE1 和 PE2",
+          "text": "BE 没有隧道口，用隧道策略把 VPN 绑到 SR LSP 上。负载分担条数按课件写成 2。",
+          "code": "tunnel-policy p1\n tunnel select-seq sr-lsp load-balance-number 2\nip vpn-instance vpna\n ipv4-family\n  tnl-policy p1"
+        }
+      ],
+      "verify": [
+        {
+          "title": "到 PE2 的类型是 srbe-lsp",
+          "see": "Destination 10.0.3.3 的 Type 是 srbe-lsp，状态 Up。不要指望看到 Tunnel 接口。",
+          "code": "display tunnel-info all"
+        },
+        {
+          "title": "私网标签和 SR 隧道叠在一起",
+          "see": "10.1.5.5/32 的 Received 标签是 PE2 分的内层 VPN 标签，课件回显是 48122。Relay Tunnel 出接口是去往 P 的物理口，TunnelID 对应上面那条 srbe-lsp。",
+          "code": "display bgp vpnv4 all routing-table 10.1.5.5\ndisplay ip routing-table vpn-instance vpna 10.1.5.5 verbose"
+        }
+      ]
+    }
+  ],
+  "figures": []
+}

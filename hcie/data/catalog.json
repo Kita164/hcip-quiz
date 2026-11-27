@@ -69,11 +69,22 @@
       "id": "wan",
       "title": "广域",
       "source": "Datacom 通用 V1.0 · 广域互联 / 广域承载 / CloudWAN",
-      "blurb": "专线和 VPN 怎么选，GRE 与 L2TP，以及从 MPLS 到 SRv6 的承载网。",
+      "blurb": "专线和 VPN 怎么选，GRE 与 L2TP，从 MPLS 到 SRv6，以及承载网怎么设计。",
       "topics": [
         "wan-overview",
         "gre-l2tp",
-        "wan-bearer"
+        "wan-bearer",
+        "wan-design"
+      ]
+    },
+    {
+      "id": "sr",
+      "title": "段路由",
+      "source": "Datacom 通用 V1.0 · Segment Routing / SRv6",
+      "blurb": "SR-MPLS 的 SRGB、SBFD，以及 SRv6 的 SID 和 BE 配置。",
+      "topics": [
+        "sr-mpls",
+        "srv6"
       ]
     },
     {
@@ -104,11 +115,12 @@
       "id": "ipv6",
       "title": "IPv6",
       "source": "ICMPv6 基础；Datacom 通用 V1.0 · IPv6 路由 / 过渡技术",
-      "blurb": "邻居发现和无状态配置，OSPFv3、IS-IS、BGP4+，以及 6PE、6VPE 和 NAT64。",
+      "blurb": "邻居发现和无状态配置，OSPFv3、IS-IS、BGP4+，6PE、6VPE、NAT64，以及 IPv6+ 怎么演进。",
       "topics": [
         "ipv6-nd",
         "ipv6-routing",
-        "ipv6-transition"
+        "ipv6-transition",
+        "ipv6-plus"
       ]
     },
     {
@@ -125,12 +137,13 @@
       "id": "ops",
       "title": "运维和排障",
       "source": "Datacom 通用 V1.0 · 网络运维 / 故障排除 / 网络割接",
-      "blurb": "日常检查、排障、割接，以及 CampusInsight。",
+      "blurb": "日常检查、排障、割接、CampusInsight，以及控制器怎么开放。",
       "topics": [
         "net-ops",
         "net-troubleshoot",
         "net-cutover",
-        "campus-insight"
+        "campus-insight",
+        "net-program"
       ]
     }
   ]
