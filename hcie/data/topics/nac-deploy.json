@@ -1,0 +1,179 @@
+{
+  "id": "nac-deploy",
+  "title": "准入授权、下线和策略联动",
+  "summary": "认证只回答「你是谁」。授权才决定能进哪个 VLAN、吃哪条 ACL、进哪个 UCL 组。模板要绑到接口才生效。策略联动用 CAPWAP 把控制点和执行点分开。",
+  "source": "Datacom 通用 V1.0 · 网络准入控制",
+  "mindmap": [
+    {
+      "t": "配进去",
+      "c": [
+        {
+          "t": "授权",
+          "d": "VLAN、ACL、UCL。授权 VLAN 盖过接口 VLAN"
+        },
+        {
+          "t": "免认证",
+          "d": "认证前也能访问的地址。ACL 号 6000～6031"
+        },
+        {
+          "t": "模板",
+          "d": "接入模板绑进认证模板，再挂到接口"
+        },
+        {
+          "t": "联动",
+          "d": "控制点认证，执行点实施。中间是 CAPWAP"
+        }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "h",
+      "text": "授权不是认证"
+    },
+    {
+      "type": "p",
+      "text": "RADIUS 把认证和授权放在同一条接受报文里。通过之后常见下发四样：VLAN、IP 地址、ACL、UCL 组。多选题这四项都算。"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "授权 VLAN 不改接口配置，但优先级高于用户自己配的 VLAN。用户下线后，接口上原来的 VLAN 才重新生效。",
+        "静态 ACL：服务器用标准属性 Filter-Id 下发 ACL 号，规则要事先写在设备上。",
+        "动态 ACL：服务器用华为扩展属性 HW-Data-Filter 把 ACL 号和规则一起下发，设备上不用先写规则。",
+        "UCL 组是一群终端。按组下策略，不用给每个人写一条。名称走 Filter-Id，组 ID 走 HW-UCL-Group。组本身和它的访问策略仍要在设备上先建好。",
+        "26 号属性 Vendor-Specific 是厂家扩展。华为的 HW- 属性都从这里来。"
+      ]
+    },
+    {
+      "type": "h",
+      "text": "认证前和认证失败还要留一条路"
+    },
+    {
+      "type": "p",
+      "text": "免认证 free-rule 让用户在认证成功前能下载客户端、访问 DHCP 和 DNS。两种写法：按 IP、MAC、接口、VLAN 直接写；或者关联 ACL，编号 6000～6031。"
+    },
+    {
+      "type": "p",
+      "text": "认证事件授权是「还没成功」时的权限，也叫逃生：认证前、认证失败、服务器失效。例如认证失败后仍允许访问病毒库。业务方案 service-scheme 里可以绑 UCL 组、VLAN、QoS profile。"
+    },
+    {
+      "type": "h",
+      "text": "下线"
+    },
+    {
+      "type": "p",
+      "text": "人走了设备还留着表项，RADIUS 会继续计费，别人还能冒用这个 IP 和 MAC，用户规格也会被占满。所以设备要删表项并通知服务器停计费。"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "三种：客户端主动下线，接入设备踢下线，服务器踢下线。",
+        "MAC 认证只有后两种，没有客户端可点。",
+        "Portal 还可以由 Portal 服务器发起下线。"
+      ]
+    },
+    {
+      "type": "h",
+      "text": "配置顺序"
+    },
+    {
+      "type": "ol",
+      "items": [
+        "做接入模板：dot1x-access-profile、mac-access-profile 或 portal-access-profile。设备自带 dot1x_access_profile、mac_access_profile、portal_access_profile。",
+        "做认证模板 authentication-profile，把要用的接入模板绑进去。三种最多各绑一个。绑了多个就是混合认证，谁的报文先到就先做谁。",
+        "配 access-domain。不带 force 是默认域：用户名里有域名就用那个域，没有才用默认域。带 force 是强制域：不管用户名里写什么域，都进这个域。",
+        "AAA：RADIUS 模板或本地用户，认证、授权、计费方案，挂到域上。",
+        "接口或 VAP 模板下 authentication-profile 引用，这一步才真正打开 NAC。"
+      ]
+    },
+    {
+      "type": "code",
+      "title": "旁路要两种模板都在",
+      "code": "authentication-profile name p1\n dot1x-access-profile dot1x_access_profile\n mac-access-profile mac_access_profile\n authentication dot1x-mac-bypass\n access-domain nac force\ninterface GigabitEthernet0/0/1\n authentication-profile p1"
+    },
+    {
+      "type": "p",
+      "text": "静态用户给已经写死 IP 的打印机。接口上只要开了 802.1X、MAC、Portal 任意一种，设备就会优先拿静态用户的用户名去认证，失败了才落到普通认证。缺省用户名是系统名加 IP，例如 huawei1.1.1.1，而且缺省没有密码。指定用户名为 MAC 的命令，优先级高于「用户名包含 IP」和单独的 password。"
+    },
+    {
+      "type": "h",
+      "text": "策略联动"
+    },
+    {
+      "type": "p",
+      "text": "大园区里，如果每台接入交换机都自己做认证又自己做策略，策略会又重又散。联动把两件事拆开：认证控制设备负责认证和下发「能访问什么」；认证接入设备负责执行 VLAN、ACL、UCL。两边用 CAPWAP 隧道做用户关联、授权下发和用户同步。"
+    },
+    {
+      "type": "p",
+      "text": "开了联动之后，接入设备会自动透传 BPDU，并上报用户下线和接入位置。没有联动时，中间交换机仍要手工做 802.1X 透明传输。"
+    }
+  ],
+  "exam": [
+    "授权四样：VLAN、IP、ACL、UCL。授权 VLAN 高于接口 VLAN，下线后恢复。",
+    "静态 ACL 用 Filter-Id，规则在设备上。动态 ACL 用 HW-Data-Filter，规则在服务器上。",
+    "免认证 ACL 编号 6000～6031。",
+    "强制域忽略用户名里的域名。默认域只在用户名没带域名时使用。",
+    "认证模板最多各绑一个 802.1X、一个 MAC、一个 Portal。挂到接口才生效。",
+    "MAC 旁路的前提是两个接入模板都已经绑上。",
+    "策略联动：控制点认证，执行点实施，通道是 CAPWAP。"
+  ],
+  "mixups": [
+    {
+      "see": "用户认证成功，接口 VLAN 没改，流量却进了另一个 VLAN",
+      "mean": "服务器下了授权 VLAN。它不改接口配置，但压过接口 VLAN。下线后回到接口 VLAN。"
+    },
+    {
+      "see": "Filter-Id",
+      "mean": "可能是静态 ACL 号，也可能是 UCL 组名。动态 ACL 和 UCL 组 ID 走华为扩展属性，不走这条。"
+    },
+    {
+      "see": "access-domain nac 和 access-domain nac force",
+      "mean": "前者是默认域，用户名里带了别的域就去那个域。后者是强制域，名字里写什么都进 nac。"
+    },
+    {
+      "see": "认证模板配完了，接口上用户仍不用认证",
+      "mean": "还没在接口或 VAP 上引用 authentication-profile。"
+    },
+    {
+      "see": "静态用户名 huawei1.1.1.1",
+      "mean": "缺省是系统名加 IP，而且没有缺省密码。要改成 MAC 就用 username macaddress 那条，它优先级更高。"
+    },
+    {
+      "see": "策略联动和普通 802.1X 透传",
+      "mean": "联动后接入设备自动透传 BPDU。没做联动，中间交换机仍要手工 l2protocol-tunnel。"
+    }
+  ],
+  "memory": [
+    "认证认人，授权给权。VLAN、ACL、UCL 是权。",
+    "模板三步：接入模板，认证模板，接口引用。",
+    "force 是不管用户名。不写 force 才看用户名里的域。",
+    "联动口诀：控制点出政策，执行点干活，CAPWAP 传话。"
+  ],
+  "labs": [
+    {
+      "title": "一个口上同时做 802.1X 和 MAC 旁路",
+      "goal": "办公 PC 走 802.1X，同口打印机走 MAC。强制进域 nac。",
+      "steps": [
+        {
+          "where": "认证模板",
+          "text": "缺省接入模板可以直接引用。旁路命令写在两个模板都绑上之后。",
+          "code": "authentication-profile name p1\n dot1x-access-profile dot1x_access_profile\n mac-access-profile mac_access_profile\n authentication dot1x-mac-bypass\n access-domain nac force"
+        },
+        {
+          "where": "接口",
+          "text": "GE0/0/1、GE0/0/2 都挂同一个认证模板。域、RADIUS 和本地用户按现场 AAA 去配，课件把这部分放在域上。",
+          "code": "interface GigabitEthernet0/0/1\n authentication-profile p1"
+        }
+      ],
+      "verify": [
+        {
+          "title": "看谁先认证",
+          "see": "PC 发出 EAPoL 就走 802.1X。打印机没有 EAP 应答，设备改做 MAC 认证。用户上线后的 VLAN 如果和接口 VLAN 不同，就是授权 VLAN，不是接口被改写了。",
+          "code": "display access-user"
+        }
+      ]
+    }
+  ],
+  "figures": []
+}

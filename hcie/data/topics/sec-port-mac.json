@@ -1,0 +1,245 @@
+{
+  "id": "sec-port-mac",
+  "title": "交换安全：隔离、MAC 和风暴",
+  "summary": "同 VLAN 还要隔离，用端口隔离组。接口只许特定 MAC，用端口安全。流量抑制是丢超额，风暴控制是超了就堵住或关掉接口。",
+  "source": "Datacom 通用 V1.0 · 网络安全技术",
+  "mindmap": [
+    {
+      "t": "接入安全",
+      "c": [
+        {
+          "t": "端口隔离",
+          "d": "缺省 L2：二层隔离，三层还能通"
+        },
+        {
+          "t": "MAC 表",
+          "d": "静态、黑洞、动态。学习关闭可丢或转发"
+        },
+        {
+          "t": "端口安全",
+          "d": "缺省动作 restrict，缺省只学 1 个 MAC"
+        },
+        {
+          "t": "漂移",
+          "d": "同一 MAC 换了接口。可 error-down"
+        },
+        {
+          "t": "风暴",
+          "d": "抑制丢超额；风暴控制关闭或阻塞"
+        }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "h",
+      "text": "端口隔离"
+    },
+    {
+      "type": "p",
+      "text": "同一 VLAN 里的端口缺省二层互通。放进同一个隔离组之后，组内端口互相隔离。不同组不隔离。隔离只在本设备上，跨设备无效。"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "模式",
+        "效果",
+        "缺省"
+      ],
+      "rows": [
+        [
+          "l2",
+          "二层隔离，三层仍可通。要三层通，VLANIF 上还要开 VLAN 内 Proxy ARP",
+          "是"
+        ],
+        [
+          "all",
+          "二层和三层都隔离",
+          "否"
+        ]
+      ]
+    },
+    {
+      "type": "p",
+      "text": "不写 group，进组 1。单向隔离 am isolate 配在 A 上指向 B：A 发的到不了 B，B 发的仍能到 A。缺省没有单向隔离。"
+    },
+    {
+      "type": "code",
+      "title": "PC1 和 PC2 互不相通，都还能访问别的口",
+      "code": "port-isolate mode l2\ninterface GigabitEthernet0/0/1\n port-isolate enable group 2\ninterface GigabitEthernet0/0/2\n port-isolate enable group 2"
+    },
+    {
+      "type": "h",
+      "text": "MAC 表"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "静态：mac-address static，手工绑定接口和 VLAN，不老化。",
+        "黑洞：mac-address blackhole，命中这个 MAC 的报文丢掉。",
+        "动态：学习来的，按 aging-time 老化。",
+        "关闭学习：接口或 VLAN 上 mac-address learning disable。动作 discard 是不学习并丢弃未知源 MAC，forward 是不学习但仍转发。",
+        "mac-limit maximum 限制个数。超了按 discard 或 forward。可以开 alarm。"
+      ]
+    },
+    {
+      "type": "h",
+      "text": "端口安全"
+    },
+    {
+      "type": "p",
+      "text": "打开之后，学到的动态 MAC 变成安全 MAC。数量到上限就不再学，只允许这些 MAC。缺省最多 1 个。安全动态 MAC 缺省不老化，要老化得单独配 aging-time，类型是 absolute 或 inactivity。"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "protect-action",
+        "超过个数或静态 MAC 漂移",
+        "告警"
+      ],
+      "rows": [
+        [
+          "protect",
+          "丢弃源 MAC 不在表里的报文；漂移的那个 MAC 也丢",
+          "不告警"
+        ],
+        [
+          "restrict",
+          "同样丢弃",
+          "告警。这是缺省动作"
+        ],
+        [
+          "shutdown",
+          "接口 error-down",
+          "告警"
+        ]
+      ]
+    },
+    {
+      "type": "p",
+      "text": "Sticky MAC 把学到的安全 MAC 固定下来，保存配置后重启还在。手工写一条用 port-security mac-address sticky mac vlan。查看动态安全 MAC 用 display mac-address security，查看 Sticky 用 display mac-address sticky。"
+    },
+    {
+      "type": "p",
+      "text": "接口因为端口安全 error-down 之后，想让它自己起来：系统视图 error-down auto-recovery cause port-security interval。"
+    },
+    {
+      "type": "h",
+      "text": "MAC 漂移"
+    },
+    {
+      "type": "p",
+      "text": "同一个 MAC 从另一个接口又学到了，就是漂移。可以是环路，也可以是攻击者把网关 MAC 学到自己那边。"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "接口优先级 mac-learning priority。高优先级接口学到的 MAC 不允许被低优先级接口抢走。undo mac-learning priority allow-flapping 用来禁止这个优先级发生漂移。",
+        "优先级不够就丢：mac-learning priority flapping-defend action discard。",
+        "检测：VLAN 下 mac-address flapping detection，或全局打开。可以用 exclude 排除某些 VLAN。",
+        "动作：接口上 mac-address flapping action error-down 或 quit-vlan。",
+        "记录看 display mac-address flapping record。自动恢复用 error-down auto-recovery cause mac-address-flapping interval。"
+      ]
+    },
+    {
+      "type": "h",
+      "text": "MACsec"
+    },
+    {
+      "type": "p",
+      "text": "局域网链路默认明文。MACsec 是 802.1AE，在相邻设备之间逐跳加密，不是像 IPSec 那样保护 IP 层端到端。它做完整性、用户数据加密、源真实性、重放保护。典型放在接入交换机和汇聚之间，中间有传输设备时也可以。"
+    },
+    {
+      "type": "p",
+      "text": "两边预配相同的 CAK。MKA 选出 Key Server，Key Server 用 CAK 算出 SAK，发给对端。之后的数据用 SAK 加解密。"
+    },
+    {
+      "type": "h",
+      "text": "流量抑制和风暴控制"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "",
+        "流量抑制",
+        "风暴控制"
+      ],
+      "rows": [
+        [
+          "做什么",
+          "超过阈值就丢掉超额的，阈值内继续过",
+          "超过阈值就阻塞这一类报文，或者把接口关掉"
+        ],
+        [
+          "方向",
+          "入方向可按百分比、pps、bps。出方向可以阻塞广播、未知组播、未知单播。VLAN 里只能按 bps 限广播",
+          "只做入方向"
+        ],
+        [
+          "还能限什么",
+          "接口入方向还能限已知单播、已知组播，以及 ICMP，避免 ICMP 打满 CPU",
+          "针对广播、未知组播、未知单播"
+        ]
+      ]
+    },
+    {
+      "type": "p",
+      "text": "缺省抑制模式是 packets。改成 bits 之后粒度更细。"
+    }
+  ],
+  "exam": [
+    "端口隔离缺省模式 l2：二层隔离、三层互通。all 才是二三层都断。只在本机同一组内生效。",
+    "端口安全缺省最大学习数是 1，缺省动作 restrict：丢弃并告警。shutdown 是 error-down。",
+    "安全动态 MAC 缺省不老化。Sticky 保存后不丢。",
+    "黑洞 MAC 是丢弃这个源。静态 MAC 不老化。",
+    "流量抑制丢超额。风暴控制是阻塞或关口，而且只在入方向。",
+    "MACsec 用 CAK 协商出 SAK。它是二层逐跳，不是 IPSec。"
+  ],
+  "mixups": [
+    {
+      "see": "同 VLAN 的两台 PC ping 不通，但都能访问网关",
+      "mean": "端口隔离模式是缺省的 l2，二层隔离、三层仍通。要连三层也断，改成 port-isolate mode all。"
+    },
+    {
+      "see": "port-security 打开后只允许 1 个 MAC，多出来的包被丢而且有告警",
+      "mean": "缺省 max-mac-num 是 1，缺省动作是 restrict。protect 也丢，但不告警。shutdown 会把接口打 error-down。"
+    },
+    {
+      "see": "display mac-address security 和 display mac-address sticky",
+      "mean": "前者看动态安全 MAC，后者看 Sticky。不要用普通 mac-address 表代替。"
+    },
+    {
+      "see": "同一 MAC 出现在另一个接口",
+      "mean": "漂移。接口动作是 error-down 或 quit-vlan。记录在 display mac-address flapping record。"
+    },
+    {
+      "see": "广播超过阈值后，正常的那部分还在转发",
+      "mean": "这是流量抑制。风暴控制超了会把这一类整个堵住，或者关闭接口。"
+    }
+  ],
+  "memory": [
+    "隔离缺省只断二层。组内隔离，跨组、跨设备都不隔。",
+    "端口安全：缺省 1 个 MAC，缺省 restrict。protect 不响，restrict 会响，shutdown 关口。",
+    "抑制是削峰，风暴控制是封口。"
+  ],
+  "labs": [
+    {
+      "title": "两个接入口互相隔离",
+      "goal": "VLAN 2 里 PC1 和 PC2 二层不通，模式保持缺省的二层隔离、三层互通。",
+      "steps": [
+        {
+          "where": "交换机",
+          "code": "port-isolate mode l2\ninterface GigabitEthernet0/0/1\n port-isolate enable group 2\ninterface GigabitEthernet0/0/2\n port-isolate enable group 2"
+        }
+      ],
+      "verify": [
+        {
+          "title": "看组成员",
+          "see": "GE0/0/1 和 GE0/0/2 都在 group 2。两台 PC 互相二层不通。若 VLANIF 上开了 VLAN 内 Proxy ARP，三层仍可能通，那是 l2 模式的预期，不是隔离失败。",
+          "code": "display port-isolate group 2"
+        }
+      ]
+    }
+  ],
+  "figures": []
+}

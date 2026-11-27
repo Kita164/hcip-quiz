@@ -1,0 +1,128 @@
+{
+  "id": "campus-arch",
+  "title": "园区架构、堆叠和生成树",
+  "summary": "园区是接入、汇聚、核心。可靠性靠 Eth-Trunk、盒式 iStack、框式 CSS，不是靠把 STP 也算进同一道多选。同一 MST 域的 VLAN 到实例映射必须一样。语音走 Voice VLAN。",
+  "source": "Datacom 通用 V1.0 · 企业园区网络综述",
+  "mindmap": [
+    {
+      "t": "园区",
+      "c": [
+        {
+          "t": "架构",
+          "d": "接入、汇聚、核心。CloudCampus 一套控制器管 LAN 和 WAN"
+        },
+        {
+          "t": "可靠",
+          "d": "Eth-Trunk、iStack、CSS。MSTP 按 VLAN 分树"
+        },
+        {
+          "t": "出口 VPN",
+          "d": "专网用 IPSec，远程办公用 L2TP 或 SSL"
+        }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "h",
+      "text": "这篇只补综述里还没写过的"
+    },
+    {
+      "type": "p",
+      "text": "综述把 VLAN、OSPF、准入、DHCP Snooping、IPSG、LLDP、SNMP、NETCONF、IPSec 又点了一遍。那些见对应专题。这里只留架构、可靠性和语音、遥测、远程接入。"
+    },
+    {
+      "type": "p",
+      "text": "CloudCampus 3.0 三句话：单园区到多分支都覆盖；规划、建设、维护、优化都在控制器上；一套控制器同时管 LAN 和 WAN。虚拟化园区用 VXLAN，见后面的专题。云管理园区用 NCE-Campus，经 NETCONF 和 Telemetry 上线、纳管。"
+    },
+    {
+      "type": "h",
+      "text": "可靠性和 MSTP"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "技术",
+        "干什么"
+      ],
+      "rows": [
+        [
+          "Eth-Trunk",
+          "多条链路捆成一条逻辑链路"
+        ],
+        [
+          "iStack",
+          "多台盒式交换机叠成一台逻辑交换机"
+        ],
+        [
+          "CSS",
+          "两台框式交换机组成一台逻辑交换机"
+        ],
+        [
+          "MSTP",
+          "802.1s。兼容 STP/RSTP。一个域里多棵实例树，不同 VLAN 走不同树，做负载分担"
+        ]
+      ]
+    },
+    {
+      "type": "p",
+      "text": "同一 MST 域要同时满足：都开了 MSTP、域名相同、VLAN 到实例的映射相同、修订级别相同。少一条就不是同一个域。判断题「映射必须相同」是对的。"
+    },
+    {
+      "type": "p",
+      "text": "和 VRRP 一起用时，两台核心互换主根和次根：一组 VLAN 的网关和生成树根在左边，另一组在右边。网关冗余、二层无环、上行负载分担一起做。核心做了集群之后，网关可以放在 VLANIF 上，课件案例里就不再另做 VRRP。"
+    },
+    {
+      "type": "callout",
+      "kind": "exam",
+      "title": "提高可靠性这道题不选 STP",
+      "text": "选项是 STP、Eth-Trunk、iStack、CSS。标准答案只有后三个。STP 用来防环，这道题没有把它算成可靠性技术。"
+    },
+    {
+      "type": "h",
+      "text": "Voice VLAN、DAI、Telemetry、远程接入"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "Voice VLAN 专门走语音。识别方式两种：看电话 MAC 的 OUI，或者看报文 VLAN。电话多的时候用 VLAN 方式，前提是电话能从交换机学到 Voice VLAN。",
+        "动态 ARP 检测看的是 DHCP Snooping 绑定表。ARP 的源 IP、源 MAC、VLAN、接口对上才放行。对不上就当攻击丢掉。细节补在 DHCP Snooping 那篇。",
+        "Telemetry 是设备按周期把接口流量、CPU、内存推给采集器。SNMP 是网管来问。推比拉更实时。",
+        "L2TP：远程访问企业内网。LAC 发起隧道，可以是网关或终端；LNS 在总部边界终结。",
+        "SSL VPN：浏览器就能进，不用另装客户端。IPSec 仍是站点之间的加密隧道，见 VPN 那篇。"
+      ]
+    }
+  ],
+  "exam": [
+    "iStack 是盒式堆叠，CSS 是框式集群。",
+    "同一 MST 域：MSTP、域名、VLAN 映射、修订级别，四项都要相同。",
+    "可靠性多选：Eth-Trunk、iStack、CSS。",
+    "Telemetry 是推，SNMP 是拉。",
+    "L2TP 有 LAC 和 LNS。SSL VPN 用浏览器。"
+  ],
+  "mixups": [
+    {
+      "see": "iStack 和 CSS",
+      "mean": "盒式用 iStack，可以多台。框式用 CSS，两台。不要叫反。"
+    },
+    {
+      "see": "两台交换机域名一样，VLAN 映射不一样",
+      "mean": "不是同一个 MST 域，实例树算不到一起。"
+    },
+    {
+      "see": "语音和数据挤在一个 VLAN",
+      "mean": "把语音放进 Voice VLAN，再按这个 VLAN 做 QoS。电话多就按 VLAN 识别，不必逐个写 OUI。"
+    },
+    {
+      "see": "SNMP 轮询太慢",
+      "mean": "改 Telemetry，设备自己周期上送。"
+    }
+  ],
+  "memory": [
+    "盒式 iStack，框式 CSS，链路 Eth-Trunk。",
+    "MST 域四同：协议、域名、映射、修订级别。",
+    "LAC 在外，LNS 在总部。SSL 用浏览器。"
+  ],
+  "labs": [],
+  "figures": []
+}

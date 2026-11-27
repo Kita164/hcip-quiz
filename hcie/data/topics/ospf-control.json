@@ -1,0 +1,448 @@
+{
+  "id": "ospf-control",
+  "title": "OSPF 路由控制",
+  "summary": "等价看开销是否真的相同；缺省路由谁产生、用几类 LSA，由区域类型决定；过滤分接口出方向和 ABR 的 Type3；外部路由太多就进 Overflow。",
+  "source": "Datacom 通用 V1.0 · IGP高级特性",
+  "mindmap": [
+    {
+      "t": "OSPF 路由控制",
+      "c": [
+        {
+          "t": "等价路由",
+          "d": "同协议、同目的、同开销。maximum load-balancing 限制条数"
+        },
+        {
+          "t": "缺省路由",
+          "d": "Type3 比 Type5/Type7 优先。import-route 带不进缺省"
+        },
+        {
+          "t": "过滤",
+          "d": "接口 filter-lsa-out；区域 filter import/export 只管 Type3"
+        },
+        {
+          "t": "Overflow",
+          "d": "非缺省外部路由到上限就停发、不收，5 秒看一次"
+        },
+        {
+          "t": "选路案例",
+          "d": "出口用 Type2 比 cost；内部路径改接口 cost"
+        }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "h",
+      "text": "这篇讲什么、不讲什么"
+    },
+    {
+      "type": "p",
+      "text": "课件把 OSPF 路由控制列了一长串：接口开销、等价、引入、聚合、缺省、Filter-Policy、过滤发出的 LSA、过滤 ABR 的 Type3、External LSA 上限。这一课只展开等价、缺省、LSA 过滤和 Database Overflow。开销、引入、聚合、Filter-Policy 在 HCIP 核心课里。"
+    },
+    {
+      "type": "h",
+      "text": "等价路由"
+    },
+    {
+      "type": "p",
+      "text": "同一目的、同一个路由协议、开销也相同，才是等价路由，才会负载分担。开销差 1 都不是等价。条数上限："
+    },
+    {
+      "type": "code",
+      "title": "进程下限制条数",
+      "code": "ospf 1\n maximum load-balancing 2"
+    },
+    {
+      "type": "callout",
+      "kind": "warn",
+      "title": "条数上限跟产品走",
+      "text": "number 的取值范围随设备型号变，课件不给死数字。配之前看产品文档或命令行 ?, 不要把某台设备的缺省条数背到另一台上去。"
+    },
+    {
+      "type": "h",
+      "text": "缺省路由：先看区域类型，再看谁发布"
+    },
+    {
+      "type": "p",
+      "text": "缺省路由是 0.0.0.0/0。OSPF 按区域类型决定用 Type3、Type5 还是 Type7。Type3（区域间）优先于 Type5 和 Type7（外部）。两份缺省同时在，设备用 Type3。"
+    },
+    {
+      "type": "table",
+      "caption": "NSSA 的细节在下一张调用框里。这张表是课件正文那张。",
+      "headers": [
+        "区域",
+        "什么时候产生",
+        "谁发布",
+        "LSA",
+        "泛洪到哪"
+      ],
+      "rows": [
+        [
+          "普通区域",
+          "手工 default-route-advertise",
+          "ASBR",
+          "Type5",
+          "普通区域"
+        ],
+        [
+          "Stub / Totally Stub",
+          "自动",
+          "ABR",
+          "Type3",
+          "本 Stub"
+        ],
+        [
+          "NSSA",
+          "ABR 上 nssa default-route-advertise，或按场景由 ABR 自动产生 Type7 缺省",
+          "ABR 或本区域 ASBR",
+          "Type7",
+          "本 NSSA"
+        ],
+        [
+          "Totally NSSA",
+          "自动",
+          "ABR",
+          "Type3",
+          "本 NSSA"
+        ]
+      ]
+    },
+    {
+      "type": "ul",
+      "items": [
+        "普通区域：路由表里就算有缺省，OSPF 也不会自动发布。必须 default-route-advertise。不带 always 时，路由表里要有一条激活的、不是本 OSPF 进程产生的缺省。",
+        "Stub / Totally Stub：ABR 自动发 Type3 缺省。Stub 挡 Type5；Totally Stub 连 Type3 明细也挡，只留这条缺省。",
+        "Totally NSSA：ABR 自动发 Type3 缺省。本区域 ASBR 不会自动发缺省。区域内路由器用 ASBR 引入的外部明细去外部网段，用 ABR 的 Type3 缺省去别的网段。",
+        "想让 Totally NSSA 里的路由器改选 ASBR 当默认出口，就要在 ASBR 上再手工发一条缺省。"
+      ]
+    },
+    {
+      "type": "callout",
+      "kind": "fix",
+      "title": "不带 always 时，BGP 缺省算不算",
+      "text": "课件有两句。一句说「激活的非本 OSPF 缺省」，另一句说「激活的非 OSPF（BGP 除外）缺省」。按后一句记：路由表里只有 BGP 来的 0.0.0.0/0 时，不带 always 不会生成 Type5 缺省。要发布就加 always，或者先写一条静态/IGP 缺省。"
+    },
+    {
+      "type": "code",
+      "title": "普通区域发布缺省",
+      "code": "ospf 1\n default-route-advertise always cost 1 type 2\n# 不带 always：路由表里必须已经有激活的非本 OSPF 缺省（BGP 缺省不算）\n# always：不管有没有都发，并且本机不再计算别人发来的缺省\n# permit-calculate-other：自己有缺省才发，同时仍然计算别人的缺省"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "type 1 是第一类外部路由，type 2 是第二类。缺省 type 2。",
+        "import-route 引不进别人的缺省路由。缺省只能走 default-route-advertise。",
+        "default-route-advertise summary cost 发布的是 Type3 缺省，而且必须先有 VPN，否则发不出去。cost 范围 0～16777214，缺省 1。普通缺省场景用不到 summary。",
+        "route-policy 不带 match-any：路由表里要有匹配上的非 OSPF 缺省，才按策略里的参数发布。加 match-any：只要有匹配的路由表项就发。多条都匹配时，优先已经设置 type 的，type 越小越优；其次 cost 越小越优；再次 tag 越小越优。"
+      ]
+    },
+    {
+      "type": "h",
+      "text": "NSSA 的两条缺省，不要和 Type5 搞混"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "希望「少量外部走本区域 ASBR，其余外部走别的区域」：ABR 产生 Type7 缺省，在整个 NSSA 泛洪。这种情况下 ABR 路由表里有没有 0.0.0.0 都会产生。",
+        "希望「所有外部只走本区域 ASBR」：在 ASBR 上手工 nssa default-route-advertise。这时 ASBR 路由表里必须已经有 0.0.0.0 才会产生 Type7 缺省。",
+        "Type7 缺省只在本 NSSA 泛洪，ABR 不会把它转成 Type5 再发到整个 OSPF 域。其他区域不能借这个出口出去。"
+      ]
+    },
+    {
+      "type": "h",
+      "text": "过滤发出的 LSA，和过滤 ABR 的 Type3，不是一条命令"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "要挡什么",
+        "命令配在哪",
+        "挡住之后"
+      ],
+      "rows": [
+        [
+          "某条链路上不要再把 LSA 发给这个邻居",
+          "接口：ospf filter-lsa-out",
+          "可以挡 all（Grace LSA 除外）、summary(Type3)、ase(Type5)、nssa(Type7)。可再挂 ACL"
+        ],
+        [
+          "ABR 不要把某些区域间路由送进/送出这个区域",
+          "区域视图：filter … import 或 export",
+          "只处理 Type3。import 是送进本区域，export 是从本区域送出"
+        ]
+      ]
+    },
+    {
+      "type": "code",
+      "title": "接口出方向，和区域 Type3",
+      "code": "interface GigabitEthernet0/0/1\n ospf filter-lsa-out all\n ospf filter-lsa-out summary acl 2000\n#\nospf 1\n area 0.0.0.1\n  filter 2000 import\n  filter ip-prefix P1 export"
+    },
+    {
+      "type": "callout",
+      "kind": "warn",
+      "title": "已经发出去的 LSA 不会马上消失",
+      "text": "filter-lsa-out 只影响之后的发送。邻居 LSDB 里已经有的 LSA 要老化，MaxAge 是 3600 秒。all 也不过滤 Grace LSA。接口过滤会让同一区域两台路由器的 LSDB 不再相同，只在「两条链路、想少传一份」这种场景用。"
+    },
+    {
+      "type": "p",
+      "text": "区域 filter 的方向按这个区域自己看：import = 别的区域的路由要不要进本区域；export = 本区域的路由要不要变成 Type3 送出去。ACL 2000～2999，也可以用 ip-prefix 或 route-policy。"
+    },
+    {
+      "type": "h",
+      "text": "Database Overflow：外部路由条数到顶"
+    },
+    {
+      "type": "p",
+      "text": "同一个区域要求 LSDB 相同。外部路由（Type5 和 Type7）多到设备扛不住，就叫数据库超限。Stub/NSSA 能挡住外部路由泛洪，但挡不住「动态增长的外部路由把数据库撑爆」。上限命令："
+    },
+    {
+      "type": "code",
+      "title": "全网配同一个数",
+      "code": "ospf 1\n lsdb-overflow-limit 10000"
+    },
+    {
+      "type": "p",
+      "text": "number 范围 1～1000000。限制的是非缺省外部路由。全网每台都配同一个上限。一到上限就进入 Overflow，并启动定时器，缺省 5 秒后再检查。"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "阶段",
+        "设备做什么"
+      ],
+      "rows": [
+        [
+          "刚进入",
+          "删掉自己产生的全部非缺省外部路由，启动 Overflow 定时器"
+        ],
+        [
+          "待在里面",
+          "不再产生非缺省外部路由；新收到的非缺省外部路由直接丢，也不回确认。定时器到了再数一次：还超限就重新计时，不超了就退出"
+        ],
+        [
+          "退出",
+          "拆掉定时器，重新产生自己的非缺省外部路由，也开始接收并确认别人的"
+        ]
+      ]
+    },
+    {
+      "type": "h",
+      "text": "选路案例：出口用 Type2，路径用接口 cost"
+    },
+    {
+      "type": "p",
+      "text": "财务部服务器走边界-1（R1），市场部走边界-2（R2）。内部还要指定经过哪台核心。两件事分开做。"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "出口：两边都把静态路由以 Type2 引进 OSPF。Type2 的开销只算 ASBR 到外部目的的 cost，不算到达 ASBR 的内部开销。R1 的 cost 100，R2 的 cost 200，全网都选 R1。R1 挂了，才落到 200。",
+        "内部路径：接口 cost 拉开。要求「核心-1 正常就走它」。比较的是整段内部 cost，不是外部 cost。",
+        "汇聚到核心：Cost(S3–S1)+Cost(S1–S2)+Cost(S2–R1) < Cost(S3–S2)+Cost(S2–R1)。课件用 10 和 50 把主路径压到备用下面。",
+        "核心到边界：Cost(S3–S2)+Cost(S2–S1)+Cost(S1–R1) < Cost(S3–S2)+Cost(S2–R1)。同样靠接口 cost，保证绕一下核心-1 仍然比直接去边界-2 便宜。"
+      ]
+    },
+    {
+      "type": "callout",
+      "kind": "tip",
+      "title": "Type2 为什么能固定出口",
+      "text": "Type1 外部开销 = 内部到 ASBR 的开销 + 外部开销，内部拓扑一变，出口就可能换。Type2 认为外部开销远大于内部，选路只比外部 cost。100 和 200 一旦写死，内部怎么变都不影响「选哪台 ASBR」。"
+    }
+  ],
+  "exam": [
+    "等价的三个相同：目的、协议、开销。然后才受 maximum load-balancing 限制。",
+    "Type3 缺省优先于 Type5/Type7。",
+    "import-route 不能引入缺省。普通区域缺省靠 default-route-advertise。",
+    "always 会发布，并且本机不再计算别人的缺省。permit-calculate-other 仍然计算别人的。",
+    "不带 always 时，只有 BGP 缺省不算数。",
+    "Type7 缺省不转成 Type5，不出本 NSSA。",
+    "filter-lsa-out 在接口，能挡 Type3/5/7 或除 Grace 以外的全部。区域 filter 只动 Type3，import 进、export 出。",
+    "Overflow 只限制非缺省外部路由。进入就删掉自己产生的，定时器缺省 5 秒。",
+    "固定 ASBR 用 Type2 比外部 cost；固定内部路径改接口 ospf cost。"
+  ],
+  "mixups": [
+    {
+      "see": "Type5 缺省和 Type3 缺省同时在路由表",
+      "mean": "用 Type3。区域间优先于外部。"
+    },
+    {
+      "see": "default-route-advertise 没有 always，路由表里有一条 BGP 的 0.0.0.0/0",
+      "mean": "不会生成 OSPF 缺省。BGP 除外。加 always，或另写一条静态缺省。"
+    },
+    {
+      "see": "default-route-advertise always",
+      "mean": "一定发。同时本机不再安装别人算出来的 OSPF 缺省。"
+    },
+    {
+      "see": "配了 import-route static，静态缺省却没进 OSPF",
+      "mean": "正常。缺省被 import-route 排除，要另配 default-route-advertise。"
+    },
+    {
+      "see": "NSSA 的 ABR 发出的 Type7 缺省",
+      "mean": "P-bit 不置位，不会在 ABR 上转成 Type5。其他区域看不到这条缺省。"
+    },
+    {
+      "see": "area 1 下面 filter 2000 import，ACL 只有 rule deny",
+      "mean": "Type3 一条都不进 Area 1。Router LSA / Network LSA 不受这条影响。缺省若要保留，得另发 Type5（default-route-advertise）。"
+    },
+    {
+      "see": "filter export 和 filter import",
+      "mean": "export 是本区域路由出去，import 是外面的路由进来。都只处理 Type3。"
+    },
+    {
+      "see": "filter-lsa-out all 之后邻居马上没有旧 LSA",
+      "mean": "不会。旧的要等 3600 秒老化。Grace LSA 本来就不会被 all 滤掉。"
+    },
+    {
+      "see": "Overflow 定时器超时",
+      "mean": "先数外部路由还超不超。超了再开一轮，不是超时就强制退出。"
+    }
+  ],
+  "memory": [
+    "缺省口诀：普通手工 Type5，Stub 自动 Type3，NSSA 用 Type7 且不出区，Totally 两个都是 ABR 自动 Type3。",
+    "always = 必发 + 不再算别人。不写 always = 自己得先有缺省，BGP 的不算。",
+    "过滤口诀：接口管发送，区域管 Type3；import 进来，export 出去。",
+    "Overflow：到顶就删自己的、拒收新的，5 秒复查。",
+    "选出口比外部 cost（Type2），选内部路比接口 cost。"
+  ],
+  "labs": [
+    {
+      "title": "两条等价到 R3 的环回口",
+      "goal": "R1–R3 开销 10。R1–R2–R3 两段都是 5，加起来也是 10。R1 允许两条等价。",
+      "topo": {
+        "caption": "R3 Loopback0 = 10.1.3.3/32。",
+        "nodes": [
+          {
+            "id": "R1",
+            "x": 20,
+            "y": 70,
+            "label": "R1"
+          },
+          {
+            "id": "R2",
+            "x": 200,
+            "y": 10,
+            "label": "R2"
+          },
+          {
+            "id": "R3",
+            "x": 200,
+            "y": 140,
+            "label": "R3"
+          }
+        ],
+        "links": [
+          {
+            "a": "R1",
+            "b": "R3",
+            "label": "cost 10"
+          },
+          {
+            "a": "R1",
+            "b": "R2",
+            "label": "cost 5"
+          },
+          {
+            "a": "R2",
+            "b": "R3",
+            "label": "cost 5"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "where": "R1",
+          "text": "接口和 OSPF 邻居先通。然后只放两条负载分担。",
+          "code": "ospf 1\n maximum load-balancing 2"
+        }
+      ],
+      "verify": [
+        {
+          "title": "路由表里同一目的出现两次",
+          "see": "10.1.3.3/32 两条都是 OSPF、开销 10。下一跳分别是 10.1.13.3（GE0/0/0）和 10.1.12.2（GE0/0/1）。开销不同就不会出现第二行。",
+          "code": "[R1] display ip routing-table\nDestination/Mask  Proto  Pre  Cost  Flags  NextHop    Interface\n10.1.3.3/32       OSPF   10   10    D      10.1.13.3  GE0/0/0\n                  OSPF   10   10    D      10.1.12.2  GE0/0/1"
+        }
+      ]
+    },
+    {
+      "title": "Area 1 不要 Type3，只留一条 Type5 缺省",
+      "goal": "R2 是 ABR。Area 1 里的 R3 不收 Type3 明细，但要能靠缺省去其他区域。",
+      "topo": {
+        "caption": "R1 在 Area 0，R2 跨 Area 0 和 Area 1，R3 在 Area 1。",
+        "nodes": [
+          {
+            "id": "R1",
+            "x": 20,
+            "y": 60,
+            "label": "R1",
+            "sub": "Area 0"
+          },
+          {
+            "id": "R2",
+            "x": 180,
+            "y": 60,
+            "label": "R2",
+            "sub": "ABR"
+          },
+          {
+            "id": "R3",
+            "x": 340,
+            "y": 60,
+            "label": "R3",
+            "sub": "Area 1"
+          }
+        ],
+        "links": [
+          {
+            "a": "R1",
+            "b": "R2",
+            "label": "Area 0"
+          },
+          {
+            "a": "R2",
+            "b": "R3",
+            "label": "Area 1"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "where": "R2",
+          "text": "ACL 只有一条 deny，没有任何 permit，所以 Type3 全部不能 import 进 Area 1。缺省用 Type5，不走 Type3。",
+          "code": "acl number 2000\n rule deny\nospf 1\n area 0.0.0.1\n  filter 2000 import\n default-route-advertise always"
+        }
+      ],
+      "verify": [
+        {
+          "title": "R3 的 LSDB 和路由表",
+          "see": "Area 1 的 LSDB 里没有 Type3。AS External 里有一条 0.0.0.0，AdvRouter 是 R2。路由表是 O_ASE 0.0.0.0/0，优先级 150，下一跳指向 R2。",
+          "code": "[R3] display ospf lsdb\nArea: 0.0.0.1\n  Router / Network    （没有 Summary Type3）\nAS External Database\n  External  0.0.0.0   AdvRouter 10.1.12.2\n\n[R3] display ip routing-table\n0.0.0.0/0   O_ASE  150  1  D  10.1.23.2  GE0/0/1"
+        }
+      ]
+    },
+    {
+      "title": "Type2 把财务部流量固定到边界-1",
+      "goal": "192.168.10.0/24 是财务部服务器。R1（边界-1）外部 cost 100，R2（边界-2）外部 cost 200，类型都是 Type2。内部路径再用接口 cost 拉开，主路径用 10，绕行和备用用 50。",
+      "steps": [
+        {
+          "where": "R1",
+          "text": "node 20 是空 permit，用来放行没被 node 10 匹配到的其他静态路由。漏了这条，其他静态会被路由策略默认拒绝。",
+          "code": "acl number 2000\n rule permit source 192.168.10.0 0.0.0.255\nroute-policy static2ospf permit node 10\n if-match acl 2000\n apply cost 100\nroute-policy static2ospf permit node 20\nospf 1\n import-route static route-policy static2ospf type 2\ninterface GigabitEthernet0/0/1\n ospf cost 50"
+        },
+        {
+          "where": "R2",
+          "text": "同样的策略，cost 改成 200。市场部 192.168.20.0/24 换一台主出口，做法对称，课件不重复配。",
+          "code": "acl number 2000\n rule permit source 192.168.10.0 0.0.0.255\nroute-policy static2ospf permit node 10\n if-match acl 2000\n apply cost 200\nroute-policy static2ospf permit node 20\nospf 1\n import-route static route-policy static2ospf type 2"
+        }
+      ],
+      "verify": [
+        {
+          "title": "看外部类型和 cost，不要看内部跳数",
+          "see": "财务网段是 O_ASE，类型 Type2，cost 100 的下一跳指向 R1。只有 R1 不可达时才出现 cost 200。内部接口 cost 影响的是「到达这台 ASBR 走哪条路」，不改变 100 和 200 的比较。",
+          "code": "display ip routing-table 192.168.10.0\ndisplay ospf lsdb ase 192.168.10.0"
+        }
+      ]
+    }
+  ],
+  "figures": []
+}

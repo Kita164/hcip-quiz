@@ -1,0 +1,137 @@
+{
+  "title": "HCIE-Datacom 学习笔记",
+  "decks": [
+    {
+      "id": "igp",
+      "title": "IGP 高级特性",
+      "source": "Datacom 通用 V1.0 · 2020.05 / 2021.07",
+      "blurb": "OSPF 和 IS-IS 的快速收敛、路由控制，以及 FA、GR、NSR、LSP 分片。",
+      "topics": [
+        "ospf-fast",
+        "ospf-control",
+        "ospf-others",
+        "isis-fast-control",
+        "isis-fragment-gr"
+      ]
+    },
+    {
+      "id": "bgp",
+      "title": "BGP 高级特性",
+      "source": "Datacom 通用 V1.0 · 2020.06 / 2021.07",
+      "blurb": "AS_Path 与 Community、ORF、对等体组、安全、4 字节 AS，以及路由反射器怎么组。",
+      "topics": [
+        "bgp-aspath",
+        "bgp-community",
+        "bgp-features",
+        "bgp-rr"
+      ]
+    },
+    {
+      "id": "mpls",
+      "title": "MPLS",
+      "source": "Datacom 通用 V1.0 · 2020.03 / 2021.07",
+      "blurb": "标签转发、静态 LSP，以及 LDP 的会话和三种缺省模式。",
+      "topics": [
+        "mpls-basics",
+        "mpls-ldp"
+      ]
+    },
+    {
+      "id": "campus",
+      "title": "园区",
+      "source": "Datacom 通用 V1.0 · 企业网络 / 园区 / VXLAN；ThinkMo · 南向",
+      "blurb": "企业网和园区架构、南向与准入、VXLAN，以及业务随行、大中型和中小型云管理园区。",
+      "topics": [
+        "enterprise-panorama",
+        "campus-arch",
+        "campus-south",
+        "nac-auth",
+        "nac-deploy",
+        "vxlan-campus",
+        "free-mobility",
+        "campus-fabric",
+        "campus-smb"
+      ]
+    },
+    {
+      "id": "sdwan",
+      "title": "SD-WAN",
+      "source": "SD-WAN 概述与设备开局",
+      "blurb": "架构和三种通道、应用与安全、邮件和 DHCP 开局，以及组网和可靠性怎么设计。",
+      "topics": [
+        "sdwan-arch",
+        "sdwan-functions",
+        "sdwan-onboard",
+        "sdwan-design"
+      ]
+    },
+    {
+      "id": "wan",
+      "title": "广域",
+      "source": "Datacom 通用 V1.0 · 广域互联 / 广域承载 / CloudWAN",
+      "blurb": "专线和 VPN 怎么选，GRE 与 L2TP，以及从 MPLS 到 SRv6 的承载网。",
+      "topics": [
+        "wan-overview",
+        "gre-l2tp",
+        "wan-bearer"
+      ]
+    },
+    {
+      "id": "security",
+      "title": "安全",
+      "source": "Datacom 通用 V1.0 · 网络安全技术",
+      "blurb": "端口隔离、MAC 和风暴，DHCP Snooping、IPSG，防火墙双机和虚拟系统。",
+      "topics": [
+        "sec-port-mac",
+        "sec-dhcp-ipsg",
+        "fw-ha-vsys"
+      ]
+    },
+    {
+      "id": "vpn",
+      "title": "VPN",
+      "source": "ThinkMo · IPSec VPN；Datacom 通用 V1.0 · MPLS VPN / EVPN",
+      "blurb": "IPSec，BGP/MPLS IP VPN 的实例、组网和跨域，以及 EVPN。",
+      "topics": [
+        "ipsec-vpn",
+        "mpls-l3vpn",
+        "mpls-vpn-deploy",
+        "mpls-vpn-interas",
+        "evpn"
+      ]
+    },
+    {
+      "id": "ipv6",
+      "title": "IPv6",
+      "source": "ICMPv6 基础；Datacom 通用 V1.0 · IPv6 路由 / 过渡技术",
+      "blurb": "邻居发现和无状态配置，OSPFv3、IS-IS、BGP4+，以及 6PE、6VPE 和 NAT64。",
+      "topics": [
+        "ipv6-nd",
+        "ipv6-routing",
+        "ipv6-transition"
+      ]
+    },
+    {
+      "id": "qos",
+      "title": "QoS",
+      "source": "Datacom 通用 V1.0 · QoS 基本原理",
+      "blurb": "DiffServ 的分类、监管和整形、WRED，以及队列调度和 HQoS。",
+      "topics": [
+        "qos-traffic",
+        "qos-queue"
+      ]
+    },
+    {
+      "id": "ops",
+      "title": "运维和排障",
+      "source": "Datacom 通用 V1.0 · 网络运维 / 故障排除 / 网络割接",
+      "blurb": "日常检查、排障、割接，以及 CampusInsight。",
+      "topics": [
+        "net-ops",
+        "net-troubleshoot",
+        "net-cutover",
+        "campus-insight"
+      ]
+    }
+  ]
+}

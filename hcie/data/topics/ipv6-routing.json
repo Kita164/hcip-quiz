@@ -1,0 +1,140 @@
+{
+  "id": "ipv6-routing",
+  "title": "IPv6 路由：OSPFv3、IS-IS、BGP4+",
+  "summary": "OSPFv3 按链路跑，邻居只认 Router ID，新的是 Link-LSA 和 Intra-Area-Prefix-LSA。IS-IS 靠新 TLV 和多拓扑，IPv4 与 IPv6 可以各算一棵树。BGP4+ 在 IPv6 单播地址族里激活邻居。",
+  "source": "Datacom 通用 V1.0 · IPv6 路由",
+  "mindmap": [
+    {
+      "t": "IPv6 路由",
+      "c": [
+        {
+          "t": "静态",
+          "d": "和 IPv4 一样，下一跳写成 IPv6"
+        },
+        {
+          "t": "OSPFv3",
+          "d": "链路本地建邻。Type8、Type9 是新的"
+        },
+        {
+          "t": "IS-IS",
+          "d": "TLV 129 里的 NLPID。多拓扑分开算 SPF"
+        },
+        {
+          "t": "BGP4+",
+          "d": "MP_REACH_NLRI。ipv6-family unicast"
+        }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "h",
+      "text": "OSPFv3 和 OSPFv2"
+    },
+    {
+      "type": "p",
+      "text": "区域、DR/BDR、SPF 这些骨架还在。变的是：邻居只用 Router ID 标识；协议按链路跑，不按子网；一条链路可以跑多个实例；邻居报文用链路本地地址；认证不再做在 OSPF 里。"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "LSA",
+        "OSPFv3 里叫什么"
+      ],
+      "rows": [
+        [
+          "Type1 / Type2",
+          "仍是 Router-LSA、Network-LSA"
+        ],
+        [
+          "Type3",
+          "Inter-Area-Prefix-LSA。不再叫 Network-Summary"
+        ],
+        [
+          "Type4",
+          "Inter-Area-Router-LSA"
+        ],
+        [
+          "Type5",
+          "AS-External-LSA"
+        ],
+        [
+          "Type8",
+          "Link-LSA。只在这条链路上泛洪，通告链路本地和前缀"
+        ],
+        [
+          "Type9",
+          "Intra-Area-Prefix-LSA。把本区域前缀从 Router-LSA 里拆出来"
+        ]
+      ]
+    },
+    {
+      "type": "callout",
+      "kind": "exam",
+      "title": "多选题没有 Network-Summary",
+      "text": "属于 OSPFv3 的是 Router-LSA、Network-LSA、Link-LSA。Network-Summary-LSA 是 OSPFv2 的名字，划掉。"
+    },
+    {
+      "type": "code",
+      "title": "OSPFv3 做在接口上",
+      "code": "ospfv3 1\n router-id 1.1.1.1\ninterface GigabitEthernet0/0/0\n ipv6 enable\n ospfv3 1 area 0"
+    },
+    {
+      "type": "h",
+      "text": "IS-IS for IPv6"
+    },
+    {
+      "type": "p",
+      "text": "IS-IS 不新开一个协议，靠新增 TLV。TLV 129 里增加 IPv6 的 NLPID。多拓扑让 IPv4 和 IPv6 各算一棵最短路径树，所以一边拓扑变了不必带动另一边。判断题「可以分别计算」是对的。"
+    },
+    {
+      "type": "code",
+      "title": "同一进程里打开 IPv6",
+      "code": "isis 1\n ipv6 enable topology standard\ninterface GigabitEthernet0/0/0\n ipv6 enable\n isis ipv6 enable 1"
+    },
+    {
+      "type": "h",
+      "text": "BGP4+"
+    },
+    {
+      "type": "p",
+      "text": "MP-BGP 用地址族区分协议。IPv6 单播要进 ipv6-family unicast，再 peer enable，再 network。Update 里用 MP_REACH_NLRI 发布可达路由和下一跳，用 MP_UNREACH_NLRI 撤销。抓包时下一跳和前缀都在这个属性里，不在原来的 IPv4 NLRI 里。"
+    },
+    {
+      "type": "code",
+      "title": "IPv6 单播邻居",
+      "code": "bgp 65001\n router-id 1.1.1.1\n peer 2001:DB8:2345:12::2 as-number 65002\n ipv6-family unicast\n  peer 2001:DB8:2345:12::2 enable\n  network 2001:DB8:2345:1::1 128"
+    }
+  ],
+  "exam": [
+    "OSPFv3 按链路跑，邻居标识只有 Router ID，报文用链路本地。",
+    "新增 Type8 Link-LSA、Type9 Intra-Area-Prefix-LSA。没有 Network-Summary 这个名字。",
+    "IS-IS 多拓扑时 IPv4 和 IPv6 各算一棵树。",
+    "BGP4+ 的路由在 MP_REACH_NLRI 里，要在 ipv6-family 里 enable。"
+  ],
+  "mixups": [
+    {
+      "see": "Network-Summary-LSA",
+      "mean": "这是 OSPFv2。OSPFv3 的区域间前缀叫 Inter-Area-Prefix-LSA，另外多了 Link-LSA。"
+    },
+    {
+      "see": "OSPFv3 邻居地址是全球单播",
+      "mean": "建邻用的是链路本地。Router ID 仍是 32 位，用来标识邻居。"
+    },
+    {
+      "see": "IPv6 BGP 邻居配在 ipv4-family 里",
+      "mean": "不会交换 IPv6 路由。要进 ipv6-family unicast 再 peer enable。"
+    },
+    {
+      "see": "IS-IS 只开了 ipv6 enable，没开多拓扑",
+      "mean": "标准拓扑下 IPv4 和 IPv6 共用一棵树。要分开算就用多拓扑。"
+    }
+  ],
+  "memory": [
+    "v3：链路、Router ID、链路本地。8 是链路 LSA，9 是区域内前缀。",
+    "IS-IS 靠 TLV，不靠新协议。多拓扑才分开算树。",
+    "BGP4+ 看地址族，路由在 MP_REACH_NLRI。"
+  ],
+  "labs": [],
+  "figures": []
+}

@@ -1,0 +1,125 @@
+{
+  "id": "ipv6-transition",
+  "title": "IPv6 过渡：隧道、6PE、NAT64",
+  "summary": "IPv4 广域网上承载 IPv6，用 GRE、6PE 或 6VPE。NAT64 和 IVI 是翻译，不是隧道。6PE 让 P 不用跑 IPv6。",
+  "source": "Datacom 通用 V1.0 · IPv6 过渡技术",
+  "mindmap": [
+    {
+      "t": "过渡",
+      "c": [
+        {
+          "t": "隧道",
+          "d": "手动、自动、GRE。IPv6 孤岛穿过 IPv4"
+        },
+        {
+          "t": "6PE / 6VPE",
+          "d": "BGP 标签把 IPv6 送过 MPLS。6VPE 再加 VPN"
+        },
+        {
+          "t": "翻译",
+          "d": "NAT64 有状态。IVI 把 IPv4 嵌进 IPv6，无状态"
+        }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "h",
+      "text": "先分隧道和翻译"
+    },
+    {
+      "type": "p",
+      "text": "IPv6 孤岛要穿过现成的 IPv4 广域网，用隧道或 MPLS。IPv6 主机要访问 IPv4 服务器，用翻译。多选题「在 IPv4 广域网承载 IPv6」选 GRE、6PE、6VPE，不选 NAT64。"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "技术",
+        "看到什么"
+      ],
+      "rows": [
+        [
+          "手动隧道",
+          "两端手工指定对端 IPv4。适合少量孤岛"
+        ],
+        [
+          "自动隧道",
+          "IPv4 地址嵌在 IPv6 里，用来找隧道终点"
+        ],
+        [
+          "GRE",
+          "可以带 IPv6，也能带其他协议"
+        ],
+        [
+          "6PE",
+          "PE 之间用 MP-BGP 交换带标签的 IPv6。P 只跑 IPv4 和 MPLS，不用配 IPv6"
+        ],
+        [
+          "6VPE",
+          "6PE 加 VPN。每个客户一个 VRF，传 VPNv6"
+        ],
+        [
+          "IPv4 over IPv6",
+          "反过来，IPv4 孤岛穿过 IPv6"
+        ],
+        [
+          "NAT64",
+          "IPv6 侧访问 IPv4。有状态，要地址池和 NAT 策略"
+        ],
+        [
+          "IVI",
+          "无状态。一段保留的 IPv4 嵌进特殊 IPv6"
+        ]
+      ]
+    },
+    {
+      "type": "p",
+      "text": "6PE 上，去往 IPv6 的 BGP 路由经常共用显式空标签，倒数第二跳不把 QoS 信息弹掉。P 设备只根据外层标签转发。"
+    },
+    {
+      "type": "h",
+      "text": "NAT64 和 IVI"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "NAT64 前缀用来把 IPv4 地址合成一个 IPv6 目的地址，主机把报文发给这个地址，网关再翻译。",
+        "动态 NAT64：地址池 mode pat，section 写出 IPv4 范围。NAT 策略 nat-type nat64，action source-nat address-group。",
+        "静态 NAT64 是一对一，适合要被 IPv4 侧主动访问的服务器。",
+        "IVI6 的前 32 位是 IVI 前缀，接着 8 位固定 FF，第 41 到 72 位嵌入 IPv4，后面后缀为 0。IPv6 和 IPv4 都可以主动发起。这种地址不能靠普通 SLAAC 生成，要静态或 DHCPv6。"
+      ]
+    },
+    {
+      "type": "code",
+      "title": "动态 NAT64 的地址池和策略",
+      "code": "nat address-group pool1\n mode pat\n section 1 1.1.1.6 1.1.1.10\nnat-policy\n rule name nat64\n  nat-type nat64\n  source-zone untrust\n  destination-zone trust\n  source-address 2001:db8:: 64\n  action source-nat address-group pool1"
+    }
+  ],
+  "exam": [
+    "承载 IPv6 过 IPv4：GRE、6PE、6VPE。NAT64 是翻译。",
+    "6PE 的 P 不用跑 IPv6。6VPE 是带 VRF 的 6PE。",
+    "IVI 把 IPv4 嵌在第 41 到 72 位，中间 8 位是 FF。",
+    "NAT64 动态映射要地址池和 nat-type nat64。"
+  ],
+  "mixups": [
+    {
+      "see": "NAT64",
+      "mean": "协议和地址都翻译，不是在 IPv4 上承载完整 IPv6 报文。多选题里划掉。"
+    },
+    {
+      "see": "6PE 和 6VPE",
+      "mean": "6PE 是公网 IPv6 过 MPLS。6VPE 每个 VPN 一张 IPv6 路由表，传的是 VPNv6。"
+    },
+    {
+      "see": "IVI 地址用 SLAAC 配不出来",
+      "mean": "格式固定，要静态或 DHCPv6。普通 RA 前缀生成的地址对不上嵌入规则。"
+    }
+  ],
+  "memory": [
+    "隧道和 6PE/6VPE 是承载。NAT64 和 IVI 是翻译。",
+    "6PE：P 只认标签。6VPE：再加 VPN。",
+    "IVI：32 位前缀，8 位 FF，接着 32 位 IPv4。"
+  ],
+  "labs": [],
+  "figures": []
+}

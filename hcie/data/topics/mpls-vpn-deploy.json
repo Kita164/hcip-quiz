@@ -1,0 +1,137 @@
+{
+  "id": "mpls-vpn-deploy",
+  "title": "L3VPN 组网：Intranet、Hub-Spoke、OSPF",
+  "summary": "Intranet 是同客户站点互通。Hub-Spoke 让分支只能经过总部。OSPF 在 PE 上重新发布时，Type3 靠 DN 位防环，Type5/7 靠 VPN Route Tag。后门链路用 sham link 压回骨干。",
+  "source": "Datacom 通用 V1.0 · MPLS VPN 部署与应用",
+  "mindmap": [
+    {
+      "t": "怎么组",
+      "c": [
+        {
+          "t": "Intranet",
+          "d": "同一套 RT，站点互通"
+        },
+        {
+          "t": "Hub-Spoke",
+          "d": "两个 VRF。没有「Hub 用 IGP、Spoke 用 EBGP」那种第四种"
+        },
+        {
+          "t": "OSPF",
+          "d": "DN 位管 Type3，Tag 管 Type5/7，sham link 管后门"
+        }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "h",
+      "text": "几种组网"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "组网",
+        "路由怎么走"
+      ],
+      "rows": [
+        [
+          "Intranet",
+          "同一客户的站点用同一对 RT，彼此都能收到"
+        ],
+        [
+          "Extranet",
+          "不同客户有控制地互导 RT，只开放约定的路由"
+        ],
+        [
+          "Hub-Spoke",
+          "分支不直连。路由先进 Hub 的入向 VRF，再到 Hub-CE，再从出向 VRF 发回其他分支"
+        ],
+        [
+          "MCE",
+          "一台 CE 上多个 VRF，把多个 VPN 接到同一台 PE"
+        ],
+        [
+          "跨域",
+          "单域不够时再用 Option A/B/C，见下一篇"
+        ]
+      ]
+    },
+    {
+      "type": "p",
+      "text": "PE-CE 可以用静态、OSPF、IS-IS 或 EBGP。CE 多归属时如果开了 as-override，AS_Path 里自己的 AS 被换掉，可能成环。给这条邻居配 SoO：收到时打上，发出时如果 SoO 相同就不再发给这个邻居。缺省情况下，CE 用 BGP 把路由交给 PE 时不携带 SoO。判断题「默认会携带」是错的。"
+    },
+    {
+      "type": "h",
+      "text": "Hub-Spoke 为什么没有第四种"
+    },
+    {
+      "type": "p",
+      "text": "常见三种是 Hub 和 Spoke 的 PE-CE 协议组合。第四种是 Hub-CE 与 Hub-PE 用 IGP，Spoke 用 EBGP。这条路由从 Hub 的 OSPF 再引入 BGP 时 AS_Path 是空的，会压过 Spoke-CE 原来那条带 AS_Path 的路由。Spoke-PE 撤销，Hub 再撤销，原路由又变优，然后再次被压过。路由来回振荡。所以不能这么组。"
+    },
+    {
+      "type": "h",
+      "text": "OSPF 在 VPN 里的防环"
+    },
+    {
+      "type": "p",
+      "text": "PE 把从别的 PE 学来的 VPN 路由引进 OSPF，可能生成 Type3、Type5 或 Type7，不会生成 Type1。多选题选这三类，不选 Type1。"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "环从哪来",
+        "靠什么停"
+      ],
+      "rows": [
+        [
+          "Type3",
+          "DN 位。OSPF 多实例发出的 LSA 缺省把 DN 位置 1。收到 DN=1 的 Type3 不再引进 BGP。要放开用 dn-bit-set disable"
+        ],
+        [
+          "Type5 / Type7",
+          "VPN Route Tag。本机 OSPF 进程的 tag 和 LSA 里的 tag 相同，就不再引进，避免绕回"
+        ],
+        [
+          "后门链路",
+          "区域内路由优于区域间。后门是区域内，骨干下来的是区域间，流量会走后门。sham link 把两台 PE 拉成同一区域的虚链路，再把后门 cost 调大"
+        ]
+      ]
+    },
+    {
+      "type": "code",
+      "title": "sham link 看状态是 Full、类型是 Sham",
+      "code": "interface LoopBack1\n ip binding vpn-instance vpna\n ip address 1.1.1.1 32\nospf 1 vpn-instance vpna\n area 0\n  sham-link 1.1.1.1 2.2.2.2"
+    }
+  ],
+  "exam": [
+    "SoO 缺省不携带。as-override 之后要用 SoO 防环。",
+    "Hub 用 IGP、Spoke 用 EBGP 会振荡，因为回来的路由 AS_Path 为空。",
+    "PE 把 VPN 路由引进 OSPF，可能是 Type3、Type5、Type7，不是 Type1。",
+    "DN 位防 Type3。VPN Route Tag 防 Type5/7。sham link 让后门变成备份。"
+  ],
+  "mixups": [
+    {
+      "see": "CE 发给 PE 的 BGP 路由里没有 SoO",
+      "mean": "缺省就是这样。要防多归属环路必须单独配。"
+    },
+    {
+      "see": "后门链路 cost 更小，流量不走 MPLS",
+      "mean": "区域内优于区域间。配 sham link，并把后门 cost 调到比 sham link 大。"
+    },
+    {
+      "see": "display ospf sham-link 里 Type: Sham、State: Full",
+      "mean": "虚链路已经当区域内邻接在用。"
+    },
+    {
+      "see": "DN 位缺省是 1",
+      "mean": "用来挡住 Type3 绕回。不是故障。需要穿过时才 dn-bit-set disable。"
+    }
+  ],
+  "memory": [
+    "Type3 看 DN，Type5/7 看 Tag，后门用 sham link。",
+    "SoO 相同就不发回这个邻居。缺省不带。",
+    "第四种 Hub-Spoke 会振荡：空 AS_Path 每次都赢。"
+  ],
+  "labs": [],
+  "figures": []
+}

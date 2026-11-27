@@ -1,0 +1,200 @@
+{
+  "id": "sdwan-arch",
+  "title": "SD-WAN 架构和三种通道",
+  "summary": "物理网和虚拟网解开。控制器管配置，RR 管路由和拓扑，CPE 之间跑 GRE。传统 MPLS 站点要进这张网，中间放 GW。",
+  "source": "SD-WAN 概述与设备开局",
+  "mindmap": [
+    {
+      "t": "华为 SD-WAN",
+      "c": [
+        {
+          "t": "四个面",
+          "d": "呈现、管理、控制、转发"
+        },
+        {
+          "t": "四个部件",
+          "d": "iMaster NCE、RR、CPE/vCPE、GW"
+        },
+        {
+          "t": "两张网",
+          "d": "Underlay 物理，Overlay 虚拟"
+        },
+        {
+          "t": "三条通道",
+          "d": "NETCONF 管理，BGP EVPN 控制，GRE 数据"
+        }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "h",
+      "text": "先分清四层，不要和部件名混在一起"
+    },
+    {
+      "type": "bands",
+      "caption": "课件把「编排」和「管理」有时写成一层、有时拆开。按报文怎么走来记更不容易混。",
+      "rows": [
+        {
+          "name": "呈现",
+          "items": [
+            "运营商 / MSP / 企业 Portal",
+            "北向 REST 给定制门户或 BSS/OSS"
+          ]
+        },
+        {
+          "name": "管理",
+          "items": [
+            "iMaster NCE",
+            "南向 NETCONF 管设备",
+            "编排、下发、运维"
+          ]
+        },
+        {
+          "name": "控制",
+          "items": [
+            "RR，也叫区域控制器",
+            "BGP EVPN 传路由和隧道信息"
+          ]
+        },
+        {
+          "name": "转发",
+          "items": [
+            "CPE / vCPE",
+            "Underlay 上的 Overlay",
+            "需要时加 GW"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "p",
+      "text": "控制器可以用 iMaster NCE-WAN，也可以用 iMaster NCE-Campus。分支、总部、数据中心和云上的 IT 都叫站点。"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "部件",
+        "干什么"
+      ],
+      "rows": [
+        [
+          "iMaster NCE",
+          "业务编排、网元控制、基础运维、CPE 的纳管"
+        ],
+        [
+          "RR",
+          "按 VPN 拓扑策略，在 CPE 之间分发 VPN 路由和隧道信息。SD-WAN 里又叫区域控制器"
+        ],
+        [
+          "CPE / vCPE",
+          "站点出口。硬件 CPE 或云上的软件 vCPE。全部由租户管理员在控制器上维护"
+        ],
+        [
+          "GW",
+          "SD-WAN 和传统网络之间的网关。传统站点多半是 MPLS VPN，SD-WAN 站点是 Overlay，两边不能直接互通"
+        ]
+      ]
+    },
+    {
+      "type": "callout",
+      "kind": "fix",
+      "title": "课件把 RR 的英文写错了",
+      "text": "正文写「RR 全称为 Router Reflector」。路由反射器是 Route Reflector。按 Route 记，和 BGP 那篇是同一个 RR。"
+    },
+    {
+      "type": "h",
+      "text": "Underlay 和 Overlay"
+    },
+    {
+      "type": "p",
+      "text": "物理网是运营商的专线、MPLS，或者企业自建的 WAN。虚拟网是在物理网上用 IP Overlay 再搭出来的一张或多张网。业务策略写在虚拟网上，和物理线路解开。换一条互联网出口，不必把业务策略重写一遍。"
+    },
+    {
+      "type": "p",
+      "text": "CPE 是这张虚拟网的边界，也叫 Edge。CPE 之间用 IP Overlay 隧道互联。公有云上的站点用 vCPE。RR 和 Edge 都被 NCE 纳管。RR 之间、RR 和 Edge 之间建立控制通道。RR 按照控制器下发的拓扑模型，决定 Edge 收哪些路由、发哪些路由，站点最后就按设计的 Overlay 拓扑互访。"
+    },
+    {
+      "type": "h",
+      "text": "三条通道，按先后记"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "通道",
+        "协议",
+        "上面跑什么"
+      ],
+      "rows": [
+        [
+          "管理",
+          "NETCONF，外面是 SSH",
+          "配置：NTP、IPsec、站点互联、有线无线、IP 业务、路由和路由策略。也承载应用可视、自动调优和安全业务的下发"
+        ],
+        [
+          "控制",
+          "BGP EVPN，通道用 IPsec",
+          "TNP（Transport Network Port）、IPsec SA、客户的业务路由。RR 上的策略决定路由传不传，拓扑就这么形成"
+        ],
+        [
+          "数据",
+          "GRE，或 GRE over IPsec",
+          "业务报文。隧道用控制通道送来的 TNP 和 IPsec SA 来建，转发看业务路由"
+        ]
+      ]
+    },
+    {
+      "type": "ol",
+      "items": [
+        "管理员在 NCE 上改参数，NETCONF 把配置推到 Edge。",
+        "设备按配置和 RR 建立 BGP EVPN。",
+        "EVPN 里带上 TNP、IPsec SA 和业务路由。",
+        "RR 按策略过滤这些路由。",
+        "Edge 用收到的 TNP 和 SA 建 GRE 或 GRE over IPsec，再按业务路由转发。"
+      ]
+    },
+    {
+      "type": "callout",
+      "kind": "tip",
+      "title": "和传统 BGP RR 的差别",
+      "text": "这里的 RR 不只有「少建邻居」这一个作用。它在控制器的管理下过滤 Overlay 路由，从而控制站点之间的拓扑。所以课件把它同时叫做区域控制器。"
+    }
+  ],
+  "exam": [
+    "四个部件：NCE、RR、CPE/vCPE、GW。GW 专门接非 SD-WAN 的传统网。",
+    "Underlay 是物理线路，Overlay 是业务虚拟网，两者解开。",
+    "管理 NETCONF/SSH，控制 BGP EVPN，数据 GRE 或 GRE over IPsec。",
+    "控制通道传递的三样：TNP、IPsec SA、业务路由。",
+    "先有管理通道里的配置，才建得了控制通道，然后才有数据通道。",
+    "RR 在 SD-WAN 里还负责按策略控制 Overlay 拓扑。"
+  ],
+  "mixups": [
+    {
+      "see": "Router Reflector",
+      "mean": "课件笔误。是 Route Reflector。"
+    },
+    {
+      "see": "站点之间互访却没有按设计的拓扑走",
+      "mean": "先看 RR 上的路由策略有没有把对应的 Overlay 路由放出去。数据通道只是按控制通道送来的路由转发。"
+    },
+    {
+      "see": "传统 MPLS 站点想和 SD-WAN 站点互通",
+      "mean": "中间加 GW。两边隧道类型不同，CPE 不能直接当 PE 用。"
+    },
+    {
+      "see": "只有互联网、没有专线",
+      "mean": "Underlay 可以是互联网。Overlay 照样用 GRE/IPsec 搭。业务策略不绑在某一种物理线路上。"
+    },
+    {
+      "see": "控制器只能是 NCE-WAN",
+      "mean": "NCE-WAN 和 NCE-Campus 都可以当 SD-WAN 控制器。"
+    }
+  ],
+  "memory": [
+    "部件四个：控制器编排，RR 传路由，CPE 转发，GW 接旧网。",
+    "通道三个：NETCONF 下配置，EVPN 送 TNP / SA / 路由，GRE 跑业务。",
+    "顺序：管理 → 控制 → 数据。没有前一条，后一条建不起来。"
+  ],
+  "labs": [],
+  "figures": []
+}

@@ -1,0 +1,133 @@
+{
+  "id": "mpls-l3vpn",
+  "title": "BGP/MPLS IP VPN",
+  "summary": "PE 上每个 VPN 一张 VRF。RD 让重叠地址变成唯一的 VPNv4。RT 决定收不收。转发时内层标签认 VPN，外层标签穿过公网。",
+  "source": "Datacom 通用 V1.0 · MPLS VPN 原理与配置",
+  "mindmap": [
+    {
+      "t": "L3VPN",
+      "c": [
+        {
+          "t": "控制面",
+          "d": "VRF + RD 隔离，RT 过滤，MP-BGP 传 VPNv4 和私网标签"
+        },
+        {
+          "t": "转发面",
+          "d": "内层 MP-BGP，外层 LDP。P 不看内层"
+        },
+        {
+          "t": "实例",
+          "d": "RD、Import RT、Export RT、绑定接口，四样都要"
+        }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "h",
+      "text": "这门课说的 VPN 是哪一种"
+    },
+    {
+      "type": "p",
+      "text": "本课的 MPLS VPN 指 BGP/MPLS IP VPN，也就是三层 VPN。运营商在公网上给不同客户做隔离。客户地址可以重叠，路由和数据互不可见。P 设备不存私网路由。"
+    },
+    {
+      "type": "h",
+      "text": "控制面四件事"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "东西",
+        "干什么"
+      ],
+      "rows": [
+        [
+          "VRF",
+          "PE 上每个 VPN 一张独立路由表。接口绑进哪个实例，路由就进哪张表"
+        ],
+        [
+          "RD",
+          "8 字节。加在 IPv4 前缀前面，变成全局唯一的 VPNv4。只负责区分，不负责过滤"
+        ],
+        [
+          "RT",
+          "扩展团体。Export RT 是发出去时贴上的，Import RT 是收进来时用来匹配的"
+        ],
+        [
+          "MP-BGP",
+          "PE 之间传 VPNv4、私网标签和 RT。公网标签仍由 LDP 分配"
+        ]
+      ]
+    },
+    {
+      "type": "p",
+      "text": "地址可以重叠的前提：两个 VPN 没有共同站点；或者有共同站点，但这个站点不去访问两边用了同一地址的设备。"
+    },
+    {
+      "type": "callout",
+      "kind": "exam",
+      "title": "MP-BGP 带的是 Export RT",
+      "text": "单选题四个选项里选 Export RT。Implied RT、Import RT、Extended RT 都不是传递时携带的那种。Import RT 只在本地决定收不收。缺省已经打开 policy vpn-target，按 RT 过滤；有的组网要手动 undo。"
+    },
+    {
+      "type": "h",
+      "text": "两层标签"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "内层（私网）标签由入口 PE 的 MP-BGP 分配。出口 PE 靠它认出这是哪个 VPN、送给哪个 CE。",
+        "外层（公网）标签由 LDP 按 BGP 下一跳（通常是对端 PE 的 Loopback）分配。P 只交换外层。",
+        "入口 PE：查 VRF，压内层，再压外层。P：只换外层。出口 PE：PHP 之后外层已没，再按内层标签弹出，把纯 IPv4 交给 CE。"
+      ]
+    },
+    {
+      "type": "p",
+      "text": "多选题：VPN 实例要配 Import RT、Export RT、RD，还要把接口绑进实例。四项都要。"
+    },
+    {
+      "type": "code",
+      "title": "实例和 VPNv4 邻居",
+      "code": "ip vpn-instance VPNX\n ipv4-family\n  route-distinguisher 100:1\n  vpn-target 100:321 import-extcommunity\n  vpn-target 100:123 export-extcommunity\ninterface GigabitEthernet0/0/0\n ip binding vpn-instance VPNX\nbgp 100\n ipv4-family vpnv4\n  peer 2.2.2.2 enable\n  policy vpn-target"
+    }
+  ],
+  "exam": [
+    "RD 区分地址，RT 控制收发。MP-BGP 携带的是 Export RT。",
+    "内层标签认 VPN，外层标签穿公网。P 不保存 CE 路由。",
+    "实例四项：RD、Import RT、Export RT、绑定接口。",
+    "policy vpn-target 缺省开着。"
+  ],
+  "mixups": [
+    {
+      "see": "两个 VPN 都有 192.168.1.0/24",
+      "mean": "RD 不同，VPNv4 前缀不同，公网里不冲突。能不能进对方 VRF 看 RT，不看 RD。"
+    },
+    {
+      "see": "报文上有 1024 和 1026 两层标签",
+      "mean": "外层 1024 是 LDP 的公网标签，内层 1026 是 MP-BGP 的私网标签。P 只换外层。"
+    },
+    {
+      "see": "只配了 RD，没配 RT",
+      "mean": "路由出不去，也收不进来。RD 不负责过滤。"
+    }
+  ],
+  "memory": [
+    "RD 起名字，RT 看门。发出去贴 Export，进来对 Import。",
+    "内层认家门，外层赶路。P 只赶路。"
+  ],
+  "labs": [
+    {
+      "title": "看私网标签和公网标签",
+      "goal": "192.168.2.0/24 访问 192.168.1.0/24。外层 1024 由 LDP 分配，内层 1026 由 MP-BGP 分配。",
+      "verify": [
+        {
+          "title": "VPNv4 表里的标签是内层",
+          "see": "Label information (Received/Applied) 里收到的是私网标签。公网标签要到 LSP 表里按下一跳去看。",
+          "code": "display bgp vpnv4 all routing-table 192.168.1.0\ndisplay mpls lsp"
+        }
+      ]
+    }
+  ],
+  "figures": []
+}

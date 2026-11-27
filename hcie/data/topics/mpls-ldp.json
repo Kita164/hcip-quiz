@@ -1,0 +1,217 @@
+{
+  "id": "mpls-ldp",
+  "title": "LDP 会话和标签分发",
+  "summary": "Hello 走 UDP 646 组播，会话走 TCP 646。传输地址大的一方主动建连。华为缺省是 DU + 有序 + 自由保持。Egress 缺省分出隐式空标签 3，倒数第二跳弹出。",
+  "source": "Datacom 通用 V1.0 · MPLS LDP · 2020.03 / 2021.07",
+  "mindmap": [
+    {
+      "t": "LDP",
+      "c": [
+        {
+          "t": "会话",
+          "d": "Hello 发现，传输地址大的主动 TCP"
+        },
+        {
+          "t": "三种模式",
+          "d": "发布 DU/DoD，控制有序/独立，保持自由/保守"
+        },
+        {
+          "t": "缺省",
+          "d": "DU + Ordered + Liberal。只给 32 位路由建 LSP"
+        },
+        {
+          "t": "PHP",
+          "d": "缺省标签 3。要留 EXP 就改显式空 0"
+        }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "h",
+      "text": "会话怎么起来"
+    },
+    {
+      "type": "p",
+      "text": "LDP 负责给 FEC 分配标签并维护 LSP。本课的 LDP 最初由 RFC 3036 定义，现以 RFC 5036 为准。先有会话，再交换 FEC 和标签的绑定。"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "本地会话：两台 LSR 直连。远程会话：可以不直连，用 remote-peer 指定对端地址。",
+        "交互 Hello 之后是邻接体。再交互会话消息，才成为 LDP 对等体。",
+        "LDP ID 48 比特：32 比特 LSR ID 加 16 比特标签空间。写成 2.2.2.2:0。0 表示整机一个标签空间，非 0 表示按接口。本课都是 :0。"
+      ]
+    },
+    {
+      "type": "table",
+      "headers": [
+        "消息类",
+        "名字",
+        "承载"
+      ],
+      "rows": [
+        [
+          "发现",
+          "Hello",
+          "UDP 646，目的 224.0.0.2"
+        ],
+        [
+          "会话",
+          "Initialization、Keepalive",
+          "TCP 646"
+        ],
+        [
+          "通告",
+          "Address、Label Mapping、Label Request、Withdraw、Release 等",
+          "TCP 646"
+        ],
+        [
+          "通知",
+          "Notification",
+          "TCP 646"
+        ]
+      ]
+    },
+    {
+      "type": "p",
+      "text": "LDP 头 10 字节：版本 2 字节（当前是 1）、PDU 长度 2 字节、LDP ID 6 字节。未知消息看 U 位：0 就回通知，1 就忽略。"
+    },
+    {
+      "type": "p",
+      "text": "Hello 里带传输地址。双方必须有到对方传输地址的路由。传输地址大的一方是主动方，向对方的 TCP 646 发起连接。主动方发 Initialization。被动方接受参数后回 Keepalive，并带上自己的 Initialization。主动方再回 Keepalive。两边都收到 Keepalive，会话 Operational。之后靠 Keepalive 维持。协商内容包括版本、标签分发方式、Keepalive 时间、最大 PDU、标签空间。"
+    },
+    {
+      "type": "p",
+      "text": "五个状态：Non-Existent、Initialized、OpenSent、OpenRec、Operational。参数不能接受或超时，回到 Non-Existent。display mpls ldp peer 看传输地址和发现来源。display mpls ldp session 看 Status、LAM、主动还是被动。"
+    },
+    {
+      "type": "h",
+      "text": "三种模式，缺省组合要背"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "什么",
+        "两种",
+        "华为缺省"
+      ],
+      "rows": [
+        [
+          "发布",
+          "DU：不用上游请求就分发。DoD：上游 Label Request 之后才分发",
+          "DU"
+        ],
+        [
+          "分配控制",
+          "独立：不必等下游标签。有序：自己是 Egress，或者已经拿到下一跳的标签，才向上游发",
+          "有序 Ordered"
+        ],
+        [
+          "保持",
+          "自由：不是下一跳的标签也留着，下一跳一变就能用。保守：只留下一跳的，省标签，重建慢",
+          "自由 Liberal"
+        ]
+      ]
+    },
+    {
+      "type": "p",
+      "text": "单选题的缺省组合是 DU + Ordered + Liberal，不是 DU + Independent，也不是 DoD。接口上如果改成 DoD，保持方式会跟着变成保守。自由保持通常不和 DoD 配。"
+    },
+    {
+      "type": "p",
+      "text": "上下游按数据方向，不是按 LSR ID。标签从下游分给上游。有序加 DU 时，必须从 Egress 开始往上游发映射。有序加 DoD 时，Ingress 逐跳请求到 Egress，再由 Egress 往回发映射。"
+    },
+    {
+      "type": "h",
+      "text": "PHP"
+    },
+    {
+      "type": "p",
+      "text": "Egress 给倒数第二跳的可以不是普通标签。缺省是隐式空，值 3。倒数第二跳看到出标签 3，弹出栈顶，把 IP 报文交给 Egress。Egress 只查一次 FIB。"
+    },
+    {
+      "type": "p",
+      "text": "隐式空把 EXP 一起弹掉，QoS 标记没了。要保留就改显式空，值 0：倒数第二跳不弹，把带 EXP 的标签 0 交给 Egress，Egress 直接弹掉，不再查 ILM。non-null 则分一个不小于 16 的普通标签。"
+    },
+    {
+      "type": "code",
+      "title": "缺省只给主机路由建 LSP",
+      "code": "mpls lsr-id 1.1.1.1\nmpls\n lsp-trigger host\n label advertise implicit-null\nmpls ldp\n label distribution control-mode ordered\ninterface GigabitEthernet0/0/0\n mpls\n mpls ldp"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "lsp-trigger 缺省 host，只对 32 位路由建 LSP。all 会给所有静态和 IGP 路由建，标签和收敛都变差，一般不用。none 是不建。网段路由要单独写 ip-prefix。",
+        "看某条 FEC 的标签用 display mpls lsp，不是 display mpls ldp，也不是 display mpls ldp session。会话命令看的是邻居状态。",
+        "远程会话：mpls ldp remote-peer 名字，再 remote-ip。",
+        "出标签永远用路由下一跳那个邻居通告来的标签。自由保持把其他邻居的标签存着，下一跳切换时直接换，不用重新要。"
+      ]
+    }
+  ],
+  "exam": [
+    "UDP 646 只用于 Hello，目的 224.0.0.2。其余消息 TCP 646。",
+    "传输地址大的是主动方。",
+    "缺省 DU + Ordered + Liberal。",
+    "缺省只对 32 位路由触发 LSP。",
+    "隐式空是 3，显式空是 0。缺省隐式空。显式空用来留 EXP。",
+    "display mpls lsp 看 FEC 和标签。display mpls ldp session 看会话，LAM 为 DU 表示下游自主。"
+  ],
+  "mixups": [
+    {
+      "see": "display mpls ldp session 想看 192.168.4.0/24 的出入标签",
+      "mean": "这是会话状态。标签看 display mpls lsp 或 display mpls ldp lsp。"
+    },
+    {
+      "see": "DU + Independent + Conservative",
+      "mean": "不是缺省。缺省是 DU、有序、自由保持。"
+    },
+    {
+      "see": "出标签是 3",
+      "mean": "隐式空。倒数第二跳弹出后再发给 Egress，链路上最后一跳没有标签。EXP 也没了。"
+    },
+    {
+      "see": "label advertise explicit-null",
+      "mean": "Egress 分标签 0。倒数第二跳不弹，把 EXP 带到最后一跳。"
+    },
+    {
+      "see": "网段路由没有 LSP，32 位环回有",
+      "mean": "缺省 lsp-trigger host。网段要写 ip-prefix 再 lsp-trigger。"
+    },
+    {
+      "see": "会话状态 Operational，SsnRole Passive",
+      "mean": "会话已建成，本机传输地址较小，是被动方。对端是主动方。"
+    }
+  ],
+  "memory": [
+    "发现 UDP，协商 TCP。谁的传输地址大，谁主动连 646。",
+    "缺省三词：下游自主、有序、自由。只给主机路由建 LSP。",
+    "3 是隐式空，倒数第二跳弹掉。0 是显式空，为了留 QoS。"
+  ],
+  "labs": [
+    {
+      "title": "让 192.168.1.0/24 和 192.168.4.0/24 走 LDP",
+      "goal": "IGP 已经通。缺省只给 /32 建 LSP，这两个网段要写进前缀列表。",
+      "steps": [
+        {
+          "where": "每台",
+          "text": "全局和接口都要先 mpls 再 mpls ldp。LSR ID 用各台 Loopback。",
+          "code": "mpls lsr-id 10.0.1.1\nmpls\nmpls ldp\ninterface GigabitEthernet0/0/0\n mpls\n mpls ldp"
+        },
+        {
+          "where": "R1 和 R4",
+          "text": "只有网段的两端需要放宽触发。中间的 /32 环回仍按缺省 host 建立。",
+          "code": "ip ip-prefix ldp permit 192.168.1.0 24\nip ip-prefix ldp permit 192.168.4.0 24\nmpls\n lsp-trigger ip-prefix ldp"
+        }
+      ],
+      "verify": [
+        {
+          "title": "出标签 3 就是 PHP",
+          "see": "到对端 Loopback 的 OutLabel 如果是 3，本机就是倒数第二跳，发出去之前会弹掉标签。网段路由要在配了 lsp-trigger 之后才出现。",
+          "code": "display mpls ldp peer\ndisplay mpls ldp session\ndisplay mpls ldp lsp"
+        }
+      ]
+    }
+  ],
+  "figures": []
+}

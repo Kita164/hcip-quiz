@@ -1,0 +1,166 @@
+{
+  "id": "evpn",
+  "title": "EVPN",
+  "summary": "MAC 学习从数据面挪到 BGP。Type 3 拉 BUM，Type 4 选 DF，Type 1 做水平分割和快速收敛，Type 2 带单播标签。跨域 Option C 的 ASBR 不看 MAC。",
+  "source": "Datacom 通用 V1.0 · EVPN 原理与配置",
+  "mindmap": [
+    {
+      "t": "EVPN",
+      "c": [
+        {
+          "t": "相对 VPLS",
+          "d": "控制面学 MAC，能多活、能负载分担"
+        },
+        {
+          "t": "路由",
+          "d": "1 快速收敛，2 单播标签，3 BUM，4 DF，5 前缀"
+        },
+        {
+          "t": "接入",
+          "d": "Port、VLAN、VLAN Bundle、VLAN-Aware Bundle"
+        }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "h",
+      "text": "它解决 VPLS 的哪两件事"
+    },
+    {
+      "type": "p",
+      "text": "VPLS 先建承载隧道，再建 PW，把 PW 和 AC 绑进 VSI。VSI 像一台交换机，在数据面学 MAC。单活接入时流量分担不均，故障后收敛慢。EVPN 用 BGP 发布 MAC，同一目的 MAC 可以有多条下一跳，再配合 RR，不用全互联 PW。"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "词",
+        "是什么"
+      ],
+      "rows": [
+        [
+          "AC",
+          "CE 和 PE 之间的接入电路"
+        ],
+        [
+          "ES / ESI",
+          "同一组多归属链路的以太网段，ESI 标识它"
+        ],
+        [
+          "EVI / MAC-VRF",
+          "一个 EVPN 实例和它的 MAC 表"
+        ],
+        [
+          "DF",
+          "多归属时，这个 ES 上负责发 BUM 的那台 PE"
+        ]
+      ]
+    },
+    {
+      "type": "h",
+      "text": "五种路由"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "类型",
+        "名字",
+        "看到它就是"
+      ],
+      "rows": [
+        [
+          "Type 1",
+          "Ethernet A-D",
+          "快速收敛、水平分割、别名。携带 ESI 标签。单选题「快速收敛」选它"
+        ],
+        [
+          "Type 2",
+          "MAC/IP",
+          "单播。携带转发单播用的 MPLS 标签。单选题「单播标签」选它"
+        ],
+        [
+          "Type 3",
+          "Inclusive Multicast",
+          "BUM 转发表。带 PMSI"
+        ],
+        [
+          "Type 4",
+          "Ethernet Segment",
+          "发现同一 ES 上的其他 PE，做 DF 选举。带 ES-Import RT"
+        ],
+        [
+          "Type 5",
+          "IP 前缀",
+          "三层前缀，不靠 MAC"
+        ]
+      ]
+    },
+    {
+      "type": "p",
+      "text": "启动阶段先交换 Type 3 建 BUM 表，多归属时用 Type 4 发现 ES 并选 DF，再用 Type 1 交换 ESI 标签。流量阶段本地学 MAC，用 Type 2 通告。MAC 迁移靠 MAC Mobility 扩展团体，序列号更大的赢。"
+    },
+    {
+      "type": "p",
+      "text": "双活时，Type 1 的 ESI 标签做水平分割：从这条 ES 收到的 BUM 不要再从同一条 ES 发回去。别名让流量可以落到同一 ES 的另一台 PE。故障时 Type 1 撤销，远端马上撤 MAC，不用等老化。"
+    },
+    {
+      "type": "h",
+      "text": "接入和跨域"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "Port Based：整个口一个广播域。VLAN Based：每个 VLAN 一个 EVI。VLAN Bundle：多个 VLAN 捆进一个 EVI，VLAN 之间不隔离。VLAN-Aware Bundle：一个 EVI 里仍按 VLAN 隔离。",
+        "跨域仍是 A/B/C。Option C 里 PE 之间建端到端 BGP LSP，ASBR 不感知 MAC/IP 路由。域内流量可以有三层标签，域间剩两层：EVPN 标签和 BGP 标签。",
+        "二层业务用 BD 绑 EVPN。三层业务在 VPN 实例上 vpn-target both evpn，再 evpn mpls routing-enable。"
+      ]
+    },
+    {
+      "type": "code",
+      "title": "三层 EVPN 实例",
+      "code": "ip vpn-instance vpna\n ipv4-family\n  route-distinguisher 100:1\n  vpn-target 1:1 both evpn\n  evpn mpls routing-enable"
+    }
+  ],
+  "exam": [
+    "快速收敛是 Type 1。单播 MPLS 标签是 Type 2。",
+    "Type 3 管 BUM，Type 4 选 DF，Type 5 是 IP 前缀。",
+    "多归属 BUM 只由 DF 发。水平分割靠 ESI 标签。",
+    "Option C 的 ASBR 不看 MAC/IP。域间两层标签，域内可以三层。"
+  ],
+  "mixups": [
+    {
+      "see": "display bgp evpn all routing-table inclusive-route",
+      "mean": "看的是 Type 3，用来转发 BUM。不是单播 MAC。"
+    },
+    {
+      "see": "es-route",
+      "mean": "Type 4。同一 ES 上的 PE 靠它互相发现并选 DF。"
+    },
+    {
+      "see": "Type 2 和 Type 1 都带标签",
+      "mean": "单播转发用的是 Type 2 的标签。Type 1 的 ESI 标签用来水平分割和别名，不是普通单播转发标签。"
+    },
+    {
+      "see": "两台 PE 都接同一台 CE，BUM 从两边都涌出去",
+      "mean": "DF 没选好，或 Type 4 没交换。多归属时只有 DF 发 BUM。"
+    }
+  ],
+  "memory": [
+    "1 收敛，2 单播，3 广播，4 选 DF，5 是路由。",
+    "VPLS 在数据面学 MAC。EVPN 在 BGP 里学 MAC。"
+  ],
+  "labs": [
+    {
+      "title": "看 Type 3 是否到齐",
+      "goal": "PE3 和 PE1、PE2 的 EVPN 邻居都是 Established，并且收到两边的 Inclusive Multicast。",
+      "verify": [
+        {
+          "title": "邻居 2 个，Type 3 有三条",
+          "see": "Established 的 PrefRcv 大于 0。inclusive-route 里能看到对端 Loopback 对应的下一跳，本机那条下一跳是 127.0.0.1。",
+          "code": "display bgp evpn peer\ndisplay bgp evpn all routing-table inclusive-route"
+        }
+      ]
+    }
+  ],
+  "figures": []
+}

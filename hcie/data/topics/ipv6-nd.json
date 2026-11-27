@@ -1,0 +1,137 @@
+{
+  "id": "ipv6-nd",
+  "title": "IPv6 邻居发现和无状态配置",
+  "summary": "地址解析不再广播 ARP，改成 NS/NA。所有单播地址先做 DAD。RA 的 M 位决定走 SLAAC 还是 DHCPv6。前缀的 L 和 A 分别表示在链和允许自动配置。",
+  "source": "ICMPv6 基础",
+  "mindmap": [
+    {
+      "t": "NDP",
+      "c": [
+        {
+          "t": "五种报文",
+          "d": "RS 133，RA 134，NS 135，NA 136，重定向 137"
+        },
+        {
+          "t": "状态",
+          "d": "Incomplete、Reachable、Stale、Delay、Probe"
+        },
+        {
+          "t": "RA",
+          "d": "M=1 用 DHCPv6。L 在链，A 允许 SLAAC"
+        }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "callout",
+      "kind": "fix",
+      "title": "这套课件的备注是粘错的",
+      "text": "几乎每页备注都是一段 MPLS 介绍，和 ICMPv6、邻居发现无关。下面只按正文记。"
+    },
+    {
+      "type": "h",
+      "text": "ICMPv6 比 ICMPv4 多出来的"
+    },
+    {
+      "type": "p",
+      "text": "Next Header 是 58。差错消息仍有目的不可达（Type 1）、包过长（2）、超时（3）、参数错误（4）。Echo 是 128 和 129。邻居发现、SLAAC、DAD、PMTU 都建立在 ICMPv6 上。"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "报文",
+        "Type",
+        "用来"
+      ],
+      "rows": [
+        [
+          "RS",
+          "133",
+          "主机问有没有路由器。和 RA 一起做前缀公告"
+        ],
+        [
+          "RA",
+          "134",
+          "路由器通告前缀、跳数、M/O 标志"
+        ],
+        [
+          "NS",
+          "135",
+          "地址解析、DAD。Target 不能是组播"
+        ],
+        [
+          "NA",
+          "136",
+          "应答 NS。R 是路由器，S 是响应请求，O 是覆盖旧表项"
+        ],
+        [
+          "Redirect",
+          "137",
+          "告诉主机更好的下一跳"
+        ]
+      ]
+    },
+    {
+      "type": "h",
+      "text": "地址解析"
+    },
+    {
+      "type": "p",
+      "text": "不再用 ARP，也不再广播。NS 的目的 IPv6 是目标地址对应的被请求节点组播 FF02::1:FFxx:xxxx，目的 MAC 是 33-33-FF-xx-xx-xx。NA 单播回来，带目标 MAC。邻居表用 display ipv6 neighbors，不是 ARP 表。"
+    },
+    {
+      "type": "p",
+      "text": "状态：没有表项时先发 NS，进入 Incomplete。收到 NA 变 Reachable。大约 30 秒或收到非请求 NA 后变 Stale。再要发包就进 Delay，然后 Probe，每秒发单播 NS。三次无应答就删。五秒没有 NA 也会从 Incomplete 失败。"
+    },
+    {
+      "type": "h",
+      "text": "DAD 和 SLAAC"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "任何单播地址启用前都要 DAD，包括链路本地。检测完成前叫 tentative，还不能用来做普通单播，但会加入对应的被请求节点组播。",
+        "DAD 的 NS 源地址是 ::。如果收到别人的 NA，这个地址不能用。",
+        "RA 的 M 位缺省 0：用前缀做无状态配置。改成 1 用 ipv6 nd autoconfig managed-address-flag，主机改去要 DHCPv6。Cur Hop Limit 会变成主机发出报文的跳数限制，课件例子是 64。",
+        "前缀选项 L 缺省 1，表示这段前缀在链。A 缺省 1，允许用这个前缀自动生成地址。Valid lifetime 2592000 秒，Preferred 604800 秒。L 改成 0 用 off-link。"
+      ]
+    },
+    {
+      "type": "p",
+      "text": "PMTU 靠 Type 2「包过长」往回通知，不再依赖 IPv4 那种在中间设备分片。"
+    }
+  ],
+  "exam": [
+    "NS 135，NA 136，RS 133，RA 134，重定向 137。",
+    "被请求节点组播是 FF02::1:FF 加地址最后 24 位。",
+    "DAD 的 NS 源地址是 ::。收到 NA 就是冲突。",
+    "M=0 做 SLAAC，M=1 做 DHCPv6。L 在链，A 允许自动配置。",
+    "邻居表命令是 display ipv6 neighbors。"
+  ],
+  "mixups": [
+    {
+      "see": "display arp 里没有 IPv6 邻居",
+      "mean": "IPv6 不进 ARP 表。看 display ipv6 neighbors。状态 STALE 表示曾经可达、现在待确认，不是坏了。"
+    },
+    {
+      "see": "NS 的目的地址是 FF02::1",
+      "mean": "那是所有节点。地址解析和 DAD 用的是被请求节点组播 FF02::1:FFxx:xxxx。"
+    },
+    {
+      "see": "RA 的 M 位是 0",
+      "mean": "主机用前缀自己生成地址。要改成 DHCPv6 才把 M 置 1。"
+    },
+    {
+      "see": "链路本地地址也要 DAD",
+      "mean": "要。所有单播都要，不只是全球地址。"
+    }
+  ],
+  "memory": [
+    "133 问路由，134 给前缀，135 问邻居，136 回答，137 改道。",
+    "M 管地址从哪来，L 管在不在链，A 管能不能自己配。",
+    "DAD：源地址是全 0，有人回答就不能用。"
+  ],
+  "labs": [],
+  "figures": []
+}

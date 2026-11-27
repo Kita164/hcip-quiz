@@ -1,0 +1,190 @@
+{
+  "id": "vxlan-campus",
+  "title": "VXLAN 和园区虚拟化",
+  "summary": "VXLAN 把以太帧套进 UDP 4789，VNI 有 24 位。一个 VNI 对应一个 BD。华为跨子网用对称 IRB，两边都做三层，报文带 L3 VNI。ARP 抑制要把广播改成单播，靠 Type 2。",
+  "source": "Datacom 通用 V1.0 · VXLAN 与园区网络虚拟化",
+  "mindmap": [
+    {
+      "t": "VXLAN",
+      "c": [
+        {
+          "t": "封装",
+          "d": "MAC in UDP，目的端口 4789，VNI 24 位"
+        },
+        {
+          "t": "网关",
+          "d": "集中式或分布式。华为用对称 IRB"
+        },
+        {
+          "t": "控制面",
+          "d": "静态头端复制，或 EVPN。Type 3 建隧道，Type 2 带主机"
+        }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "h",
+      "text": "为什么不用 VLAN 硬扩"
+    },
+    {
+      "type": "p",
+      "text": "虚拟机要在三层网络上做二层扩展，还要大量租户隔离。VLAN 只有 12 位。VXLAN 是 NVO3 的一种，把以太帧套进 UDP，外层用物理网络的 IP 和 MAC，Underlay 只看到普通三层包。虚拟机迁移不受二层域限制。"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "名字",
+        "是什么"
+      ],
+      "rows": [
+        [
+          "VNI",
+          "24 位，1～16777215，大约 1600 万个租户。一个租户可以有多个 VNI"
+        ],
+        [
+          "BD",
+          "广播域。VNI 和 BD 一对一，同一 BD 里二层互通"
+        ],
+        [
+          "VTEP",
+          "隧道端点，负责封装和解封装。NVE 是做这件事的实体"
+        ],
+        [
+          "VBDIF",
+          "BD 上的三层口，相当于 VLANIF"
+        ],
+        [
+          "头端复制",
+          "BUM 按 peer-list 复制给每个远端 VTEP"
+        ]
+      ]
+    },
+    {
+      "type": "p",
+      "text": "外层 UDP 目的端口是 4789。静态隧道要手工写本端 VNI、远端 VTEP 地址和头端复制列表。动态隧道靠 BGP EVPN：对端 VTEP 路由可达，且 VNI 相同，就建隧道并生成复制列表。EVPN 路由类型的总表在 EVPN 那篇。这里只记和 VXLAN 转发有关的差别。"
+    },
+    {
+      "type": "h",
+      "text": "Type 2 的三种用法"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "通告",
+        "带着什么",
+        "用在哪"
+      ],
+      "rows": [
+        [
+          "主机 MAC",
+          "MAC + 二层 VNI",
+          "同子网二层"
+        ],
+        [
+          "ARP",
+          "IP + MAC + 二层 VNI",
+          "集中式网关同步 ARP"
+        ],
+        [
+          "IRB",
+          "IP + MAC + 二层 VNI + 三层 VNI",
+          "分布式网关跨子网"
+        ]
+      ]
+    },
+    {
+      "type": "p",
+      "text": "ARP 路由和 IRB 路由对外发布是互斥的，只能选一种。集中式网关发布 ARP 路由，分布式网关发布 IRB 路由。IRB 路由里已经包含 ARP 需要的字段，所以 Type 2 主机 IP 路由可以用来传 ARP。判断题是对的。"
+    },
+    {
+      "type": "h",
+      "text": "对称 IRB 和非对称 IRB"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "",
+        "非对称",
+        "对称（华为用这个）"
+      ],
+      "rows": [
+        [
+          "谁做三层",
+          "入口 VTEP 做三层再做二层，出口只做二层",
+          "入口和出口都做三层"
+        ],
+        [
+          "隧道里的 VNI",
+          "二层 VNI",
+          "三层 VNI"
+        ],
+        [
+          "有没有主机路由",
+          "不传 /32。入口只能匹配到对端网段的直连路由",
+          "传 ARP 生成的 /32。最长匹配压过直连"
+        ],
+        [
+          "出口怎么认",
+          "内层目的 MAC 不是自己的网关 MAC，按 BD 做二层",
+          "内层目的 MAC 是自己的 Router MAC，再按 L3 VNI 找 VPN 实例"
+        ]
+      ]
+    },
+    {
+      "type": "p",
+      "text": "对称 IRB 要多一个 IP VPN 实例和 L3 VNI。VBDIF 绑进这个实例，路由不出实例。RT 仍分成 EVPN 实例的 RT 和 IP VPN 的 EVPN RT，两边都要对上才接收。Type 5 只带 L3 VNI，也走 IRB，并带 VTEP 的 Router MAC。"
+    },
+    {
+      "type": "p",
+      "text": "ARP 广播抑制：三层网关先收集主机信息，用 Type 2 同步到二层网关。二层网关再收到 ARP 请求时，如果表里有目标，就把广播 MAC 换成单播 MAC。主机信息收集缺省不从本地 ARP 生成 EVPN 路由，要手工打开。"
+    },
+    {
+      "type": "callout",
+      "kind": "exam",
+      "title": "下一跳不按那道题的 Next_Hop 说法记",
+      "text": "判断题：Type 2 主机 IP 路由可以传 ARP，对。单选要挑错误项：错的是「通过 Next_Hop 属性携带路由下一跳」。隧道终点看 Type 3 的 Originating Router's IP，PMSI 里也会带发送端 VTEP 地址。L2/L3 VNI 在 NLRI 的 MPLS Label 字段里。"
+    },
+    {
+      "type": "p",
+      "text": "园区里 Underlay 是三层路由，Fabric 是 VXLAN 隧道，Overlay 上用 VNI 加 VPN 实例划出多个 VN。同子网走 L2 VNI，跨子网走 L3 VNI。"
+    },
+    {
+      "type": "code",
+      "title": "BD 和 VNI 绑在一起",
+      "code": "bridge-domain 10\n vxlan vni 1000\ninterface Nve1\n source 1.1.1.1\n vni 1000 head-end peer-list 2.2.2.2"
+    }
+  ],
+  "exam": [
+    "目的 UDP 端口 4789。VNI 24 位，和 BD 一对一。",
+    "静态靠头端复制列表，动态靠 EVPN Type 3。",
+    "集中式发 ARP 路由，分布式发 IRB 路由，两种发布互斥。",
+    "华为是对称 IRB：两边都做三层，隧道里是 L3 VNI，有 /32 主机路由。",
+    "Type 2 主机 IP 路由可以带 ARP。ARP 抑制缺省不生成路由，要先开主机信息收集。"
+  ],
+  "mixups": [
+    {
+      "see": "跨子网报文里的 VNI 是接入侧的二层 VNI",
+      "mean": "那是非对称 IRB。华为对称 IRB 在 VTEP 之间用 L3 VNI，出口看到自己的 Router MAC 才查路由。"
+    },
+    {
+      "see": "入口已经有对端网段的直连路由，还是按 /32 转发",
+      "mean": "对称 IRB 学到了主机路由，最长匹配优先。非对称才只能用直连。"
+    },
+    {
+      "see": "ARP 请求仍然在全网泛洪",
+      "mean": "没开主机信息收集，或对端没有 Type 2。开了之后，二层网关把广播 MAC 换成单播。"
+    },
+    {
+      "see": "同时发布 ARP 路由和 IRB 路由",
+      "mean": "不行，两种对外发布互斥。集中式用 ARP，分布式用 IRB。"
+    }
+  ],
+  "memory": [
+    "UDP 4789，VNI 24 位，一个 VNI 一个 BD。",
+    "对称：两边都路由，带 L3 VNI。非对称：入口路由，出口桥接。",
+    "Type 3 建隧道，Type 2 带主机。收集主机信息要手工开。"
+  ],
+  "labs": [],
+  "figures": []
+}

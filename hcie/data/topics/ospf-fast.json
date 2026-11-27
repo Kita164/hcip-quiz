@@ -1,0 +1,301 @@
+{
+  "id": "ospf-fast",
+  "title": "OSPF 快速收敛",
+  "summary": "路由变了只算叶子（PRC），抖动用智能定时器压住，链路断了靠事先算好的 LFA 备份，感知靠 BFD 而不是死定时器。",
+  "source": "Datacom 通用 V1.0 · IGP高级特性",
+  "mindmap": [
+    {
+      "t": "OSPF 快速收敛",
+      "c": [
+        {
+          "t": "PRC",
+          "d": "只更新叶子，最短路径树不动。华为默认开"
+        },
+        {
+          "t": "智能定时器",
+          "d": "第一次快，连着抖就按 hold×2 拉长，顶到 max 三次再回到起点"
+        },
+        {
+          "t": "IP FRR",
+          "d": "LFA 预先算出无环备份，故障时切 FIB，目标 50ms"
+        },
+        {
+          "t": "BFD",
+          "d": "邻居 Full 后建会话。接口上的参数压过进程"
+        }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "h",
+      "text": "PRC：只动叶子"
+    },
+    {
+      "type": "p",
+      "text": "PRC（Partial Route Calculation）在路由变化时只重算变化的那条路由。节点是路由器，叶子是路由。SPF 已经算出的最短路径树不动，新网段挂到原来那个节点上，下一跳就沿用访问这个节点的下一跳。"
+    },
+    {
+      "type": "p",
+      "text": "例子：以 R1 为根的树已经收敛。R5 把 Loopback0 放进 OSPF。R5 泛洪新 LSA，R1 只在 R5 这个节点上加一片叶子，去这个环回口的出接口和下一跳跟去 R5 节点一样。"
+    },
+    {
+      "type": "callout",
+      "kind": "exam",
+      "title": "默认",
+      "text": "华为设备上 OSPF 的 PRC 默认开启，不用再配一条打开 PRC 的命令。"
+    },
+    {
+      "type": "h",
+      "text": "智能定时器：第一次快，连着抖就变慢"
+    },
+    {
+      "type": "p",
+      "text": "少量变化要快，连续抖动不能把 CPU 打满。智能定时器同时管 LSA 的产生、LSA 的接收和 SPF 计算。"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "第 1 次间隔 = start-interval。",
+        "第 n 次（n≥2）间隔 = hold-interval × 2^(n-2)。",
+        "一旦达到 max-interval，连续三次都用这个最长时间，然后回到第 1 步，重新从 start 开始。"
+      ]
+    },
+    {
+      "type": "table",
+      "caption": "三条命令的缺省值，单位都是毫秒。背这张表，不要背课件正文里那句「1 秒就是 5 秒」。",
+      "headers": [
+        "命令",
+        "管什么",
+        "max",
+        "start",
+        "hold"
+      ],
+      "rows": [
+        [
+          "lsa-originate-interval intelligent-timer",
+          "产生 Router/Network LSA",
+          "5000",
+          "500",
+          "1000"
+        ],
+        [
+          "lsa-arrival-interval intelligent-timer",
+          "接收 LSA",
+          "1000",
+          "500",
+          "500"
+        ],
+        [
+          "spf-schedule-interval intelligent-timer",
+          "SPF 计算",
+          "10000",
+          "500",
+          "1000"
+        ]
+      ]
+    },
+    {
+      "type": "callout",
+      "kind": "fix",
+      "title": "课件正文和命令缺省值不是一回事",
+      "text": "概述页写「同一条 LSA 在 1 秒内不能再次生成，即更新间隔 5 秒」。这是把两个老定时器写到了一句里：产生间隔 MinLSInterval 是 5 秒，接收间隔 MinLSArrival 是 1 秒。华为缺省已经改成上面的智能定时器。other-type（Router/Network 以外的 LSA）才是固定间隔，缺省 5 秒，范围 0～10 秒。"
+    },
+    {
+      "type": "code",
+      "title": "产生 / 接收 / 计算",
+      "code": "bfd\n#\nospf 1\n lsa-originate-interval intelligent-timer 5000 500 1000\n lsa-originate-interval other-type 5\n lsa-arrival-interval intelligent-timer 1000 500 500\n spf-schedule-interval intelligent-timer 10000 500 1000\n# 取消产生侧那条 5 秒间隔，让拓扑变化马上发出去：\n lsa-originate-interval 0"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "intelligent-timer 只作用于 Router LSA 和 Network LSA 的产生间隔。其他 LSA 用 other-type。",
+        "lsa-originate-interval 0 是取消产生间隔，不是把三个参数都设成 0。",
+        "spf-schedule-interval 还可以写成秒（1～10）或 millisecond（1～10000 毫秒）。"
+      ]
+    },
+    {
+      "type": "h",
+      "text": "IP FRR：备份先算好，断了只做切换"
+    },
+    {
+      "type": "p",
+      "text": "OSPF IP FRR 是动态 IP FRR。用 LFA（Loop-Free Alternates）以每个能当备份的邻居为根做 SPF，挑出开销最小且无环的备份下一跳，写进转发表。主链路断了直接切备份，不等重新 SPF。课件给的目标是 50ms 以内，前提是备份已经在转发表里。"
+    },
+    {
+      "type": "table",
+      "caption": "S 是源，D 是目的，N 是备份邻居，E 是要保护的那台故障节点。Distance_opt(X,Y) 是 X 到 Y 的最短距离。",
+      "headers": [
+        "保护对象",
+        "必须同时满足",
+        "在防什么"
+      ],
+      "rows": [
+        [
+          "链路保护",
+          "Distance(N,D) < Distance(N,S) + Distance(S,D)",
+          "流量从 N 去 D 不会绕回 S"
+        ],
+        [
+          "节点+链路",
+          "上面的链路不等式，再加上 Distance(N,D) < Distance(N,E) + Distance(E,D)",
+          "流量从 N 去 D 既不经过 S，也不经过故障节点 E"
+        ]
+      ]
+    },
+    {
+      "type": "callout",
+      "kind": "exam",
+      "title": "优先级",
+      "text": "节点保护优先于链路保护。两个不等式要同时成立才叫节点链路双保护。不等式不成立，这台邻居就不能当无环备份，路由里不会有 Backup Nexthop。"
+    },
+    {
+      "type": "code",
+      "title": "打开 FRR，必要时把某接口排除",
+      "code": "ospf 1\n frr\n  loop-free-alternate\n#\ninterface GigabitEthernet0/0/1\n ospf frr block"
+    },
+    {
+      "type": "p",
+      "text": "ospf frr block 配在本端接口上，是不让对端把这台设备当成备份节点。承载重要业务、不希望被 FRR 流量打到的设备，用这条挡掉。"
+    },
+    {
+      "type": "h",
+      "text": "BFD：不要拿 40 秒的 Dead 定时器等故障"
+    },
+    {
+      "type": "p",
+      "text": "OSPF 靠 Hello 判邻居失效，Dead 定时器缺省 40 秒。BFD 把检测压到毫秒。邻居到 Full 之后才通知 BFD 建会话；链路断了 BFD 先 Down，OSPF 再重算。"
+    },
+    {
+      "type": "code",
+      "title": "全局 BFD 是前提，进程和接口二选一或叠加",
+      "code": "bfd\n#\nospf 1\n bfd all-interfaces enable\n bfd all-interfaces min-tx-interval 100 min-rx-interval 100 detect-multiplier 3\n# 和 FRR 绑在一起：BFD Down 时把接口链路状态也打 Down，立刻切备份\n bfd all-interfaces frr-binding\n#\ninterface GigabitEthernet0/0/0\n ospf bfd enable\n ospf bfd min-tx-interval 50 min-rx-interval 50 detect-multiplier 3"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "系统视图必须先有 bfd，否则 OSPF 里的 BFD 命令配了也不检测。",
+        "接口上的 BFD 开关和参数压过进程里的 all-interfaces。接口开了，就按接口参数建会话。",
+        "min-rx-interval / min-tx-interval 范围 10～2000 毫秒，缺省 1000。detect-multiplier 范围 3～50，缺省 3。",
+        "frr-binding 是把 BFD 会话状态和接口链路状态绑死，专门给 IP FRR 用。"
+      ]
+    }
+  ],
+  "exam": [
+    "PRC 默认开。新增网段只加叶子，最短路径树和去该节点的下一跳都不变。",
+    "智能定时器：第 n 次 = hold×2^(n-2)，顶到 max 后连续三次，再回到 start。",
+    "originate 缺省 5000/500/1000，arrival 1000/500/500，SPF 10000/500/1000，单位毫秒。",
+    "链路保护一个不等式，节点保护要两个都满足。节点保护优先。",
+    "FRR 的备份类型在回显里写成 LFA LINK。切换的是已经装进 FIB 的备份，不是等 SPF。",
+    "BFD 必须先在系统视图 enable。接口配置优先于进程配置。"
+  ],
+  "mixups": [
+    {
+      "see": "选项里把「LSP 快速扩散」和 PRC、智能定时器、OSPF IP FRR 放在一起，问哪些是 OSPF 的",
+      "mean": "PRC、智能定时器、OSPF IP FRR 是 OSPF 的。LSP 快速扩散是 IS-IS 的 flash-flood，划掉。"
+    },
+    {
+      "see": "课件写「1 秒不能再生，即间隔 5 秒」",
+      "mean": "产生间隔和接收间隔是两条命令。缺省以智能定时器那张表为准，不要把 1 秒和 5 秒当成同一个数。"
+    },
+    {
+      "see": "lsa-originate-interval 0",
+      "mean": "取消产生侧间隔，让 LSA 马上发出去。不是把 max/start/hold 三个数写成 0。"
+    },
+    {
+      "see": "Backup Type : LFA LINK",
+      "mean": "这条路由有链路保护备份。没有 Backup Nexthop 就是 LFA 没算出无环邻居。"
+    },
+    {
+      "see": "只在 OSPF 进程里写了 bfd all-interfaces enable，会话起不来",
+      "mean": "系统视图缺了 bfd。全局 BFD 没开，进程和接口上的命令都不检测。"
+    },
+    {
+      "see": "进程和接口都配了 BFD 参数，两边数字不一样",
+      "mean": "按接口上的参数建会话。接口优先。"
+    }
+  ],
+  "memory": [
+    "PRC 动叶子，I-SPF 动节点。OSPF 这篇只记 PRC。",
+    "定时器口诀：头快、翻倍、三次顶、再回头。originate 5 秒顶，arrival 1 秒顶，SPF 10 秒顶。",
+    "FRR 不等式：备份邻居到目的，要比「绕回源再去目的」更近。节点保护再加一条：也不许经过故障节点。",
+    "BFD 三步：系统视图 bfd → 进程或接口 enable → 要跟 FRR 一起切就加 frr-binding。"
+  ],
+  "labs": [
+    {
+      "title": "OSPF IP FRR：R1–R3 断了改走 R2",
+      "goal": "Area 0 里 R1 访问 R4 的 10.1.34.0/24。主路径 R1–R3–R4，开销 15。R1 打开 LFA 之后，备份走 R1–R2。",
+      "topo": {
+        "caption": "实线是主路径 R1–R3–R4。R1–R2 是备份。接口地址见命令注释。",
+        "nodes": [
+          {
+            "id": "R1",
+            "x": 20,
+            "y": 80,
+            "label": "R1"
+          },
+          {
+            "id": "R2",
+            "x": 200,
+            "y": 10,
+            "label": "R2"
+          },
+          {
+            "id": "R3",
+            "x": 200,
+            "y": 150,
+            "label": "R3"
+          },
+          {
+            "id": "R4",
+            "x": 400,
+            "y": 80,
+            "label": "R4"
+          }
+        ],
+        "links": [
+          {
+            "a": "R1",
+            "b": "R3",
+            "label": "cost 10"
+          },
+          {
+            "a": "R1",
+            "b": "R2",
+            "label": "cost 10"
+          },
+          {
+            "a": "R2",
+            "b": "R3",
+            "label": "cost 5"
+          },
+          {
+            "a": "R3",
+            "b": "R4",
+            "label": "cost 5"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "where": "地址",
+          "text": "R1 GE0/0/0 = 10.1.13.1/24 对 R3，GE0/0/1 = 10.1.12.1/24 对 R2。R2：10.1.12.2、10.1.23.2。R3：10.1.13.3、10.1.34.3、10.1.23.3。R4 GE0/0/1 = 10.1.34.4/24。Router-ID 用 10.1.1.1 / .2.2 / .3.3 / .4.4。四台都在 Area 0。",
+          "code": ""
+        },
+        {
+          "where": "R1 开销和 FRR",
+          "text": "R2、R3、R4 按图上的 cost 同样改接口。只在需要备份的 R1 上开 FRR 即可。",
+          "code": "interface GigabitEthernet0/0/0\n ospf cost 10\ninterface GigabitEthernet0/0/1\n ospf cost 10\nospf 1\n frr\n  loop-free-alternate"
+        }
+      ],
+      "verify": [
+        {
+          "title": "看备份下一跳，不要只看主下一跳",
+          "see": "NextHop 是 10.1.13.3（R3），Backup Nexthop 是 10.1.12.2（R2），Backup Type 是 LFA LINK，Cost 15，Type Transit。",
+          "code": "[R1] display ospf routing 10.1.34.4\n\nOSPF Process 1 with Router ID 10.1.1.1\n Destination : 10.1.34.0/24\n AdverRouter : 10.1.4.4    Area : 0.0.0.0\n Cost : 15    Type : Transit\n NextHop : 10.1.13.3      Interface : GigabitEthernet0/0/0\n Backup Nexthop : 10.1.12.2\n Backup Interface: GigabitEthernet0/0/1\n Backup Type : LFA LINK"
+        }
+      ]
+    }
+  ],
+  "figures": []
+}

@@ -1,0 +1,188 @@
+{
+  "id": "sec-dhcp-ipsg",
+  "title": "DHCP Snooping 和 IPSG",
+  "summary": "信任口才收 Offer/Ack。绑定表记下 IP、MAC、接口和 VLAN。改 CHADDR 用一致性检查挡，冒充服务器和中间人用绑定表挡。IPSG 按这张表丢弃不匹配的 IP 报文。",
+  "source": "Datacom 通用 V1.0 · 网络安全技术",
+  "mindmap": [
+    {
+      "t": "DHCP 安全",
+      "c": [
+        {
+          "t": "信任口",
+          "d": "非信任口丢掉 Offer、Ack、Nak"
+        },
+        {
+          "t": "绑定表",
+          "d": "从 Ack 里摘 IP、MAC、接口、VLAN、租期"
+        },
+        {
+          "t": "饿死",
+          "d": "限制绑定表项个数；CHADDR 必须等于源 MAC"
+        },
+        {
+          "t": "IPSG",
+          "d": "没有绑定表时，除 DHCP 请求外全部拒绝"
+        }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "h",
+      "text": "先分清 DHCP 报文方向"
+    },
+    {
+      "type": "p",
+      "text": "无中继：Discover 广播，Offer 单播，Request 广播，Ack 单播。服务器按 CHADDR 分配地址，按接收接口所在网段选地址池。有多个 Offer 时客户端一般只用第一个，再用广播 Request 通知其他服务器放弃。"
+    },
+    {
+      "type": "p",
+      "text": "有中继：第一个中继把自己的地址填进 giaddr，后面的中继不改。服务器靠 giaddr 判断客户端网段。中继把目的改成服务器，源改成自己靠近客户端的接口地址。"
+    },
+    {
+      "type": "h",
+      "text": "信任和非信任"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "信任口正常接收 Offer、Ack、Nak。",
+        "客户端的请求只从信任口送去合法服务器，不向非信任口转发。",
+        "非信任口收到的 Offer、Ack、Nak 直接丢。仿冒 DHCP 服务器就挂在非信任口上，它的应答进不来。",
+        "只开了 dhcp snooping enable、没标 trusted 的口：请求转发给所有信任口，响应丢掉。",
+        "trusted 口：请求也只转给其他信任口，没有其他信任口就把请求丢掉；响应只转给连着对应客户端、并且开了 snooping 的口。"
+      ]
+    },
+    {
+      "type": "p",
+      "text": "绑定表从 Ack 里取 MAC、分配到的 IP、租期，再加上开了 Snooping 的接口和 VLAN。租期到了老化，收到 Release 也删。"
+    },
+    {
+      "type": "h",
+      "text": "三种攻击"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "攻击",
+        "怎么做",
+        "怎么挡"
+      ],
+      "rows": [
+        [
+          "饿死，换源 MAC 也换 CHADDR",
+          "每个请求换一个 CHADDR，耗尽地址池",
+          "限制接口能学的绑定表项个数"
+        ],
+        [
+          "只改 CHADDR，源 MAC 不变",
+          "同样耗尽地址池，但帧源 MAC 是攻击者自己的",
+          "dhcp snooping check dhcp-chaddr enable。CHADDR 必须等于帧源 MAC，否则丢"
+        ],
+        [
+          "中间人 / IP、MAC 欺骗",
+          "用 ARP 让客户端和服务器都学到攻击者的 MAC",
+          "收到的 ARP 或 IP 报文用源 IP + 源 MAC 去对绑定表，对上才转发"
+        ]
+      ]
+    },
+    {
+      "type": "callout",
+      "kind": "warn",
+      "title": "CHADDR 检查挡不住「MAC 和 CHADDR 一起换」",
+      "text": "攻击者每次把源 MAC 和 CHADDR 改成同一个新值，一致性检查会放行。这种仍是饿死，要靠绑定表项个数上限，不能只靠 check dhcp-chaddr。"
+    },
+    {
+      "type": "callout",
+      "kind": "exam",
+      "title": "多选题里划掉 TCP flag",
+      "text": "DHCP Snooping 防的是仿冒服务器、改变 CHADDR 的饿死、中间人和 IP/MAC 欺骗。它不防 TCP flag 攻击。"
+    },
+    {
+      "type": "h",
+      "text": "IPSG"
+    },
+    {
+      "type": "p",
+      "text": "IP Source Guard 用绑定表检查 IP 报文。匹配才放行。静态地址和 DHCP 地址都能做表项。用户改了 IP，表对不上，报文被丢。"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "没有绑定表就打开 IPSG：除 DHCP 请求以外的 IP 报文全部拒绝。先有表，再开检查。",
+        "静态表用 user-bind static，至少带 IP 或 MAC，可以再带接口和 VLAN。接口上 ip source check user-bind enable 按静态表做完全匹配。",
+        "动态表来自 DHCP Snooping。缺省按 MAC、IP、VLAN、入接口四项都查，也可以只查其中几项。",
+        "告警：ip source check user-bind alarm enable，再配 threshold。丢弃次数超过阈值才告警。",
+        "查看静态表：display dhcp static user-bind all。"
+      ]
+    },
+    {
+      "type": "h",
+      "text": "DAI：用同一张绑定表查 ARP"
+    },
+    {
+      "type": "p",
+      "text": "园区综述里的动态 ARP 检测不另开专题。中间人伪造 ARP 时，交换机把 ARP 的源 IP、源 MAC、VLAN、接口去对 DHCP Snooping 绑定表。四项都对才转发，否则丢掉。没有绑定表，DAI 无从核对。"
+    }
+  ],
+  "exam": [
+    "非信任口丢 Offer、Ack、Nak。请求只往信任口送。",
+    "绑定表五项：IP、MAC、VLAN、接口、租期。",
+    "CHADDR 检查是和帧源 MAC 比。一起伪造就靠表项个数。",
+    "中间人靠绑定表匹配源 IP + 源 MAC。",
+    "IPSG 没表时拒绝除 DHCP 请求外的所有 IP。",
+    "TCP flag 不是 DHCP Snooping 的防御对象。",
+    "DAI 用 DHCP Snooping 绑定表核对 ARP 的源 IP、源 MAC、VLAN 和接口。"
+  ],
+  "mixups": [
+    {
+      "see": "接口开了 dhcp snooping enable，没有 trusted",
+      "mean": "这是非信任口。服务器的 Offer 和 Ack 会被丢。连服务器的口必须 trusted。"
+    },
+    {
+      "see": "giaddr",
+      "mean": "第一个中继填写，后面的中继不改。服务器用它选地址池。不是 CHADDR。"
+    },
+    {
+      "see": "check dhcp-chaddr 配了，地址还是被耗光",
+      "mean": "攻击者源 MAC 和 CHADDR 一起变。要再限绑定表项个数。"
+    },
+    {
+      "see": "先开了 ip source check user-bind enable，用户全部上不了网",
+      "mean": "还没有绑定表。缺省会拒绝 DHCP 请求以外的 IP 报文。先写 user-bind 或先让 Snooping 学到表。"
+    },
+    {
+      "see": "display dhcp static user-bind all",
+      "mean": "看的是 IPSG 静态绑定，不是 DHCP Snooping 动态表。"
+    },
+    {
+      "see": "ARP 源 IP 和源 MAC 对不上绑定表",
+      "mean": "DAI 丢弃。这是防中间人，和 IPSG 查 IP 报文不是同一条命令，但用的是同一张绑定表。"
+    }
+  ],
+  "memory": [
+    "服务器口 trusted，用户口 enable。Offer 只从信任口进。",
+    "CHADDR 对源 MAC。对不上就丢。两个一起变，就限个数。",
+    "IPSG：没有表就几乎全丢。有表才按 IP、MAC、接口、VLAN 放行。"
+  ],
+  "labs": [
+    {
+      "title": "静态地址不许用户自己改",
+      "goal": "10.1.1.1 只能用 MAC 5489-98C2-1486，10.1.1.10 只能用 5489-98AB-22A7。改 IP 后访问失败。",
+      "steps": [
+        {
+          "where": "接入交换机",
+          "code": "user-bind static ip-address 10.1.1.1 mac-address 5489-98C2-1486\nuser-bind static ip-address 10.1.1.10 mac-address 5489-98AB-22A7\ninterface GigabitEthernet0/0/1\n ip source check user-bind enable\n ip source check user-bind alarm enable\n ip source check user-bind alarm threshold 100"
+        }
+      ],
+      "verify": [
+        {
+          "title": "表里有这两条，改地址后不通",
+          "see": "display 能看到两个 IP 和对应 MAC。用管理员分配的地址可以访问，改掉 IP 后报文匹配不上绑定表，被丢掉。",
+          "code": "display dhcp static user-bind all"
+        }
+      ]
+    }
+  ],
+  "figures": []
+}

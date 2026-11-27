@@ -1,0 +1,184 @@
+{
+  "id": "wan-overview",
+  "title": "广域互联：专线和 VPN 怎么选",
+  "summary": "专线是裸纤、SDH/MSTP/WDM 和 MPLS VPN。L2TP 和 IPSec 不是专线。分支到总部用 GRE 或 DSVPN，远程拨入用 L2TP，合作伙伴用 SSL。链路好不好先探测，再选路。",
+  "source": "Datacom 通用 V1.0 · 广域互联方案与技术概述",
+  "mindmap": [
+    {
+      "t": "广域互联",
+      "c": [
+        {
+          "t": "专线",
+          "d": "裸纤、传输专线、MPLS VPN"
+        },
+        {
+          "t": "自建 VPN",
+          "d": "接入 L2TP，内网 GRE/DSVPN，外联 SSL"
+        },
+        {
+          "t": "探测",
+          "d": "BFD 看通断，NQA 模拟，IP FPM 量真实流量"
+        }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "h",
+      "text": "三种接法"
+    },
+    {
+      "type": "p",
+      "text": "企业广域互联是总部、数据中心、分支和移动办公之间的私网。底下可以是运营商的网，也可以是电力、交通这种自建专线。现网经常混用。"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "接法",
+        "给谁",
+        "代价"
+      ],
+      "rows": [
+        [
+          "传输专线：裸纤、SDH、MSTP、WDM",
+          "总部、数据中心、重要网点",
+          "贵。硬管道，带宽独占，质量和安全最好"
+        ],
+        [
+          "MPLS 专线：L2VPN 或 L3VPN",
+          "要隔离、又想比传输便宜",
+          "以太网接入，基本没有硬管道。安全有，可靠性不如传输专线"
+        ],
+        [
+          "Internet 加 VPN",
+          "对 SLA 要求不高的中小分支",
+          "便宜。安全靠隧道，不靠线路"
+        ]
+      ]
+    },
+    {
+      "type": "callout",
+      "kind": "exam",
+      "title": "专线只选 SDH 和 MPLS VPN",
+      "text": "多选「哪些是专线技术」：SDH、MPLS VPN。L2TP 和 IPSec VPN 是跑在 Internet 上的隧道，不是专线。帧中继和 ATM 课件明确说现在基本不用。"
+    },
+    {
+      "type": "h",
+      "text": "专线里再分三档"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "裸纤：中间不经过别的设备，容量由企业自己的传输设备决定。按距离收费。一跳一般认为最长 300 km，再远要加中继。",
+        "SDH、MSTP、WDM：多个用户共享光纤，但各自占一段硬管道。现网多是 MSTP 和 WDM，少量地方还有 SDH。WDM 在一条光纤上用不同波长，带宽可以到数 T。",
+        "MPLS VPN：专线里最便宜，性能也最弱。现网 L3VPN 多。跨域三种做法见 L3VPN 跨域那篇：小网 Option A，中大型 Option B，大型或特大型 Option C。"
+      ]
+    },
+    {
+      "type": "h",
+      "text": "自建 VPN 按用途分"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "用途",
+        "谁和谁",
+        "课件给的技术"
+      ],
+      "rows": [
+        [
+          "Access VPN，也叫 VPDN",
+          "出差的人或远程小办公室拨进来",
+          "L2TP。也可以是 PPTP、L2F"
+        ],
+        [
+          "Intranet VPN",
+          "本公司网关到网关",
+          "GRE、DSVPN。要加密就再套 IPSec"
+        ],
+        [
+          "Extranet VPN",
+          "延伸到供应商、合作伙伴",
+          "SSL VPN"
+        ]
+      ]
+    },
+    {
+      "type": "p",
+      "text": "DSVPN 是为了补 GRE over IPSec 的三个缺点：流量都得绕 Hub、加站点要改 Hub、Spoke 用动态地址时点到点 GRE 不好配。它用 NHRP 收集各节点的公网地址，用 mGRE 让一个 Tunnel 口对很多对端。Spoke 和 Spoke 之间的数据可以直连。这条 GRE 仍然可以用 IPSec 保护。封装顺序见 IPSec 那篇：先 GRE，再 IPSec。"
+    },
+    {
+      "type": "h",
+      "text": "先探测，再谈可靠和优化"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "手段",
+        "看什么",
+        "和另外两个的差别"
+      ],
+      "rows": [
+        [
+          "BFD",
+          "邻接转发引擎之间通不通",
+          "Hello。介质无关、协议无关。同一条路径只建一个会话，参数要覆盖所有绑定的应用"
+        ],
+        [
+          "NQA",
+          "时延、抖动、丢包，还能看 HTTP、DNS、FTP",
+          "设备自己当探针，省一台专用探针。它造报文去模拟，不是量真实业务"
+        ],
+        [
+          "IP FPM",
+          "真实业务的丢包和时延",
+          "直接量业务报文，也能跨层、跨多路径。NQA 做不到这两点"
+        ]
+      ]
+    },
+    {
+      "type": "p",
+      "text": "IP FPM 三个角色：边缘接口是 TLP，负责计数和时间戳，上游叫 In-Point，下游叫 Out-Point。边缘节点是 DCP，收 TLP 的数。中间节点是 MCP，汇总后报给网管。"
+    },
+    {
+      "type": "p",
+      "text": "出口或网关的冗余，课件点名用 VRRP：多台设备合成一台虚拟网关，Master 转发，Master 的下行断了就由 Backup 接上。堆叠和链路聚合也是冗余，但出口网关场景记 VRRP。"
+    },
+    {
+      "type": "p",
+      "text": "优化两件事。识别应用用 SAC：先看这条流认过没有，认过就直接转发。没认过就进 SAC，顺序是 FPI 的 ACL、再 FPI 的 DNS 关联表、再协议端口表，三个都失败才交给 SA。调度用 QoS 和 HQoS，队列和调度见 QoS 那两篇，这里不重复。补包用 FEC：冗余包和数据包一起发，接收方发现丢了就用冗余包还原，适合随机丢包或跨国 RTT 很大的网。ARQ 是发了等确认、没有确认再重传，会多一段时延。FEC 的能力有限，四个包丢了三个，剩下一个还原不出另外三个。"
+    }
+  ],
+  "exam": [
+    "专线：SDH 和 MPLS VPN。L2TP、IPSec 不是专线。",
+    "传输专线比 MPLS 专线贵，可靠性也更好。MPLS 专线比传输专线便宜。",
+    "接入用 L2TP，公司内部网关用 GRE 或 DSVPN，合作伙伴用 SSL。",
+    "BFD 看通断。NQA 模拟业务。IP FPM 量真实业务。",
+    "FEC 在接收方还原。丢得太多还原不了。"
+  ],
+  "mixups": [
+    {
+      "see": "把 IPSec 选成专线",
+      "mean": "IPSec 和 L2TP 是 Internet 上的 VPN。专线是 SDH 这类传输，以及运营商的 MPLS VPN。"
+    },
+    {
+      "see": "MPLS 专线比裸纤更可靠",
+      "mean": "反过来。裸纤和 SDH/MSTP/WDM 是硬管道。MPLS VPN 用以太网接入，性能最弱，只是专线里最便宜。"
+    },
+    {
+      "see": "NQA 的时延就是业务时延",
+      "mean": "NQA 发的是探测报文。要看真实业务，用 IP FPM。"
+    },
+    {
+      "see": "DSVPN 和点到点 GRE",
+      "mean": "DSVPN 用 mGRE，一个 Tunnel 口对很多 Spoke，公网地址靠 NHRP 学。点到点 GRE 加一个动态地址的 Spoke 就要改配置。"
+    }
+  ],
+  "memory": [
+    "专线三档：裸纤、传输、MPLS。隧道不是专线。",
+    "接入 L2TP，内部 GRE，对外 SSL。",
+    "通断看 BFD，模拟看 NQA，真实流量看 IP FPM。"
+  ],
+  "labs": [],
+  "figures": []
+}

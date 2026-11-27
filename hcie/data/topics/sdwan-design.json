@@ -1,0 +1,159 @@
+{
+  "id": "sdwan-design",
+  "title": "SD-WAN 怎么规划",
+  "summary": "Overlay 四种拓扑都支持。隧道只在同一个路由域里枚举。RR 至少两台，要有公网地址或一对一静态 NAT。传统 MPLS 若不是同一张网，用 Gateway 站点对接。",
+  "source": "Datacom 通用 V1.0 · SD-WAN 解决方案与规划设计",
+  "mindmap": [
+    {
+      "t": "规划",
+      "c": [
+        {
+          "t": "拓扑",
+          "d": "Hub-Spoke、Full-mesh、Partial-mesh、分层，四个都要"
+        },
+        {
+          "t": "隧道",
+          "d": "同路由域才枚举。TNP 描述 WAN 口"
+        },
+        {
+          "t": "RR",
+          "d": "至少两台，优先独立部署，只要 1:1 NAT"
+        }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "h",
+      "text": "架构和开局不在这里重复"
+    },
+    {
+      "type": "p",
+      "text": "四个部件、三条通道和邮件开局见前面两篇。这篇只记设计时要拍板的事。多选「支持哪些 Overlay 拓扑」四项全选：Hub-Spoke、Full-mesh、Partial-mesh、分层组网。智能选路能按链路质量改转发路径，这道判断是对的。"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "拓扑",
+        "流量怎么走"
+      ],
+      "rows": [
+        [
+          "Hub-Spoke",
+          "总部或数据中心当 Hub，分支当 Spoke，访问集中在 Hub"
+        ],
+        [
+          "Full-mesh",
+          "有互访的站点直接通信，不绕中间节点"
+        ],
+        [
+          "Partial-mesh",
+          "Underlay 直接互通就直连，否则绕到双方都连着的逃生站点 Redirect"
+        ],
+        [
+          "分层",
+          "多个区域，区域之间经骨干区域互访"
+        ]
+      ]
+    },
+    {
+      "type": "h",
+      "text": "隧道只在同一个路由域里建"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "Transport Network 是运营商那张接入网。路由域：不同 TN 之间路由可达，就算同一个路由域。",
+        "TNP 描述 CPE 接入这张网的 WAN 口：Site ID、Router ID、TN、公网地址、私网地址、封装。Site ID 由控制器分配。一个站点 1 到 2 台 CPE，Router ID 一般用环回地址。",
+        "枚举规则：只有相同路由域的 TNP 才能建隧道，同一个路由域里的接口做 Full-mesh。不同路由域不建。",
+        "建立顺序：ZTP 之后设备和控制器建 NETCONF。控制器下发配置后，设备和 RR 建 DTLS，交换 TNP 和 IPSec SA，再起 BGP EVPN。业务隧道要等 RR 把对端 TNP 反射过来，由路由触发。",
+        "TNP 交换两次。第一次是 RR 和 Edge 之间，为了建控制通道。第二次是 Edge 和 Edge 之间，为了建数据通道。"
+      ]
+    },
+    {
+      "type": "callout",
+      "kind": "fix",
+      "title": "备注里 DTLS 那句说反了",
+      "text": "有一页备注写 DTLS 用来保护 TCP。DTLS 是数据报上的 TLS，保护的是 UDP。控制通道本身走 BGP EVPN，数据通道是 GRE。不要按那句备注记。"
+    },
+    {
+      "type": "h",
+      "text": "RR 怎么放"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "至少两台，Edge 双上行到两台。一个 Edge 站点最多连两个 RR 站点。一个 CPE 最多连两个 RR 站点，也就是 4 台 RR 设备。连两个 RR 站点时，要和每个站点里的每台 CPE 都建 BGP。",
+        "优先独立部署，别和会经常改配置的站点绑在一起。做不到就放在核心、性能够的设备上。小于约 50 个站点，可以和 Hub 共部署。",
+        "RR 必须有公网地址，或者前面只做 1:1 静态 NAT。所以 Edge 到 RR 不算 NAT 穿越问题。Edge 和 Edge 都在 NAT 后面，才用 STUN，RR 当 STUN 服务器。",
+        "Active 正常时，Standby 链路不建控制通道，要等去往 RR 的 Active 全断。不建议给 RR 自己配 Standby 链路。",
+        "Edge 太多就分区，每区至少一对 RR，区间 RR 互建 BGP EVPN。算路由规格时把各站点 LAN 侧路由加总。",
+        "MSP 转售：中小客户共享一台 RR，大客户单独分 RR。"
+      ]
+    },
+    {
+      "type": "h",
+      "text": "站点和传统网络"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "小站点单 CPE。要设备级冗余就双 CPE。每台 CPE 最多 10 条 WAN 链路，建议单 CPE 不超过 3 条，双 CPE 的站点不超过 6 条。",
+        "两台 CPE 用 Interlink 互联。端口够就用专用链路，两条时控制器自动编成 Eth-Trunk。推荐这种，和 LAN 业务分开。端口不够才借用 LAN 侧二层口。",
+        "LAN 侧路由用静态、OSPF 或 BGP，和局域网设备一致。WAN 侧 Overlay 用 BGP EVPN，控制器编排。两边可以用路由策略过滤。",
+        "上网从本站 Internet 口出去，叫本地上网。出接口最多选三个，按优先级主备，不做负载分担。NAT 是 Easy IP，用出接口地址。适合小企业或不需要把上网流量集中管控的站。",
+        "传统 MPLS 和 SD-WAN 的 Underlay 不互通：挑一个 SD-WAN 站和一个传统站，逻辑上当成 Gateway。互联链路上跑 OSPF 或 BGP。多个 VPN 就在这条链路上建多条逻辑链路，分别放进对应 VRF。",
+        "Underlay 本来就是同一张网：用 Local Breakout，流量先到 Underlay 再和传统站点互通。这种方式只支持一个 SD-WAN VPN。可以每个站点自己突破，也可以先集中到一个站点再突破，还可以本地优先、断了再绕到集中站点。"
+      ]
+    },
+    {
+      "type": "p",
+      "text": "Hub 双活两种切法。业务网段能分开，就让办公走 Hub1、生产走 Hub2。两个数据中心离得远，就让 Spoke 以近的 Hub 为主、远的为备。站点太多、Hub 规格不够：一个租户里分区域，或者拆成多个租户交给 MSP。跨区互访都从 Hub 的 LAN 侧绕。"
+    },
+    {
+      "type": "p",
+      "text": "控制器异地容灾是两套集群，节点数必须一样。只有主集群对外服务，数据实时同步到备集群。北向和南向用同一个域名，倒换后域名指到新的主集群。倒换是手动的，时间可以控制在 10 分钟内。链路要求时延不超过 20 ms，带宽不低于 125 MB。集群内部的部件故障仍靠集群自己的容错，不靠这次异地倒换。"
+    }
+  ],
+  "exam": [
+    "Overlay 拓扑四项都选：Hub-Spoke、Full-mesh、Partial-mesh、分层。",
+    "智能选路可以按链路质量改转发路径。",
+    "隧道枚举：同一路由域 Full-mesh，不同路由域不建。",
+    "RR 至少两台，要公网地址或 1:1 静态 NAT。Edge 到 RR 不做 STUN。",
+    "传统网站和 SD-WAN 不在同一张 Underlay：Gateway 站点对接。在同一张网：Local Breakout，且只支持一个 VPN。",
+    "本地上网最多三个出接口，按优先级主备，NAT 用 Easy IP。"
+  ],
+  "mixups": [
+    {
+      "see": "Partial-mesh 和 Full-mesh",
+      "mean": "Partial-mesh 只在 Underlay 本来互通的站点之间直连。不通的一对要绕到 Redirect 逃生站点。"
+    },
+    {
+      "see": "不同运营商的口也建了 Overlay",
+      "mean": "先看路由域。路由互不可达就不枚举隧道。"
+    },
+    {
+      "see": "RR 前面做了端口复用的 NAT",
+      "mean": "不支持。只支持 1:1 静态 NAT，或者 RR 自己用公网地址。"
+    },
+    {
+      "see": "Active 还在，Standby 上也有到 RR 的 BGP",
+      "mean": "正常时 Standby 不建控制通道。去往 RR 的 Active 全部断开才用它。"
+    },
+    {
+      "see": "Local Breakout 打通了好几个 VPN",
+      "mean": "本地互访只支持一个 SD-WAN VPN。多个 VPN 要走 Gateway 站点上的背靠背逻辑链路。"
+    },
+    {
+      "see": "备注写 DTLS 保护 TCP",
+      "mean": "写反了。DTLS 保护 UDP。"
+    }
+  ],
+  "memory": [
+    "四种拓扑都要会：星型、全互联、部分互联、分层。",
+    "同路由域才建隧道。RR 要公网，只要一对一 NAT。",
+    "不是同一张网就放 Gateway。同一张网用 Local Breakout，只带一个 VPN。"
+  ],
+  "labs": [],
+  "figures": []
+}
