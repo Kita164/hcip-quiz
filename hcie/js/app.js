@@ -9,6 +9,8 @@
     query: "",
     onlyTodo: false,
     current: "home",
+    openDecks: new Set(),
+    spy: null,
   };
 
   const $ = (id) => document.getElementById(id);
@@ -112,6 +114,7 @@
     const nav = $("nav");
     const learnedN = state.order.filter((id) => state.learned[id]).length;
     $("prog").textContent = "已学 " + learnedN + " / " + state.order.length;
+    const searching = state.query.trim().length > 0;
     const homeOn = state.current === "home" ? " active" : "";
     let html = '<a class="topic-link' + homeOn + '" href="#home"><i class="dot"></i><span>总览</span></a>';
     state.catalog.decks.forEach((deck) => {
@@ -119,16 +122,34 @@
         .map((id) => state.topics[id])
         .filter((t) => t && matches(t));
       if (!items.length) return;
-      html += '<div class="deck">' + esc(deck.title) + "</div>";
+      const open = searching || state.openDecks.has(deck.id);
+      html += '<details class="deck-block" data-deck="' + esc(deck.id) + '"' + (open ? " open" : "") + ">";
+      html += "<summary>" + esc(deck.title) + "</summary>";
       items.forEach((t) => {
         const on = t.id === state.current ? " active" : "";
         const done = state.learned[t.id] ? " learned" : "";
         html += '<a class="topic-link' + on + done + '" href="#' + esc(t.id) + '"><i class="dot"></i><span>' + highlight(t.title) + "</span></a>";
       });
+      html += "</details>";
     });
     const any = state.order.some((id) => matches(state.topics[id]));
     if (!any) html += '<p class="empty">没有匹配的专题。</p>';
     nav.innerHTML = html;
+    nav.querySelectorAll("details.deck-block").forEach((el) => {
+      el.addEventListener("toggle", () => {
+        const id = el.getAttribute("data-deck");
+        if (el.open) state.openDecks.add(id);
+        else state.openDecks.delete(id);
+      });
+    });
+    const active = nav.querySelector(".topic-link.active");
+    if (active) {
+      const nr = nav.getBoundingClientRect();
+      const ar = active.getBoundingClientRect();
+      if (ar.top < nr.top + 8 || ar.bottom > nr.bottom - 8) {
+        nav.scrollTop += ar.top - nr.top - 48;
+      }
+    }
     renderHits();
   }
 
@@ -297,11 +318,13 @@ function snippet(topic) {
     const learnedN = state.order.filter((id) => state.learned[id]).length;
     const next = state.order.map((id) => state.topics[id]).find((t) => !state.learned[t.id]);
     let html = '<p class="kicker">学习笔记，不是题库</p>';
-    html += "<h2>HCIE-Datacom</h2>";
+    html += '<h2 id="page-title">HCIE-Datacom</h2>';
     html += "<p class=\"summary\">这里按专题整理笔试 H12-891 和实验 H12-892 会用到的说法、对照表和华为命令。不做题。左侧可以搜整份笔记，学完一个专题就标已学，进度只存在这台浏览器里。</p>";
     html += '<p class="source">已学 ' + learnedN + " / " + state.order.length + (next ? "。下一篇未学：<a href=\"#" + esc(next.id) + "\">" + esc(next.title) + "</a>" : "。这一轮都标过了，可以按目录回头翻易混点。") + "</p>";
+    const outline = [{ id: "page-title", text: "总览", depth: 0 }];
     state.catalog.decks.forEach((deck) => {
-      html += '<section class="card"><h3 style="margin-top:0">' + esc(deck.title) + "</h3>";
+      html += '<section class="card" id="deck-' + esc(deck.id) + '"><h3 style="margin-top:0">' + esc(deck.title) + "</h3>";
+      outline.push({ id: "deck-" + deck.id, text: deck.title, depth: 1 });
       html += '<p class="source">' + esc(deck.source || "") + "</p>";
       html += "<p>" + esc(deck.blurb || "") + "</p><ul>";
       deck.topics.forEach((id) => {
@@ -320,23 +343,31 @@ function snippet(topic) {
     html += "</ol></section>";
     $("article").innerHTML = html;
     $("top-title").textContent = "总览";
+    renderRail(outline, '<div class="rail-card"><p class="rail-kicker">怎么用</p><p>左侧按章展开。搜概念或命令会把命中的章节打开。学完就标已学，进度只留在这台浏览器里。</p></div>');
   }
 
   function renderTopic(id) {
     const t = state.topics[id];
     if (!t) {
       $("article").innerHTML = "<h2>没有这一篇</h2><p><a href=\"#home\">回总览</a></p>";
+      renderRail([], "");
       return;
     }
     const deck = deckOf(id);
     const learned = !!state.learned[id];
-    const toc = [];
+    const outline = [{ id: "page-title", text: t.title, depth: 0 }];
     (t.blocks || []).forEach((b, i) => {
-      if (b.type === "h" && b.lv !== 3) toc.push('<a href="#' + esc(id) + "/s-" + i + '">' + esc(b.text) + "</a>");
+      if (b.type === "h" && b.lv !== 3) outline.push({ id: "s-" + i, text: b.text, depth: 1 });
     });
-    if ((t.labs || []).length) toc.push('<a href="#' + esc(id) + '/labs">实验</a>');
+    if (t.exam && t.exam.length) outline.push({ id: "exam", text: "常考点", depth: 1 });
+    if (t.mixups && t.mixups.length) outline.push({ id: "mixups", text: "看到什么就是什么", depth: 1 });
+    if (t.memory && t.memory.length) outline.push({ id: "memory", text: "记忆", depth: 1 });
+    if ((t.labs || []).length) outline.push({ id: "labs", text: "实验", depth: 1 });
+    const toc = outline.filter((item) => item.depth).map((item) => {
+      return '<a href="#' + esc(id) + "/" + esc(item.id) + '">' + esc(item.text) + "</a>";
+    });
     let html = '<p class="kicker">' + esc(deck ? deck.title : "") + "</p>";
-    html += "<h2>" + highlight(t.title) + "</h2>";
+    html += '<h2 id="page-title">' + highlight(t.title) + "</h2>";
     html += '<p class="summary">' + highlight(t.summary) + "</p>";
     html += '<div class="meta-row"><button type="button" class="learn' + (learned ? " on" : "") + '" id="learn-btn">' + (learned ? "已学" : "标为已学") + "</button>";
     html += '<span class="source">' + esc(t.source || (deck && deck.source) || "") + "</span></div>";
@@ -346,14 +377,14 @@ function snippet(topic) {
     }
     html += '<div class="prose">' + (t.blocks || []).map(renderBlock).join("") + "</div>";
     if (t.exam && t.exam.length) {
-      html += "<h3>常考点</h3><ul>" + t.exam.map((x) => "<li>" + highlight(x) + "</li>").join("") + "</ul>";
+      html += '<h3 id="exam">常考点</h3><ul>' + t.exam.map((x) => "<li>" + highlight(x) + "</li>").join("") + "</ul>";
     }
     if (t.mixups && t.mixups.length) {
-      html += "<h3>看到什么就是什么</h3>";
+      html += '<h3 id="mixups">看到什么就是什么</h3>';
       html += t.mixups.map((m) => '<div class="see"><div><b>看到</b>' + highlight(m.see) + "</div><div><b>就是</b>" + highlight(m.mean) + "</div></div>").join("");
     }
     if (t.memory && t.memory.length) {
-      html += "<h3>记忆</h3><ul class=\"memory\">" + t.memory.map((x) => "<li>" + highlight(x) + "</li>").join("") + "</ul>";
+      html += '<h3 id="memory">记忆</h3><ul class="memory">' + t.memory.map((x) => "<li>" + highlight(x) + "</li>").join("") + "</ul>";
     }
     html += renderLabs(t.labs);
     html += renderFigures(t.figures);
@@ -367,6 +398,49 @@ function snippet(topic) {
     document.title = t.title + " · HCIE 笔记";
     const btn = $("learn-btn");
     if (btn) btn.addEventListener("click", () => toggleLearned(id));
+    const points = (t.exam && t.exam.length ? t.exam : t.memory) || [];
+    const card = points.length
+      ? '<div class="rail-card"><p class="rail-kicker">本篇要点</p><ul>' + points.map((x) => "<li>" + esc(x) + "</li>").join("") + "</ul></div>"
+      : "";
+    renderRail(outline, card);
+  }
+
+  function renderRail(items, extra) {
+    const rail = $("rail");
+    if (!rail) return;
+    if (!items || !items.length) {
+      rail.innerHTML = "";
+      return;
+    }
+    const base = state.current === "home" ? "home" : state.current;
+    const nav = items.map((item, i) => {
+      const href = item.id === "page-title" ? "#" + esc(base) : "#" + esc(base) + "/" + esc(item.id);
+      return '<a class="' + (item.depth ? "sub" : "") + (i === 0 ? " active" : "") + '" data-spy="' + esc(item.id) + '" href="' + href + '">' + esc(item.text) + "</a>";
+    }).join("");
+    rail.innerHTML = '<p class="rail-kicker">本页目录</p><nav class="rail-nav" aria-label="本页目录">' + nav + "</nav>" + (extra || "");
+    bindSpy();
+  }
+
+  function bindSpy() {
+    if (state.spy) state.spy.disconnect();
+    const rail = $("rail");
+    if (!rail) return;
+    const links = Array.from(rail.querySelectorAll("a[data-spy]"));
+    const pairs = links.map((a) => [document.getElementById(a.getAttribute("data-spy")), a]).filter((pair) => pair[0]);
+    if (!pairs.length) return;
+    const desktop = window.matchMedia("(min-width: 901px)").matches;
+    state.spy = new IntersectionObserver((entries) => {
+      const hit = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+      if (!hit) return;
+      links.forEach((a) => a.classList.remove("active"));
+      const link = pairs.find((pair) => pair[0] === hit.target);
+      if (link) link[1].classList.add("active");
+    }, {
+      root: desktop ? document.querySelector(".main") : null,
+      rootMargin: "-8% 0px -70% 0px",
+      threshold: 0,
+    });
+    pairs.forEach((pair) => state.spy.observe(pair[0]));
   }
 
   function toggleLearned(id) {
@@ -379,6 +453,8 @@ function snippet(topic) {
 
   function show(id, anchor) {
     state.current = state.topics[id] || id === "home" ? id : "home";
+    const deck = state.current === "home" ? null : deckOf(state.current);
+    if (deck) state.openDecks.add(deck.id);
     if (state.current === "home") {
       renderHome();
       document.title = "HCIE-Datacom 学习笔记";
