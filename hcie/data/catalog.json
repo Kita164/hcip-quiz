@@ -40,7 +40,7 @@
       "id": "campus",
       "title": "园区",
       "source": "Datacom 通用 V1.0 · 企业网络 / 园区 / VXLAN；ThinkMo · 南向",
-      "blurb": "企业网和园区架构、南向与准入、VXLAN，以及业务随行、大中型和中小型云管理园区。",
+      "blurb": "企业网和园区架构、南向与准入、VXLAN、业务随行、云管理，以及控制器开放接口。",
       "topics": [
         "enterprise-panorama",
         "campus-arch",
@@ -50,7 +50,8 @@
         "vxlan-campus",
         "free-mobility",
         "campus-fabric",
-        "campus-smb"
+        "campus-smb",
+        "campus-open-api"
       ]
     },
     {
@@ -137,13 +138,18 @@
       "id": "ops",
       "title": "运维和排障",
       "source": "Datacom 通用 V1.0 · 网络运维 / 故障排除 / 网络割接",
-      "blurb": "日常检查、排障、割接、CampusInsight，以及控制器怎么开放。",
+      "blurb": "日常检查、排障、割接、CampusInsight，以及 SSH、NETCONF、Telemetry 和设备上的开放接口。",
       "topics": [
         "net-ops",
         "net-troubleshoot",
         "net-cutover",
         "campus-insight",
-        "net-program"
+        "net-program",
+        "ssh-paramiko",
+        "netconf-yang",
+        "telemetry",
+        "huawei-ops",
+        "rest-api"
       ]
     }
   ]

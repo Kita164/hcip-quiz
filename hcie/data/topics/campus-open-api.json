@@ -1,0 +1,102 @@
+{
+  "id": "campus-open-api",
+  "title": "园区控制器的开放接口",
+  "summary": "智简园区四层都开放：应用、平台、网络、终端。第三方认证可以走 Authorization API，也可以走 Portal 加 RADIUS。位置数据可以用 HTTPS JSON、AP 的 RSSI 或蓝牙。",
+  "source": "Datacom 通用 V1.0 · iMaster NCE-Campus 开放 API",
+  "mindmap": [
+    {
+      "t": "园区开放",
+      "c": [
+        {
+          "t": "四层",
+          "d": "应用、平台、网络、终端，全选"
+        },
+        {
+          "t": "认证",
+          "d": "Authorization API，或 Portal 加 RADIUS"
+        },
+        {
+          "t": "位置",
+          "d": "HTTPS JSON、RSSI、蓝牙"
+        }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "h",
+      "text": "四层都算开放"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "应用层：行业应用拿网络业务数据做增值。",
+        "平台层：四大类 API，对接标准网络协议。",
+        "网络层：设备侧用 NETCONF、YANG、Telemetry。AP 还可以插第三方物联卡。",
+        "终端层：ZigBee、RFID、蓝牙，以及手机、话机、平板、摄像头。"
+      ]
+    },
+    {
+      "type": "callout",
+      "kind": "exam",
+      "title": "四个层级全选",
+      "text": "多选「智简园区开放支持哪几个层级」是应用层、平台层、网络层、终端层，没有要排除的。"
+    },
+    {
+      "type": "h",
+      "text": "认证和位置怎么对接"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "场景",
+        "对接方式"
+      ],
+      "rows": [
+        [
+          "第三方做接入认证",
+          "Authorization API。已有门户也可以用 Portal 加 RADIUS，控制器把认证页面交给第三方"
+        ],
+        [
+          "位置和客流",
+          "控制器周期把 AP 采到的位置送出去。通道可以是 HTTPS 加 JSON、AP RSSI API，或蓝牙 API"
+        ],
+        [
+          "调用别的 API",
+          "先用账号换 Token，放在请求头里。再调例如 SSID 配置"
+        ]
+      ]
+    },
+    {
+      "type": "p",
+      "text": "准入协议本身见网络准入那两篇。这里只记控制器对外开放时的两条认证集成，不要和 802.1X 的报文流程混成一张表。"
+    }
+  ],
+  "exam": [
+    "开放层级四个都选。",
+    "认证集成两条：Authorization API，Portal 加 RADIUS。",
+    "位置三条：HTTPS JSON、AP RSSI、蓝牙。",
+    "API 调用先拿 Token，放在头里。"
+  ],
+  "mixups": [
+    {
+      "see": "只选平台层",
+      "mean": "应用、网络、终端也在答案里。网络层就是 NETCONF 和 Telemetry 这些设备接口。"
+    },
+    {
+      "see": "位置数据要在控制器上画出热力图",
+      "mean": "控制器负责把位置送出去。热力图、轨迹和客流是第三方算的。"
+    },
+    {
+      "see": "Token 放在 URI 里",
+      "mean": "课件是放在请求头里做鉴权。"
+    }
+  ],
+  "memory": [
+    "四层全开放。",
+    "认证两条路，位置三条路。",
+    "先换 Token，再调接口。"
+  ],
+  "labs": [],
+  "figures": []
+}

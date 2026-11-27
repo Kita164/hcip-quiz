@@ -1,0 +1,76 @@
+{
+  "id": "rest-api",
+  "title": "REST 和 HTTP 方法",
+  "summary": "REST 是风格，不是协议。资源用 URI 定位，用 GET、POST、PUT、DELETE 操作。GET 没有请求体。RESTful 是按这个风格做的接口，RESTCONF 才是把 YANG 映射到 HTTP 的协议。",
+  "source": "Datacom 通用 V1.0 · RESTful 原理与实践",
+  "mindmap": [
+    {
+      "t": "REST",
+      "c": [
+        {
+          "t": "风格",
+          "d": "资源、URI、标准方法、无状态"
+        },
+        {
+          "t": "方法",
+          "d": "GET 不带请求数据"
+        },
+        {
+          "t": "协议",
+          "d": "RESTCONF 才是协议。HTTP/2 是二进制分帧"
+        }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "h",
+      "text": "三个名字不要叠在一起"
+    },
+    {
+      "type": "p",
+      "text": "SDN 把转发和控制分开，控制集中，接口开放。北向是控制器对应用，南向是控制器对设备。REST 只规定设计原则：网上的东西都是资源，每个资源有 URI，操作用 HTTP 的标准方法，每次请求自己带齐信息，服务器不靠上一次请求的记忆。符合这些原则的接口叫 RESTful。RESTCONF 是 IETF 的协议，用 HTTP 去操作 YANG 数据，见 NETCONF 那篇。"
+    },
+    {
+      "type": "callout",
+      "kind": "exam",
+      "title": "GET 没有请求体",
+      "text": "单选「哪种方法的 HTTP 请求不需要请求数据」是 GET。POST 把要提交的数据放在请求体里。PUT 和 DELETE 也不是这道题的答案。"
+    },
+    {
+      "type": "p",
+      "text": "请求行是三截：方法、URI、版本。例如 GET http://www.w3.org/pub/WWW/TheProject.html HTTP/1.1。响应里用状态码告诉结果，头字段补充服务器和资源的信息。"
+    },
+    {
+      "type": "p",
+      "text": "HTTP/2 在 TCP 上改进 HTTP/1.1，不是换成另一套业务协议。报文改成二进制帧，头用 HPACK 压缩，多条请求可以在一条连接里交错，不再严格排队。服务器还可以主动推资源。SPDY 是更早的试验，思路进了 HTTP/2。HTTPS 是 HTTP 加上 TLS，和 HTTP/2 不是二选一。"
+    }
+  ],
+  "exam": [
+    "REST 是风格。RESTful 是符合风格的接口。RESTCONF 是协议。",
+    "GET 没有请求体。",
+    "资源用 URI 定位。操作不改变这个标识。",
+    "HTTP/2 用二进制帧，可以多路复用。"
+  ],
+  "mixups": [
+    {
+      "see": "把 REST 说成一种标准协议",
+      "mean": "它是风格。真正的协议是 HTTP，映射到 YANG 的是 RESTCONF。"
+    },
+    {
+      "see": "GET 的请求体里放了参数",
+      "mean": "这道题认为 GET 没有请求数据。过滤条件放在 URI 里。"
+    },
+    {
+      "see": "HTTPS 和 HTTP/2 互相替代",
+      "mean": "HTTPS 解决加密。HTTP/2 解决队头阻塞和头部体积。两个可以同时用。"
+    }
+  ],
+  "memory": [
+    "风格、接口、协议，三个词分开。",
+    "GET 不带体。",
+    "URI 找资源，方法表示动作。"
+  ],
+  "labs": [],
+  "figures": []
+}
