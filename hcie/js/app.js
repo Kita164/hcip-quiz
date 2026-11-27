@@ -13,6 +13,7 @@
     mindOff: new Set(),
     diagrams: {},
     spy: null,
+    spyLock: "",
   };
 
   const $ = (id) => document.getElementById(id);
@@ -253,10 +254,15 @@ function snippet(topic) {
     return '<div class="table-wrap"><table>' + cap + "<thead>" + head + "</thead><tbody>" + rows + "</tbody></table></div>";
   }
 
-  function renderBlock(b, index) {
+  function secHead(tag, id, no, text) {
+    return "<" + tag + (id ? ' id="' + id + '"' : "") + ">" +
+      (no ? '<span class="sec-no">' + esc(no) + "</span>" : "") + highlight(text) + "</" + tag + ">";
+  }
+
+  function renderBlock(b, index, no) {
     if (b.type === "h") {
       const lv = b.lv === 3 ? "h4" : "h3";
-      return "<" + lv + ' id="s-' + index + '">' + highlight(b.text) + "</" + lv + ">";
+      return secHead(lv, "s-" + index, no, b.text);
     }
     if (b.type === "p") return richText(b.text);
     if (b.type === "ul") return "<ul>" + (b.items || []).map((x) => "<li>" + liBody(x) + "</li>").join("") + "</ul>";
@@ -279,7 +285,7 @@ function snippet(topic) {
     return "";
   }
 
-  function renderLabs(labs) {
+  function renderLabs(labs, no) {
     if (!labs || !labs.length) return "";
     const body = labs.map((lab, i) => {
       const steps = (lab.steps || []).map((s) => {
@@ -298,12 +304,12 @@ function snippet(topic) {
         (lab.topo ? renderTopo(lab.topo) : "") +
         steps + verify + "</details>";
     }).join("");
-    return "<h3 id=\"labs\">实验</h3>" + body;
+    return secHead("h3", "labs", no, "实验") + body;
   }
 
-  function renderFigures(figs) {
+  function renderFigures(figs, no) {
     if (!figs || !figs.length) return "";
-    return "<h3>课件里的图</h3>" + figs.map((f) => {
+    return secHead("h3", "figures", no, "课件里的图") + figs.map((f) => {
       return '<figure class="figure"><img src="' + esc(f.src) + '" alt="' + esc(f.caption || "") + '" loading="lazy"><figcaption>' + highlight(f.caption || "") + "</figcaption></figure>";
     }).join("");
   }
@@ -320,13 +326,16 @@ function snippet(topic) {
     const learnedN = state.order.filter((id) => state.learned[id]).length;
     const next = state.order.map((id) => state.topics[id]).find((t) => !state.learned[t.id]);
     let html = '<p class="kicker">学习笔记，不是题库</p>';
-    html += '<h2 id="page-title">HCIE-Datacom</h2>';
+    html += secHead("h2", "page-title", "1.", "HCIE-Datacom");
     html += "<p class=\"summary\">这里按专题整理笔试 H12-891 和实验 H12-892 会用到的说法、对照表和华为命令。不做题。左侧可以搜整份笔记，学完一个专题就标已学，进度只存在这台浏览器里。</p>";
     html += '<p class="source">已学 ' + learnedN + " / " + state.order.length + (next ? "。下一篇未学：<a href=\"#" + esc(next.id) + "\">" + esc(next.title) + "</a>" : "。这一轮都标过了，可以按目录回头翻易混点。") + "</p>";
-    const outline = [{ id: "page-title", text: "总览", depth: 0 }];
+    const outline = [{ id: "page-title", text: "总览", depth: 0, no: "1." }];
+    let sectionNo = 0;
     state.catalog.decks.forEach((deck) => {
-      html += '<section class="card" id="deck-' + esc(deck.id) + '"><h3 style="margin-top:0">' + esc(deck.title) + "</h3>";
-      outline.push({ id: "deck-" + deck.id, text: deck.title, depth: 1 });
+      sectionNo += 1;
+      const no = "1." + sectionNo;
+      html += '<section class="card" id="deck-' + esc(deck.id) + '">' + secHead("h3", "", no, deck.title);
+      outline.push({ id: "deck-" + deck.id, text: deck.title, depth: 1, no: no });
       html += '<p class="source">' + esc(deck.source || "") + "</p>";
       html += "<p>" + esc(deck.blurb || "") + "</p><ul>";
       deck.topics.forEach((id) => {
@@ -337,7 +346,9 @@ function snippet(topic) {
       });
       html += "</ul></section>";
     });
-    html += '<section class="card"><h3 style="margin-top:0">以后加一套新课件</h3><ol>';
+    sectionNo += 1;
+    html += '<section class="card" id="add-deck">' + secHead("h3", "", "1." + sectionNo, "以后加一套新课件") + "<ol>";
+    outline.push({ id: "add-deck", text: "以后加一套新课件", depth: 1, no: "1." + sectionNo });
     html += "<li>一个专题一个文件，放到 <code>hcie/data/topics/&lt;id&gt;.json</code>。字段看 <code>hcie/README.md</code>。</li>";
     html += "<li>在 <code>hcie/data/catalog.json</code> 的某个章节 <code>topics</code> 数组里写上这个 id。新章节就加一个 deck。</li>";
     html += "<li>图放进 <code>hcie/images/</code>，JSON 里用相对 <code>hcie/</code> 的路径，例如 <code>images/foo.jpg</code>。</li>";
@@ -357,19 +368,32 @@ function snippet(topic) {
     }
     const deck = deckOf(id);
     const learned = !!state.learned[id];
-    const outline = [{ id: "page-title", text: t.title, depth: 0 }];
+    const outline = [{ id: "page-title", text: t.title, depth: 0, no: "1." }];
+    const sectionNo = {};
+    let h3n = 0;
     (t.blocks || []).forEach((b, i) => {
-      if (b.type === "h" && b.lv !== 3) outline.push({ id: "s-" + i, text: b.text, depth: 1 });
+      if (b.type !== "h" || b.lv === 3) return;
+      h3n += 1;
+      sectionNo["s-" + i] = "1." + h3n;
+      outline.push({ id: "s-" + i, text: b.text, depth: 1, no: sectionNo["s-" + i] });
     });
-    if (t.exam && t.exam.length) outline.push({ id: "exam", text: "常考点", depth: 1 });
-    if (t.mixups && t.mixups.length) outline.push({ id: "mixups", text: "看到什么就是什么", depth: 1 });
-    if (t.memory && t.memory.length) outline.push({ id: "memory", text: "记忆", depth: 1 });
-    if ((t.labs || []).length) outline.push({ id: "labs", text: "实验", depth: 1 });
+    function takeNo(anchor, text) {
+      h3n += 1;
+      const no = "1." + h3n;
+      outline.push({ id: anchor, text: text, depth: 1, no: no });
+      return no;
+    }
+    const examNo = t.exam && t.exam.length ? takeNo("exam", "常考点") : "";
+    const mixNo = t.mixups && t.mixups.length ? takeNo("mixups", "看到什么就是什么") : "";
+    const memNo = t.memory && t.memory.length ? takeNo("memory", "记忆") : "";
+    const labNo = (t.labs || []).length ? takeNo("labs", "实验") : "";
+    const figNo = (t.figures || []).length ? takeNo("figures", "课件里的图") : "";
     const toc = outline.filter((item) => item.depth).map((item) => {
-      return '<a href="#' + esc(id) + "/" + esc(item.id) + '">' + esc(item.text) + "</a>";
+      return '<a href="#' + esc(id) + "/" + encodeURIComponent(item.id) + '">' +
+        (item.no ? '<span class="sec-no">' + esc(item.no) + "</span>" : "") + esc(item.text) + "</a>";
     });
     let html = '<p class="kicker">' + esc(deck ? deck.title : "") + "</p>";
-    html += '<h2 id="page-title">' + highlight(t.title) + "</h2>";
+    html += secHead("h2", "page-title", "1.", t.title);
     html += '<p class="summary">' + highlight(t.summary) + "</p>";
     html += '<div class="meta-row"><button type="button" class="learn' + (learned ? " on" : "") + '" id="learn-btn">' + (learned ? "已学" : "标为已学") + "</button>";
     html += '<span class="source">' + esc(t.source || (deck && deck.source) || "") + "</span></div>";
@@ -379,7 +403,7 @@ function snippet(topic) {
     const used = {};
     let prose = "";
     (t.blocks || []).forEach((b, i) => {
-      prose += renderBlock(b, i);
+      prose += renderBlock(b, i, sectionNo["s-" + i]);
       if (b.type === "h" && window.HCIEFigures) {
         figs.forEach((f, fi) => {
           if (!used[fi] && f.at && String(b.text || "").indexOf(f.at) >= 0) {
@@ -396,17 +420,17 @@ function snippet(topic) {
     }
     html += '<div class="prose">' + prose + "</div>";
     if (t.exam && t.exam.length) {
-      html += '<h3 id="exam">常考点</h3><ul>' + t.exam.map((x) => "<li>" + liBody(x) + "</li>").join("") + "</ul>";
+      html += secHead("h3", "exam", examNo, "常考点") + "<ul>" + t.exam.map((x) => "<li>" + liBody(x) + "</li>").join("") + "</ul>";
     }
     if (t.mixups && t.mixups.length) {
-      html += '<h3 id="mixups">看到什么就是什么</h3>';
+      html += secHead("h3", "mixups", mixNo, "看到什么就是什么");
       html += t.mixups.map((m) => '<div class="see"><div><b>看到</b>' + highlight(m.see) + "</div><div><b>就是</b>" + highlight(m.mean) + "</div></div>").join("");
     }
     if (t.memory && t.memory.length) {
-      html += '<h3 id="memory">记忆</h3><ul class="memory">' + t.memory.map((x) => "<li>" + highlight(x) + "</li>").join("") + "</ul>";
+      html += secHead("h3", "memory", memNo, "记忆") + '<ul class="memory">' + t.memory.map((x) => "<li>" + highlight(x) + "</li>").join("") + "</ul>";
     }
-    html += renderLabs(t.labs);
-    html += renderFigures(t.figures);
+    html += renderLabs(t.labs, labNo);
+    html += renderFigures(t.figures, figNo);
     const nb = neighbors(id);
     html += '<div class="pager">';
     html += nb.prev ? '<a href="#' + esc(nb.prev.id) + '">← ' + esc(nb.prev.title) + "</a>" : "<span></span>";
@@ -433,34 +457,101 @@ function snippet(topic) {
     }
     const base = state.current === "home" ? "home" : state.current;
     const nav = items.map((item, i) => {
-      const href = item.id === "page-title" ? "#" + esc(base) : "#" + esc(base) + "/" + esc(item.id);
-      return '<a class="' + (item.depth ? "sub" : "") + (i === 0 ? " active" : "") + '" data-spy="' + esc(item.id) + '" href="' + href + '">' + esc(item.text) + "</a>";
+      const href = item.id === "page-title" ? "#" + encodeURIComponent(base) : "#" + encodeURIComponent(base) + "/" + encodeURIComponent(item.id);
+      return '<a class="' + (item.depth ? "sub" : "") + (i === 0 ? " active" : "") + '" data-spy="' + esc(item.id) + '" href="' + href + '">' +
+        (item.no ? '<span class="sec-no">' + esc(item.no) + "</span>" : "") + esc(item.text) + "</a>";
     }).join("");
     rail.innerHTML = '<p class="rail-kicker">本页目录</p><nav class="rail-nav" aria-label="本页目录">' + nav + "</nav>" + (extra || "");
-    bindSpy();
+    rail.querySelectorAll("a[data-spy]").forEach((a) => {
+      a.addEventListener("click", (e) => {
+        e.preventDefault();
+        const target = a.getAttribute("data-spy");
+        state.spyLock = target;
+        setRailActive(target);
+        const href = a.getAttribute("href") || "";
+        if (location.hash !== href) history.pushState(null, "", href);
+        scrollToHeading(target, true);
+      });
+    });
+    updateSpy();
   }
 
-  function bindSpy() {
-    if (state.spy) state.spy.disconnect();
-    const rail = $("rail");
-    if (!rail) return;
-    const links = Array.from(rail.querySelectorAll("a[data-spy]"));
-    const pairs = links.map((a) => [document.getElementById(a.getAttribute("data-spy")), a]).filter((pair) => pair[0]);
-    if (!pairs.length) return;
-    const wide = window.matchMedia("(min-width: 1180px)").matches;
-    const desktop = window.matchMedia("(min-width: 901px)").matches;
-    state.spy = new IntersectionObserver((entries) => {
-      const hit = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
-      if (!hit) return;
-      links.forEach((a) => a.classList.remove("active"));
-      const link = pairs.find((pair) => pair[0] === hit.target);
-      if (link) link[1].classList.add("active");
-    }, {
-      root: wide ? document.getElementById("article") : (desktop ? document.querySelector(".main") : null),
-      rootMargin: "-8% 0px -70% 0px",
-      threshold: 0,
+  function viewScroller() {
+    if (window.matchMedia("(max-width: 900px)").matches) return window;
+    if (window.matchMedia("(min-width: 1180px)").matches) return $("article");
+    return document.querySelector(".main") || window;
+  }
+
+  function spyOffset() {
+    return window.matchMedia("(max-width: 900px)").matches ? 64 : 24;
+  }
+
+  function railHeads() {
+    return Array.from(document.querySelectorAll(".rail-nav a[data-spy]")).map((a) => {
+      return { id: a.getAttribute("data-spy"), el: document.getElementById(a.getAttribute("data-spy")) };
+    }).filter((item) => item.el);
+  }
+
+  function setRailActive(id) {
+    document.querySelectorAll(".rail-nav a[data-spy]").forEach((a) => {
+      a.classList.toggle("active", a.getAttribute("data-spy") === id);
     });
-    pairs.forEach((pair) => state.spy.observe(pair[0]));
+  }
+
+  function updateSpy() {
+    if (state.spyLock) return;
+    const heads = railHeads();
+    const scroller = viewScroller();
+    if (!heads.length || !scroller) return;
+    const scrollingWindow = scroller === window;
+    const top = scrollingWindow ? window.scrollY : scroller.scrollTop;
+    const height = scrollingWindow ? window.innerHeight : scroller.clientHeight;
+    const scrollHeight = scrollingWindow ? document.documentElement.scrollHeight : scroller.scrollHeight;
+    if (top + height >= scrollHeight - 8) {
+      setRailActive(heads[heads.length - 1].id);
+      return;
+    }
+    const line = (scrollingWindow ? 0 : scroller.getBoundingClientRect().top) + spyOffset();
+    let current = heads[0].id;
+    heads.forEach((item) => {
+      if (item.el.getBoundingClientRect().top <= line + 1) current = item.id;
+    });
+    setRailActive(current);
+  }
+
+  function scrollToHeading(id, smooth) {
+    const el = document.getElementById(id);
+    const scroller = viewScroller();
+    if (!el || !scroller) return;
+    state.spyLock = id;
+    setRailActive(id);
+    const scrollingWindow = scroller === window;
+    const line = (scrollingWindow ? 0 : scroller.getBoundingClientRect().top) + spyOffset();
+    const dest = (scrollingWindow ? window.scrollY : scroller.scrollTop) + el.getBoundingClientRect().top - line;
+    scroller.scrollTo({ top: Math.max(0, dest), behavior: smooth ? "smooth" : "auto" });
+    window.clearTimeout(state.spyTimer);
+    state.spyTimer = window.setTimeout(() => finishSpyScroll(), smooth ? 1200 : 40);
+  }
+
+  function finishSpyScroll() {
+    const id = state.spyLock;
+    if (!id) return;
+    const el = document.getElementById(id);
+    const scroller = viewScroller();
+    if (el && scroller) {
+      const scrollingWindow = scroller === window;
+      const line = (scrollingWindow ? 0 : scroller.getBoundingClientRect().top) + spyOffset();
+      const delta = el.getBoundingClientRect().top - line;
+      const top = scrollingWindow ? window.scrollY : scroller.scrollTop;
+      const max = scrollingWindow
+        ? document.documentElement.scrollHeight - window.innerHeight
+        : scroller.scrollHeight - scroller.clientHeight;
+      if (Math.abs(delta) > 2 && top < max - 2) {
+        scroller.scrollTo({ top: Math.max(0, Math.min(max, top + delta)), behavior: "auto" });
+      }
+    }
+    state.spyLock = "";
+    updateSpy();
   }
 
   function toggleLearned(id) {
@@ -472,25 +563,25 @@ function snippet(topic) {
   }
 
   function show(id, anchor) {
-    state.current = state.topics[id] || id === "home" ? id : "home";
+    const next = state.topics[id] || id === "home" ? id : "home";
+    const same = state.current === next && document.getElementById(anchor || "page-title");
+    state.current = next;
     const deck = state.current === "home" ? null : deckOf(state.current);
     if (deck) state.openDecks.add(deck.id);
-    if (state.current === "home") {
-      renderHome();
-      document.title = "HCIE-Datacom 学习笔记";
-    } else renderTopic(state.current);
-    renderNav();
-    const art = $("article");
-    if (anchor) {
-      const el = document.getElementById(anchor);
-      if (el) el.scrollIntoView({ block: "start" });
-      else art.scrollTop = 0;
-    } else if (art && art.parentElement) {
-      const scroller = window.matchMedia("(min-width: 1180px)").matches
-        ? document.getElementById("article")
-        : (window.matchMedia("(min-width: 901px)").matches ? document.querySelector(".main") : window);
+    if (!same) {
+      if (state.current === "home") {
+        renderHome();
+        document.title = "HCIE-Datacom 学习笔记";
+      } else renderTopic(state.current);
+      renderNav();
+    }
+    if (anchor && document.getElementById(anchor)) scrollToHeading(anchor, same);
+    else if (!same) {
+      const scroller = viewScroller();
       if (scroller === window) window.scrollTo(0, 0);
       else scroller.scrollTop = 0;
+      state.spyLock = "";
+      updateSpy();
     }
     closeDrawer();
   }
@@ -530,6 +621,15 @@ function snippet(topic) {
       show(id, anchor);
     };
     window.addEventListener("hashchange", route);
+    window.addEventListener("popstate", route);
+    const onScroll = () => updateSpy();
+    $("article").addEventListener("scroll", onScroll, { passive: true });
+    document.querySelector(".main").addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("scroll", onScroll, { passive: true });
+    const unlockSpy = () => finishSpyScroll();
+    $("article").addEventListener("scrollend", unlockSpy);
+    document.querySelector(".main").addEventListener("scrollend", unlockSpy);
+    window.addEventListener("scrollend", unlockSpy);
     $("q").addEventListener("input", (e) => {
       state.query = e.target.value;
       renderNav();

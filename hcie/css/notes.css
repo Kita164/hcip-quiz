@@ -224,14 +224,16 @@ article { padding: 22px 22px 72px; width: 100%; max-width: var(--content); }
 .rail-nav { display: flex; flex-direction: column; }
 .rail-nav a {
   display: block;
+  width: 100%;
   text-decoration: none;
   color: var(--muted);
   font-size: 15px;
-  line-height: 1.5;
-  padding: 5px 0 5px 12px;
+  line-height: 1.6;
+  padding: 11px 12px;
   border-left: 2px solid var(--border);
 }
 .rail-nav a.sub { padding-left: 22px; font-size: 14px; }
+.sec-no { margin-right: .4em; font-variant-numeric: tabular-nums; }
 .rail-nav a:hover { color: var(--text); }
 .rail-nav a.active {
   color: var(--accent);
@@ -251,7 +253,7 @@ article { padding: 22px 22px 72px; width: 100%; max-width: var(--content); }
 .rail-card li { margin: 6px 0; font-size: 15px; line-height: 1.55; }
 .rail-card p { margin: 0; font-size: 15px; line-height: 1.6; }
 .kicker { color: var(--muted); font-size: .82rem; margin: 0 0 4px; }
-article h2 { font-size: 1.55rem; line-height: 1.35; margin: 0 0 10px; }
+article h2 { font-size: 26px; line-height: 1.35; margin: 0 0 12px; }
 .summary { font-size: 1.05rem; line-height: 1.75; margin: 0 0 14px; }
 .meta-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 16px; }
 .learn {
@@ -292,9 +294,9 @@ article h2 { font-size: 1.55rem; line-height: 1.35; margin: 0 0 10px; }
 .tree li { margin: 3px 0; }
 .tree summary { font-weight: 700; }
 .tree-d, .leaf .tree-d { display: block; color: var(--muted); font-weight: 450; font-size: .82rem; }
-article h2, .prose h3, .prose h4 { scroll-margin-top: 20px; }
-.prose h3 { font-size: 1.25rem; margin: 28px 0 10px; line-height: 1.4; }
-.prose h4 { font-size: 1.08rem; margin: 16px 0 6px; line-height: 1.45; }
+article h2, article h3, .prose h3, .prose h4 { scroll-margin-top: 24px; }
+article h3, .prose h3 { font-size: 20px; margin: 44px 0 12px; line-height: 1.4; }
+.prose h4 { font-size: 18px; margin: 32px 0 8px; line-height: 1.45; }
 .prose p { margin: 8px 0; }
 article > :not(.diagram):not(.prose),
 .prose > :not(.diagram):not(.table-wrap) {
@@ -499,7 +501,7 @@ mark { background: color-mix(in srgb, var(--warn) 55%, transparent); color: inhe
   .side.open { transform: none; }
   .topbar { display: flex; }
   article { padding: 16px 14px 64px; max-width: none; }
-  article h2, .prose h3, .prose h4 { scroll-margin-top: 64px; }
+  article h2, article h3, .prose h3, .prose h4 { scroll-margin-top: 64px; }
   .see { grid-template-columns: 1fr; }
 }
 @media (min-width: 700px) {
