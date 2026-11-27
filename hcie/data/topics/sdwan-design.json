@@ -29,7 +29,7 @@
     },
     {
       "type": "p",
-      "text": "四个部件、三条通道和邮件开局见前面两篇。这篇只记设计时要拍板的事。多选「支持哪些 Overlay 拓扑」四项全选：Hub-Spoke、Full-mesh、Partial-mesh、分层组网。智能选路能按链路质量改转发路径，这道判断是对的。"
+      "text": "四个部件、三条通道和邮件开局见前面两篇。这篇只记设计时要拍板的事。多选「支持哪些 Overlay 拓扑」四项全选：\nHub-Spoke\nFull-mesh\nPartial-mesh\n分层组网\n智能选路能按链路质量改转发路径，这道判断是对的。"
     },
     {
       "type": "table",
@@ -64,7 +64,7 @@
       "type": "ul",
       "items": [
         "Transport Network 是运营商那张接入网。路由域：不同 TN 之间路由可达，就算同一个路由域。",
-        "TNP 描述 CPE 接入这张网的 WAN 口：Site ID、Router ID、TN、公网地址、私网地址、封装。Site ID 由控制器分配。一个站点 1 到 2 台 CPE，Router ID 一般用环回地址。",
+        "TNP 描述 CPE 接入这张网的 WAN 口，里面有这些：\nSite ID：由控制器分配\nRouter ID：一般用环回地址\nTransport Network\n公网地址\n私网地址\n封装\n一个站点 1 到 2 台 CPE。",
         "枚举规则：只有相同路由域的 TNP 才能建隧道，同一个路由域里的接口做 Full-mesh。不同路由域不建。",
         "建立顺序：ZTP 之后设备和控制器建 NETCONF。控制器下发配置后，设备和 RR 建 DTLS，交换 TNP 和 IPSec SA，再起 BGP EVPN。业务隧道要等 RR 把对端 TNP 反射过来，由路由触发。",
         "TNP 交换两次。第一次是 RR 和 Edge 之间，为了建控制通道。第二次是 Edge 和 Edge 之间，为了建数据通道。"

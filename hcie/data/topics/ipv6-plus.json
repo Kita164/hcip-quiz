@@ -29,7 +29,7 @@
     },
     {
       "type": "p",
-      "text": "判断题说 IPv6+ 包括网络编程、网络切片、确定性网络、随流检测、新型组播和应用感知。这句是对的。课件点名的实现分别是 SRv6、FlexE 切片、DetNet、iFIT、BIERv6 和 APN6。连接类是 SRv6 和 BIERv6，控制面和转发面都不再用 MPLS。切片、检测和确定性体验是第二类。SRv6 的 SID、FlexE 和 iFIT 的测量方法见段路由和广域承载那几篇。"
+      "text": "判断题说 IPv6+ 包括这些，这句是对的：\n网络编程\n网络切片\n确定性网络\n随流检测\n新型组播\n应用感知\n课件点名的实现：\nSRv6\nFlexE 切片\nDetNet\niFIT\nBIERv6\nAPN6\n连接类是 SRv6 和 BIERv6，控制面和转发面都不再用 MPLS。切片、检测和确定性体验是第二类。SRv6 的 SID、FlexE 和 iFIT 的测量方法见段路由和广域承载那几篇。"
     },
     {
       "type": "h",

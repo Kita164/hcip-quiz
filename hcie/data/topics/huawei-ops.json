@@ -39,7 +39,7 @@
     },
     {
       "type": "p",
-      "text": "典型用途是空配置自动开局、告警来了自动处理、定时把配置备份出去。脚本写好后三步：上传、安装、运行。安装用 ops install file，查看用 display ops script，运行用 ops run python。"
+      "text": "典型用途：\n空配置自动开局\n告警来了自动处理\n定时把配置备份出去\n脚本写好后三步：\n上传\n安装：ops install file\n运行：ops run python\n查看已安装的脚本：display ops script"
     },
     {
       "type": "p",

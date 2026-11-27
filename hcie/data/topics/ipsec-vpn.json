@@ -33,7 +33,7 @@
     },
     {
       "type": "p",
-      "text": "IPSec 不是一个协议，是一组：AH、ESP、密钥交换、认证和加密算法。两端建一条隧道，业务从隧道里过。四个结果：验证数据来源、加密、检查有没有被改、丢掉重放的旧包。"
+      "text": "IPSec 不是一个协议，是一组：\nAH\nESP\n密钥交换\n认证算法\n加密算法\n两端建一条隧道，业务从隧道里过。四个结果：\n验证数据来源\n加密\n检查有没有被改\n丢掉重放的旧包"
     },
     {
       "type": "h",
@@ -41,7 +41,7 @@
     },
     {
       "type": "p",
-      "text": "安全联盟是双方对协议、感兴趣流、封装模式、算法、密钥和生存周期的约定。IPSec SA 用三元组标识：SPI、目的 IP、协议号（AH 或 ESP）。SPI 是 32 比特，放在 AH 和 ESP 头里。"
+      "text": "安全联盟是双方约定的这些内容：\n协议\n感兴趣流\n封装模式\n算法\n密钥\n生存周期\nIPSec SA 用三元组标识：\nSPI：32 比特，放在 AH 和 ESP 头里\n目的 IP\n协议号：AH 或 ESP"
     },
     {
       "type": "p",
@@ -83,7 +83,7 @@
     },
     {
       "type": "p",
-      "text": "MD5 和 SHA1 课件标成不安全。DES、3DES 安全性低，不推荐。AES 常见 128、192、256。SM1 不公开，要走加密芯片。SM4 分组和密钥都是 128 位。认证用的是 HMAC：发送方算出 ICV，接收方再算一次，不一致就丢。"
+      "text": "MD5 和 SHA1 课件标成不安全。\nDES、3DES 安全性低，不推荐。\nAES 常见长度：\n128\n192\n256\nSM1 不公开，要走加密芯片。\nSM4 分组和密钥都是 128 位。\n认证用的是 HMAC：发送方算出 ICV，接收方再算一次，不一致就丢。"
     },
     {
       "type": "h",
@@ -223,7 +223,7 @@
       "steps": [
         {
           "where": "RouterA",
-          "text": "ike proposal 用 aes-128、sha2-256、DH group14。peer 上 undo version 2 是关掉 IKEv2，本例按 IKEv1 协商，对端也要同样关掉。预共享密钥和 remote-address 两边互指。",
+          "text": "ike proposal 用这三项：\naes-128\nsha2-256\nDH group14\npeer 上 undo version 2 是关掉 IKEv2，本例按 IKEv1 协商，对端也要同样关掉。\n预共享密钥和 remote-address 两边互指。",
           "code": "ike proposal 5\n encryption-algorithm aes-128\n authentication-algorithm sha2-256\n dh group14\nike peer spub\n undo version 2\n ike-proposal 5\n pre-shared-key cipher huawei@123\n remote-address 2.1.1.1\nipsec policy map1 10 isakmp\n ike-peer spub\n proposal tran1\n security acl 3101\ninterface GigabitEthernet1/0/0\n ipsec policy map1"
         }
       ],

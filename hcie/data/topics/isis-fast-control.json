@@ -137,7 +137,7 @@
         "不写 level-1 / level-2 / level-1-2，生成的是 Level-2 缺省。",
         "配在 Level-1 设备上时，只会向 Level-1 区域发，不会发进 Level-2。",
         "avoid-learning：不把其他协议或其他进程的缺省装进路由表。原来已经活跃的，会被置成不活跃。",
-        "cost 的范围看 cost-style：narrow、narrow-compatible、compatible 是 0～63；wide、wide-compatible 是 0～4261412864。",
+        "cost 的范围看 cost-style：\nnarrow：0～63\nnarrow-compatible：0～63\ncompatible：0～63\nwide：0～4261412864\nwide-compatible：0～4261412864",
         "tag 只有 cost-style 为 wide、wide-compatible 或 compatible 时才会放进 LSP。范围 1～4294967295。"
       ]
     }
@@ -250,7 +250,7 @@
       "verify": [
         {
           "title": "分担时两条，写了 weight 只剩一条",
-          "see": "没写 weight 时，10.1.3.3/32 有两条 ISIS-L2，优先级 15，开销 10。写完 weight 后只剩下一跳 10.1.13.3、出接口 GE0/0/0。",
+          "see": "没写 weight 时，10.1.3.3/32 有两条 ISIS-L2，优先级 15，开销 10。\n写完 weight 后只剩一条：\n下一跳 10.1.13.3\n出接口 GE0/0/0",
           "code": "[R1] display ip routing-table\n10.1.3.3/32  ISIS-L2  15  10  D  10.1.13.3  GE0/0/0\n             ISIS-L2  15  10  D  10.1.12.2  GE0/0/1\n# 配置 weight 之后第二行消失"
         }
       ]

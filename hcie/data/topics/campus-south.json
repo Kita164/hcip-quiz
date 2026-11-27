@@ -243,7 +243,7 @@
   ],
   "memory": [
     "LLDP 交邻居，SNMP 查和告警，NETCONF 下配置。",
-    "v1 四操作：Get、GetNext、Set、Trap。v2c 再加 GetBulk 和 Inform。v3 加上认证加密。",
+    "v1 四个操作：\nGet\nGetNext\nSet\nTrap\nv2c 再加：\nGetBulk\nInform\nv3 加上认证和加密。",
     "Callhome = 设备找控制器。普通 SSH = 控制器找设备。"
   ],
   "labs": [],

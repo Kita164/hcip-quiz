@@ -33,7 +33,7 @@
     },
     {
       "type": "p",
-      "text": "RADIUS 把认证和授权放在同一条接受报文里。通过之后常见下发四样：VLAN、IP 地址、ACL、UCL 组。多选题这四项都算。"
+      "text": "RADIUS 把认证和授权放在同一条接受报文里。通过之后常见下发这四样，多选题都算：\nVLAN\nIP 地址\nACL\nUCL 组"
     },
     {
       "type": "ul",
@@ -51,7 +51,7 @@
     },
     {
       "type": "p",
-      "text": "免认证 free-rule 让用户在认证成功前能下载客户端、访问 DHCP 和 DNS。两种写法：按 IP、MAC、接口、VLAN 直接写；或者关联 ACL，编号 6000～6031。"
+      "text": "免认证 free-rule 让用户在认证成功前能下载客户端、访问 DHCP 和 DNS。两种写法：\n按 IP 直接写\n按 MAC 直接写\n按接口直接写\n按 VLAN 直接写\n或者关联 ACL，编号 6000～6031"
     },
     {
       "type": "p",

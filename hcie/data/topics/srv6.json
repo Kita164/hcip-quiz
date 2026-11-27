@@ -35,7 +35,7 @@
       "type": "ul",
       "items": [
         "Locator 标识这台设备在拓扑里的位置，可路由、可聚合。配上之后会生成一条网段路由，由 IGP 在 SR 域里扩散。别人靠这条路由找到本机，本机发出的 SID 也都落在这段里。一般全网唯一。Anycast 保护时，多台可以配同一个 Locator。",
-        "Function 是要执行的动作，也叫 Opcode。可以静态配，也可以由 IGP 动态分配。End、End.X、End.DX4、End.DT4 都是 Function。",
+        "Function 是要执行的动作，也叫 Opcode。可以静态配，也可以由 IGP 动态分配。这些都是 Function：\nEnd\nEnd.X\nEnd.DX4\nEnd.DT4",
         "Arguments 可选。多数业务不用。EVPN VPLS 的 BUM 用 End.DT2M 时，Arguments 用来带 ESI，做水平分割。"
       ]
     },
