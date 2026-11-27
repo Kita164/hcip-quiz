@@ -219,7 +219,8 @@ function snippet(topic) {
       pixel: true,
       title: "组网",
       caption: topo.caption || "",
-      nodes: (topo.nodes || []).map((n) => ({ id: n.id, role: n.role || "router", label: n.label, sub: n.sub, x: n.x, y: n.y })),
+      detail: true,
+      nodes: (topo.nodes || []).map((n) => ({ id: n.id, role: n.role || "router", label: n.label, sub: n.sub, labelAt: n.labelAt, x: n.x, y: n.y })),
       links: topo.links || [],
     });
   }

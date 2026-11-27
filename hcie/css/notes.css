@@ -378,6 +378,7 @@ pre {
 .fig .edge { stroke: var(--muted); fill: none; stroke-width: 1.6; }
 .fig .arrow-head { fill: var(--muted); }
 .fig .n-text, .fig .edge-t { fill: var(--text); font-size: 13px; font-family: inherit; }
+.fig .end-t { fill: var(--text); font-size: 12px; font-family: inherit; }
 .fig .n-sub { fill: var(--muted); font-size: 12px; font-family: inherit; }
 .fig .mind-t { fill: var(--text); font-size: 13.5px; font-family: inherit; }
 .fig .mind-d { fill: var(--muted); font-size: 12.5px; font-family: inherit; }

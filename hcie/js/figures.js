@@ -168,7 +168,164 @@
     return frame("思维导图", "点带加减号的节点可以折叠。说明在节点里全文显示。", svgWrap(w, h, parts.join(""), "思维导图"));
   }
 
+  function pillGeom(cls, text, cx, cy) {
+    const lines = String(text || "").split("\n").filter(function (line) { return line.length; });
+    if (!lines.length) return null;
+    const tw = Math.max.apply(null, lines.map(function (line) { return measure(line, 12, 6.6); })) + 14;
+    const th = lines.length * 15 + 8;
+    return { cls: cls, lines: lines, tw: tw, th: th, x: cx - tw / 2, y: cy - th / 2 };
+  }
+
+  function drawPill(p) {
+    if (!p) return "";
+    const cx = p.x + p.tw / 2;
+    return '<g><rect class="pill" x="' + p.x + '" y="' + p.y + '" width="' + p.tw + '" height="' + p.th + '" rx="5"/>' +
+      p.lines.map(function (line, i) {
+        return '<text class="' + p.cls + '" x="' + cx + '" y="' + (p.y + 14 + i * 15) + '" text-anchor="middle">' + esc(line) + "</text>";
+      }).join("") + "</g>";
+  }
+
+  function boxesHit(a, b) {
+    if (!a || !b) return false;
+    const aw = a.w || a.tw || 0;
+    const ah = a.h || a.th || 0;
+    const bw = b.w || b.tw || 0;
+    const bh = b.h || b.th || 0;
+    if (!aw || !bw) return false;
+    return a.x < b.x + bw + 4 && a.x + aw + 4 > b.x && a.y < b.y + bh + 4 && a.y + ah + 4 > b.y;
+  }
+
+  function renderDetailNet(spec) {
+    const nodes = spec.nodes || [];
+    let minX = Infinity, minY = Infinity, srcMaxX = -Infinity, srcMaxY = -Infinity;
+    nodes.forEach(function (n) {
+      minX = Math.min(minX, n.x || 0);
+      minY = Math.min(minY, n.y || 0);
+      srcMaxX = Math.max(srcMaxX, n.x || 0);
+      srcMaxY = Math.max(srcMaxY, n.y || 0);
+    });
+    const spanX = Math.max(1, srcMaxX - minX);
+    const spanY = srcMaxY - minY;
+    const row = spanY < 8;
+    const padX = 148;
+    const padY = row ? 52 : 78;
+    const innerW = row ? Math.max(420, Math.min(680, 150 * Math.max(1, nodes.length - 1))) : 640;
+    const innerH = row ? 12 : 220;
+    const by = {};
+    nodes.forEach(function (n) {
+      const cx = padX + ((n.x || 0) - minX) / spanX * innerW;
+      const cy = padY + (row ? 8 : ((n.y || 0) - minY) / Math.max(1, spanY) * innerH);
+      by[n.id] = {
+        id: n.id,
+        role: n.role || "router",
+        label: n.label || n.id,
+        sub: n.sub || "",
+        labelAt: n.labelAt || (function () {
+          if (row) return "below";
+          if ((n.y || 0) <= minY + spanY * 0.28) return "above";
+          if ((n.y || 0) >= srcMaxY - spanY * 0.28) return "below";
+          if ((n.x || 0) <= minX + spanX * 0.28) return "left";
+          if ((n.x || 0) >= srcMaxX - spanX * 0.28) return "right";
+          return "below";
+        })(),
+        cx: cx,
+        cy: cy,
+      };
+    });
+    const placed = [];
+    Object.keys(by).forEach(function (id) {
+      const n = by[id];
+      const subs = String(n.sub || "").split("\n").filter(function (line) { return line.length; });
+      const lines = [n.label].concat(subs);
+      const widest = Math.max.apply(null, lines.map(function (line) { return measure(line, 13, 7); }));
+      const nameX = n.labelAt === "left" ? n.cx - 26 : (n.labelAt === "right" ? n.cx + 26 : n.cx);
+      const nameY = n.labelAt === "above" ? n.cy - 26 : (n.labelAt === "left" || n.labelAt === "right" ? n.cy - 4 : n.cy + 30);
+      const top = n.labelAt === "above" ? nameY - 13 * subs.length - 12 : nameY - 12;
+      const left = n.labelAt === "left" ? nameX - widest : (n.labelAt === "right" ? nameX : nameX - widest / 2);
+      placed.push({ x: n.cx - 22, y: n.cy - 18, w: 44, h: 36 });
+      placed.push({ x: left - 4, y: top, w: widest + 8, h: 14 * lines.length + 6 });
+    });
+    const segs = [];
+    const pills = [];
+    (spec.links || []).forEach(function (l) {
+      const a = by[l.a];
+      const b = by[l.b];
+      if (!a || !b) return;
+      const dx = b.cx - a.cx;
+      const dy = b.cy - a.cy;
+      const len = Math.hypot(dx, dy) || 1;
+      const ux = dx / len;
+      const uy = dy / len;
+      const px = -uy;
+      const py = ux;
+      const trim = 22;
+      const x1 = a.cx + ux * trim;
+      const y1 = a.cy + uy * trim;
+      const x2 = b.cx - ux * trim;
+      const y2 = b.cy - uy * trim;
+      segs.push({ x1: x1, y1: y1, x2: x2, y2: y2, dash: l.dashed ? ' stroke-dasharray="5 3"' : "" });
+      function add(text, cls, cx, cy) {
+        const box = pillGeom(cls, text, cx, cy);
+        if (box) pills.push(box);
+      }
+      if (l.aEnd) add(l.aEnd, "end-t", x1 + (x2 - x1) * 0.24 + px * 22, y1 + (y2 - y1) * 0.24 + py * 22);
+      if (l.bEnd) add(l.bEnd, "end-t", x1 + (x2 - x1) * 0.76 + px * 22, y1 + (y2 - y1) * 0.76 + py * 22);
+      if (l.label) {
+        const off = 40 + String(l.label).split("\n").length * 8;
+        add(l.label, "edge-t", x1 + (x2 - x1) * 0.5 - px * off, y1 + (y2 - y1) * 0.5 - py * off);
+      }
+    });
+    function shove(box) {
+      const others = placed.concat(pills.filter(function (q) { return q !== box; }));
+      others.forEach(function (old) {
+        if (!boxesHit(box, old)) return;
+        const bw = old.w || old.tw;
+        const bh = old.h || old.th;
+        const ox = Math.min(box.x + box.tw, old.x + bw) - Math.max(box.x, old.x);
+        const oy = Math.min(box.y + box.th, old.y + bh) - Math.max(box.y, old.y);
+        if (ox < oy) box.x += (box.x + box.tw / 2 < old.x + bw / 2 ? -1 : 1) * (ox + 4);
+        else box.y += (box.y + box.th / 2 < old.y + bh / 2 ? -1 : 1) * (oy + 4);
+      });
+    }
+    for (let pass = 0; pass < 10; pass++) pills.forEach(shove);
+    const linkSvg = segs.map(function (s) {
+      return '<line class="edge"' + s.dash + ' x1="' + s.x1 + '" y1="' + s.y1 + '" x2="' + s.x2 + '" y2="' + s.y2 + '"/>';
+    }).join("") + pills.map(drawPill).join("");
+    let maxX = padX + innerW + 70;
+    let maxY = padY + innerH + 56;
+    const shapes = nodes.map(function (raw) {
+      const n = by[raw.id];
+      const subs = String(n.sub || "").split("\n").filter(function (line) { return line.length; });
+      const above = n.labelAt === "above";
+      const side = n.labelAt === "left" || n.labelAt === "right";
+      const anchor = n.labelAt === "left" ? "end" : (n.labelAt === "right" ? "start" : "middle");
+      const nameX = n.labelAt === "left" ? n.cx - 26 : (n.labelAt === "right" ? n.cx + 26 : n.cx);
+      const nameY = above ? n.cy - 26 : (side ? n.cy - 4 : n.cy + 30);
+      const subStart = above ? nameY - 13 * subs.length : nameY + 14;
+      let texts = '<text class="n-text" x="' + nameX + '" y="' + nameY + '" text-anchor="' + anchor + '">' + esc(n.label) + "</text>";
+      maxX = Math.max(maxX, anchor === "start" ? nameX + measure(n.label, 13, 7) + 16 : n.cx + 36);
+      if (anchor === "end") maxX = Math.max(maxX, n.cx + 20);
+      subs.forEach(function (line, i) {
+        const y = subStart + i * 13;
+        texts += '<text class="n-sub" x="' + nameX + '" y="' + y + '" text-anchor="' + anchor + '">' + esc(line) + "</text>";
+        maxY = Math.max(maxY, y + 10);
+        maxX = Math.max(maxX, nameX + (anchor === "start" ? measure(line, 12, 6.6) + 8 : 8));
+      });
+      maxY = Math.max(maxY, nameY + 12);
+      maxX = Math.max(maxX, n.cx + 80);
+      return '<g><g transform="translate(' + n.cx + " " + n.cy + ') scale(0.62) translate(-26 -20)">' + icon(n.role) + "</g>" + texts + "</g>";
+    }).join("");
+    placed.concat(pills).forEach(function (box) {
+      const bw = box.w || box.tw || 0;
+      const bh = box.h || box.th || 0;
+      maxX = Math.max(maxX, box.x + bw + 12);
+      maxY = Math.max(maxY, box.y + bh + 12);
+    });
+    return frame(spec.title, spec.caption, svgWrap(maxX, maxY, linkSvg + shapes, spec.title));
+  }
+
   function renderNet(spec) {
+    if (spec.detail) return renderDetailNet(spec);
     const nodes = spec.nodes || [];
     const by = {};
     const cw = 176;
