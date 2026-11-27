@@ -10,6 +10,8 @@
     onlyTodo: false,
     current: "home",
     openDecks: new Set(),
+    mindOff: new Set(),
+    diagrams: {},
     spy: null,
   };
 
@@ -205,40 +207,15 @@ function snippet(topic) {
   }
 
   function renderTopo(topo) {
-    const raw = topo.nodes || [];
-    if (!raw.length) return "";
-    const nodes = raw.map((n) => {
-      const w = Math.max(84, Array.from(n.label || "").length * 13 + 22);
-      return { id: n.id, x: n.x, y: n.y, label: n.label, sub: n.sub || "", w: w, h: n.sub ? 46 : 34 };
+    if (!topo || !window.HCIEFigures) return "";
+    return HCIEFigures.spec({
+      kind: "net",
+      pixel: true,
+      title: "组网",
+      caption: topo.caption || "",
+      nodes: (topo.nodes || []).map((n) => ({ id: n.id, role: n.role || "router", label: n.label, sub: n.sub, x: n.x, y: n.y })),
+      links: topo.links || [],
     });
-    const byId = {};
-    nodes.forEach((n) => { byId[n.id] = n; });
-    let maxX = 40;
-    let maxY = 40;
-    nodes.forEach((n) => {
-      maxX = Math.max(maxX, n.x + n.w + 16);
-      maxY = Math.max(maxY, n.y + n.h + 20);
-    });
-    const lines = (topo.links || []).map((l) => {
-      const a = byId[l.a];
-      const b = byId[l.b];
-      if (!a || !b) return "";
-      const x1 = a.x + a.w / 2;
-      const y1 = a.y + a.h / 2;
-      const x2 = b.x + b.w / 2;
-      const y2 = b.y + b.h / 2;
-      const mx = (x1 + x2) / 2;
-      const my = (y1 + y2) / 2 - 7;
-      const dash = l.dashed ? ' stroke-dasharray="5 4"' : "";
-      const label = l.label ? '<text class="topo-label" x="' + mx + '" y="' + my + '" text-anchor="middle">' + esc(l.label) + "</text>" : "";
-      return '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '"' + dash + "/>" + label;
-    }).join("");
-    const shapes = nodes.map((n) => {
-      const sub = n.sub ? '<text x="' + (n.x + n.w / 2) + '" y="' + (n.y + 36) + '" text-anchor="middle" class="topo-label">' + esc(n.sub) + "</text>" : "";
-      return '<g><rect x="' + n.x + '" y="' + n.y + '" width="' + n.w + '" height="' + n.h + '" rx="8"/><text x="' + (n.x + n.w / 2) + '" y="' + (n.y + 22) + '" text-anchor="middle">' + esc(n.label) + "</text>" + sub + "</g>";
-    }).join("");
-    const cap = topo.caption ? "<figcaption>" + highlight(topo.caption) + "</figcaption>" : "";
-    return '<figure class="topo"><svg viewBox="0 0 ' + maxX + " " + maxY + '" role="img" aria-label="' + esc(topo.caption || "拓扑") + '">' + lines + shapes + "</svg>" + cap + "</figure>";
   }
 
   function renderCode(title, code) {
@@ -372,10 +349,27 @@ function snippet(topic) {
     html += '<div class="meta-row"><button type="button" class="learn' + (learned ? " on" : "") + '" id="learn-btn">' + (learned ? "已学" : "标为已学") + "</button>";
     html += '<span class="source">' + esc(t.source || (deck && deck.source) || "") + "</span></div>";
     if (toc.length) html += '<nav class="toc" aria-label="本页小节">' + toc.join("") + "</nav>";
-    if (t.mindmap && t.mindmap.length) {
-      html += '<details class="card" open><summary>思维导图</summary>' + renderTree(t.mindmap) + "</details>";
+    if (t.mindmap && t.mindmap.length && window.HCIEFigures) html += HCIEFigures.mind(id, t.mindmap, state.mindOff);
+    const figs = state.diagrams[id] || [];
+    const used = {};
+    let prose = "";
+    (t.blocks || []).forEach((b, i) => {
+      prose += renderBlock(b, i);
+      if (b.type === "h" && window.HCIEFigures) {
+        figs.forEach((f, fi) => {
+          if (!used[fi] && f.at && String(b.text || "").indexOf(f.at) >= 0) {
+            used[fi] = true;
+            prose += HCIEFigures.spec(f);
+          }
+        });
+      }
+    });
+    if (window.HCIEFigures) {
+      figs.forEach((f, fi) => {
+        if (!used[fi]) prose = HCIEFigures.spec(f) + prose;
+      });
     }
-    html += '<div class="prose">' + (t.blocks || []).map(renderBlock).join("") + "</div>";
+    html += '<div class="prose">' + prose + "</div>";
     if (t.exam && t.exam.length) {
       html += '<h3 id="exam">常考点</h3><ul>' + t.exam.map((x) => "<li>" + highlight(x) + "</li>").join("") + "</ul>";
     }
@@ -493,6 +487,8 @@ function snippet(topic) {
     });
     state.catalog = catalog;
     state.order = catalog.decks.flatMap((d) => d.topics);
+    const diagramPromise = fetch("data/diagrams.json").then((r) => (r.ok ? r.json() : {})).catch(() => ({}));
+    state.diagrams = await diagramPromise;
     await Promise.all(state.order.map(async (id) => {
       const res = await fetch("data/topics/" + id + ".json");
       if (!res.ok) throw new Error(id + " " + res.status);
@@ -530,6 +526,29 @@ function snippet(topic) {
       if (e.key === "Escape") closeDrawer();
     });
     $("article").addEventListener("click", async (e) => {
+      const mindHit = e.target.closest("[data-mind-path]");
+      if (mindHit && window.HCIEFigures) {
+        e.preventDefault();
+        const key = mindHit.getAttribute("data-mind-path");
+        if (state.mindOff.has(key)) state.mindOff.delete(key);
+        else state.mindOff.add(key);
+        const topicId = key.split("|")[0];
+        const fig = mindHit.closest("figure.diagram");
+        const topic = state.topics[topicId];
+        if (fig && topic) fig.outerHTML = HCIEFigures.mind(topicId, topic.mindmap, state.mindOff);
+        return;
+      }
+      const zoomBtn = e.target.closest("[data-zoom]");
+      if (zoomBtn) {
+        const fig = zoomBtn.closest("figure.diagram");
+        const box = fig && fig.querySelector(".diagram-scroll");
+        const dialog = $("zoom");
+        if (box && dialog) {
+          $("zoom-body").innerHTML = box.innerHTML;
+          dialog.showModal();
+        }
+        return;
+      }
       const btn = e.target.closest("[data-copy]");
       if (!btn) return;
       const pre = btn.parentElement.nextElementSibling;
