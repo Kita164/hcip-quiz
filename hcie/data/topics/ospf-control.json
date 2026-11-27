@@ -9,7 +9,7 @@
       "c": [
         {
           "t": "等价路由",
-          "d": "同协议、同目的、同开销。maximum load-balancing 限制条数"
+          "d": "同协议\n同目的\n同开销\nmaximum load-balancing 限制条数"
         },
         {
           "t": "缺省路由",
@@ -37,7 +37,7 @@
     },
     {
       "type": "p",
-      "text": "课件把 OSPF 路由控制列了一长串：接口开销、等价、引入、聚合、缺省、Filter-Policy、过滤发出的 LSA、过滤 ABR 的 Type3、External LSA 上限。这一课只展开等价、缺省、LSA 过滤和 Database Overflow。开销、引入、聚合、Filter-Policy 在 HCIP 核心课里。"
+      "text": "课件把 OSPF 路由控制列了这些：\n接口开销\n等价\n引入\n聚合\n缺省\nFilter-Policy\n过滤发出的 LSA\n过滤 ABR 的 Type3\nExternal LSA 上限\n这一课只展开等价、缺省、LSA 过滤和 Database Overflow。\n开销、引入、聚合、Filter-Policy 在 HCIP 核心课里。"
     },
     {
       "type": "h",
@@ -359,7 +359,7 @@
       "verify": [
         {
           "title": "路由表里同一目的出现两次",
-          "see": "10.1.3.3/32 两条都是 OSPF、开销 10。下一跳分别是 10.1.13.3（GE0/0/0）和 10.1.12.2（GE0/0/1）。开销不同就不会出现第二行。",
+          "see": "10.1.3.3/32 两条都是 OSPF，开销都是 10。\n下一跳 10.1.13.3，出接口 GE0/0/0\n下一跳 10.1.12.2，出接口 GE0/0/1\n开销不同就不会出现第二行。",
           "code": "[R1] display ip routing-table\nDestination/Mask  Proto  Pre  Cost  Flags  NextHop    Interface\n10.1.3.3/32       OSPF   10   10    D      10.1.13.3  GE0/0/0\n                  OSPF   10   10    D      10.1.12.2  GE0/0/1"
         }
       ]

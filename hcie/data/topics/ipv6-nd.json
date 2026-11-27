@@ -13,7 +13,7 @@
         },
         {
           "t": "状态",
-          "d": "Incomplete、Reachable、Stale、Delay、Probe"
+          "d": "Incomplete\nReachable\nStale\nDelay\nProbe"
         },
         {
           "t": "RA",
@@ -35,7 +35,7 @@
     },
     {
       "type": "p",
-      "text": "Next Header 是 58。差错消息仍有目的不可达（Type 1）、包过长（2）、超时（3）、参数错误（4）。Echo 是 128 和 129。邻居发现、SLAAC、DAD、PMTU 都建立在 ICMPv6 上。"
+      "text": "Next Header 是 58。差错消息：\n目的不可达：Type 1\n包过长：Type 2\n超时：Type 3\n参数错误：Type 4\nEcho Request：128\nEcho Reply：129\n邻居发现、SLAAC、DAD、PMTU 都建立在 ICMPv6 上。"
     },
     {
       "type": "table",

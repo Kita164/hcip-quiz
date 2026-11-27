@@ -9,15 +9,15 @@
       "c": [
         {
           "t": "三张网",
-          "d": "园区、广域、数据中心"
+          "d": "园区\n广域\n数据中心"
         },
         {
           "t": "三套方案",
-          "d": "CloudCampus、CloudWAN、CloudFabric"
+          "d": "CloudCampus\nCloudWAN\nCloudFabric"
         },
         {
           "t": "控制器",
-          "d": "Campus、Fabric、IP、WAN。SD-WAN 是前两个里的 Campus 和 WAN"
+          "d": "Campus\nFabric\nIP\nWAN\nSD-WAN 是前两个里的 Campus 和 WAN"
         }
       ]
     }

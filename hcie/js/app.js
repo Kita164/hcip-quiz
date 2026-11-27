@@ -78,7 +78,13 @@
     (topic.memory || []).forEach((x) => bits.push(x));
     (topic.labs || []).forEach((lab) => {
       bits.push(lab.title, lab.goal);
-      (lab.steps || []).forEach((s) => bits.push(s.where, s.text, s.code));
+      (lab.steps || []).forEach((s) => {
+        bits.push(s.where, s.text, s.code);
+        if (s.table) {
+          (s.table.headers || []).forEach((x) => bits.push(x));
+          (s.table.rows || []).forEach((r) => r.forEach((c) => bits.push(c)));
+        }
+      });
       (lab.verify || []).forEach((v) => bits.push(v.title, v.see, v.code));
     });
     (topic.figures || []).forEach((f) => bits.push(f.caption));
@@ -224,24 +230,41 @@ function snippet(topic) {
     return head + "<pre>" + esc(code).replace(/\n$/, "") + "</pre>";
   }
 
+  function liBody(s) {
+    const lines = String(s || "").split("\n").map((x) => x.trim()).filter(Boolean);
+    if (lines.length <= 1) return highlight(s);
+    return highlight(lines[0]) + "<ul>" + lines.slice(1).map((x) => "<li>" + highlight(x) + "</li>").join("") + "</ul>";
+  }
+
+  function richText(s) {
+    const raw = String(s || "");
+    const lines = raw.split("\n").map((x) => x.trim()).filter(Boolean);
+    if (lines.length > 1) {
+      return "<ul>" + lines.map((x) => "<li>" + highlight(x) + "</li>").join("") + "</ul>";
+    }
+    return "<p>" + highlight(raw) + "</p>";
+  }
+
+  function renderTable(b) {
+    const head = "<tr>" + (b.headers || []).map((h) => "<th>" + highlight(h) + "</th>").join("") + "</tr>";
+    const rows = (b.rows || []).map((r) => "<tr>" + r.map((c) => "<td>" + highlight(c) + "</td>").join("") + "</tr>").join("");
+    const cap = b.caption ? "<caption>" + highlight(b.caption) + "</caption>" : "";
+    return '<div class="table-wrap"><table>' + cap + "<thead>" + head + "</thead><tbody>" + rows + "</tbody></table></div>";
+  }
+
   function renderBlock(b, index) {
     if (b.type === "h") {
       const lv = b.lv === 3 ? "h4" : "h3";
       return "<" + lv + ' id="s-' + index + '">' + highlight(b.text) + "</" + lv + ">";
     }
-    if (b.type === "p") return "<p>" + highlight(b.text) + "</p>";
-    if (b.type === "ul") return "<ul>" + (b.items || []).map((x) => "<li>" + highlight(x) + "</li>").join("") + "</ul>";
-    if (b.type === "ol") return "<ol>" + (b.items || []).map((x) => "<li>" + highlight(x) + "</li>").join("") + "</ol>";
-    if (b.type === "table") {
-      const head = "<tr>" + (b.headers || []).map((h) => "<th>" + highlight(h) + "</th>").join("") + "</tr>";
-      const rows = (b.rows || []).map((r) => "<tr>" + r.map((c) => "<td>" + highlight(c) + "</td>").join("") + "</tr>").join("");
-      const cap = b.caption ? "<caption>" + highlight(b.caption) + "</caption>" : "";
-      return '<div class="table-wrap"><table>' + cap + "<thead>" + head + "</thead><tbody>" + rows + "</tbody></table></div>";
-    }
+    if (b.type === "p") return richText(b.text);
+    if (b.type === "ul") return "<ul>" + (b.items || []).map((x) => "<li>" + liBody(x) + "</li>").join("") + "</ul>";
+    if (b.type === "ol") return "<ol>" + (b.items || []).map((x) => "<li>" + liBody(x) + "</li>").join("") + "</ol>";
+    if (b.type === "table") return renderTable(b);
     if (b.type === "code") return renderCode(b.title, b.code);
     if (b.type === "callout") {
       const kind = ["exam", "tip", "warn", "fix"].includes(b.kind) ? b.kind : "tip";
-      return '<div class="callout ' + kind + '"><div class="ct">' + highlight(b.title || "") + "</div><p>" + highlight(b.text || "") + "</p></div>";
+      return '<div class="callout ' + kind + '"><div class="ct">' + highlight(b.title || "") + "</div>" + richText(b.text || "") + "</div>";
     }
     if (b.type === "topo") return renderTopo(b);
     if (b.type === "bands") {
@@ -260,12 +283,13 @@ function snippet(topic) {
     const body = labs.map((lab, i) => {
       const steps = (lab.steps || []).map((s) => {
         return '<div class="where">' + esc(s.where || "步骤") + "</div>" +
-          (s.text ? "<p>" + highlight(s.text) + "</p>" : "") +
+          (s.text ? richText(s.text) : "") +
+          (s.table ? renderTable(s.table) : "") +
           (s.code ? renderCode(s.where || "", s.code) : "");
       }).join("");
       const verify = (lab.verify || []).map((v) => {
         return "<h4>" + highlight(v.title || "验证") + "</h4>" +
-          (v.see ? '<p><b>看到：</b>' + highlight(v.see) + "</p>" : "") +
+          (v.see ? (richText(v.see).startsWith("<ul>") ? "<p><b>看到：</b></p>" + richText(v.see) : richText(v.see).replace(/^<p>/, "<p><b>看到：</b>")) : "") +
           (v.code ? renderCode("回显", v.code) : "");
       }).join("");
       return '<details class="lab card" open id="lab-' + i + '"><summary>' + highlight(lab.title || "实验") + "</summary>" +
@@ -371,7 +395,7 @@ function snippet(topic) {
     }
     html += '<div class="prose">' + prose + "</div>";
     if (t.exam && t.exam.length) {
-      html += '<h3 id="exam">常考点</h3><ul>' + t.exam.map((x) => "<li>" + highlight(x) + "</li>").join("") + "</ul>";
+      html += '<h3 id="exam">常考点</h3><ul>' + t.exam.map((x) => "<li>" + liBody(x) + "</li>").join("") + "</ul>";
     }
     if (t.mixups && t.mixups.length) {
       html += '<h3 id="mixups">看到什么就是什么</h3>';

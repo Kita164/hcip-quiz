@@ -17,7 +17,7 @@
         },
         {
           "t": "接入",
-          "d": "Port、VLAN、VLAN Bundle、VLAN-Aware Bundle"
+          "d": "Port\nVLAN\nVLAN Bundle\nVLAN-Aware Bundle"
         }
       ]
     }

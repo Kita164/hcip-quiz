@@ -9,11 +9,11 @@
       "c": [
         {
           "t": "架构",
-          "d": "接入、汇聚、核心。CloudCampus 一套控制器管 LAN 和 WAN"
+          "d": "接入\n汇聚\n核心\nCloudCampus 一套控制器管 LAN 和 WAN"
         },
         {
           "t": "可靠",
-          "d": "Eth-Trunk、iStack、CSS。MSTP 按 VLAN 分树"
+          "d": "Eth-Trunk\niStack\nCSS\nMSTP 按 VLAN 分树"
         },
         {
           "t": "出口 VPN",
@@ -66,7 +66,7 @@
     },
     {
       "type": "p",
-      "text": "同一 MST 域要同时满足：都开了 MSTP、域名相同、VLAN 到实例的映射相同、修订级别相同。少一条就不是同一个域。判断题「映射必须相同」是对的。"
+      "text": "同一 MST 域要同时满足：\n都开了 MSTP\n域名相同\nVLAN 到实例的映射相同\n修订级别相同\n少一条就不是同一个域。判断题「映射必须相同」是对的。"
     },
     {
       "type": "p",

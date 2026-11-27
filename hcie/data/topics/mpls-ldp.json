@@ -75,7 +75,7 @@
     },
     {
       "type": "p",
-      "text": "LDP 头 10 字节：版本 2 字节（当前是 1）、PDU 长度 2 字节、LDP ID 6 字节。未知消息看 U 位：0 就回通知，1 就忽略。"
+      "text": "LDP 头一共 10 字节：\n版本：2 字节，当前是 1\nPDU 长度：2 字节\nLDP ID：6 字节\n未知消息的 U 位是 0：回通知\n未知消息的 U 位是 1：忽略"
     },
     {
       "type": "p",
@@ -83,7 +83,7 @@
     },
     {
       "type": "p",
-      "text": "五个状态：Non-Existent、Initialized、OpenSent、OpenRec、Operational。参数不能接受或超时，回到 Non-Existent。display mpls ldp peer 看传输地址和发现来源。display mpls ldp session 看 Status、LAM、主动还是被动。"
+      "text": "会话有五个状态，参数不能接受或超时就回到 Non-Existent：\nNon-Existent\nInitialized\nOpenSent\nOpenRec\nOperational\ndisplay mpls ldp peer 看传输地址和发现来源。\ndisplay mpls ldp session 看这三项：\nStatus\nLAM\n主动还是被动"
     },
     {
       "type": "h",

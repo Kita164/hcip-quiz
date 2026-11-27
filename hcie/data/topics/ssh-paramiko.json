@@ -9,7 +9,7 @@
       "c": [
         {
           "t": "三层",
-          "d": "传输层、用户认证、连接协议"
+          "d": "传输层\n用户认证\n连接协议"
         },
         {
           "t": "认证",
@@ -69,7 +69,7 @@
       "type": "callout",
       "kind": "exam",
       "title": "没有 AutoDelPolicy",
-      "text": "set_missing_host_key_policy 只认三种：AutoAddPolicy、WarningPolicy、RejectPolicy。单选「哪一个不是」选 AutoDelPolicy。未知主机第一次连接时，OpenSSH 会问 yes 或 no，并把公钥记进 known_hosts。AutoAdd 是脚本里不再提问、直接把这台主机的公钥加进去。"
+      "text": "set_missing_host_key_policy 只认三种：\nAutoAddPolicy\nWarningPolicy\nRejectPolicy\n单选「哪一个不是」选 AutoDelPolicy。\n未知主机第一次连接时，OpenSSH 会问 yes 或 no，并把公钥记进 known_hosts。\nAutoAdd 是脚本里不再提问，直接把这台主机的公钥加进去。"
     },
     {
       "type": "p",

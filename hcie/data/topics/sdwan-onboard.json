@@ -13,7 +13,7 @@
         },
         {
           "t": "三种账号",
-          "d": "系统管理员、MSP、租户"
+          "d": "系统管理员\nMSP\n租户"
         },
         {
           "t": "三种 ZTP",
@@ -201,7 +201,7 @@
     "MSP 账号能建租户，也能加 RR 和 IWG。部署网络的是租户账号。",
     "邮件开局前五件事：邮件服务器、添加设备、全局参数、站点、接入方式。",
     "DHCP 只强制先添加设备。接入方式配完后设备会再上线一次。",
-    "Option 148 里有 agilemode、agilemanage-mode、agilemanage-Domain、agilemanage-port。示例端口 10020。",
+    "Option 148 里有这些字段。示例端口 10020。\nagilemode\nagilemanage-mode\nagilemanage-Domain\nagilemanage-port",
     "成功的唯一页面：设计 > 站点敏捷设计 > 设备管理，两个状态都是正常。"
   ],
   "mixups": [

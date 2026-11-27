@@ -348,7 +348,7 @@
       "verify": [
         {
           "title": "R1 看到被要求提供的前缀，R2 只收到一条",
-          "see": "ORF 表 Index 10、Action Permit、Prefix 10.1.1.1、MaskLen 32。R2 的 received-routes 总数是 1。",
+          "see": "ORF 表：\nIndex：10\nAction：Permit\nPrefix：10.1.1.1\nMaskLen：32\nR2 的 received-routes 总数是 1。",
           "code": "[R1] display bgp peer 10.1.12.2 orf ip-prefix\nIndex  Action  Prefix    MaskLen\n10     Permit  10.1.1.1  32\n\n[R2] display bgp routing-table peer 10.1.12.1 received-routes\n*> 10.1.1.1/32  10.1.12.1  101i"
         }
       ]

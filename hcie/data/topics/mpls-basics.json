@@ -288,7 +288,7 @@
       "steps": [
         {
           "where": "每台先开 MPLS",
-          "text": "LSR ID 没有缺省值，用 Loopback 并事先规划。例子里三台是 10.1.1.1、10.1.1.2、10.1.1.3。接口要在全局 mpls 之后再开。",
+          "text": "LSR ID 没有缺省值，用 Loopback 并事先规划。接口要在全局 mpls 之后再开。\nR1：10.1.1.1\nR2：10.1.1.2\nR3：10.1.1.3",
           "code": "mpls lsr-id 10.1.1.1\nmpls\ninterface GigabitEthernet0/0/0\n mpls"
         },
         {
@@ -299,7 +299,7 @@
       "verify": [
         {
           "title": "标签在链路上只出现在去程",
-          "see": "R1 是 NULL/200，R2 是 200/300，R3 是 300/NULL。抓包时 1.1.1.1 到 3.3.3.3 的 Echo Request 带 Label 300、S=1。Reply 没有 MPLS 头，因为反方向没配 LSP。",
+          "see": "R1：NULL/200\nR2：200/300\nR3：300/NULL\n抓包时 1.1.1.1 到 3.3.3.3 的 Echo Request 带 Label 300，S=1。\nReply 没有 MPLS 头，因为反方向没配 LSP。",
           "code": "display mpls lsp\ndisplay mpls static-lsp"
         }
       ]
