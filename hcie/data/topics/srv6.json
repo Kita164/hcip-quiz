@@ -1,0 +1,255 @@
+{
+  "id": "srv6",
+  "title": "SRv6：SID 和 BE 怎么配",
+  "summary": "128 位 SID 通常是 Locator、Function、Arguments。End 对应 Node SID，End.X 对应邻接 SID。SRv6 BE 正常不带 SRH。静态 Opcode 重启后不变，动态的会变。",
+  "source": "Datacom 通用 V1.0 · SRv6 原理与配置",
+  "mindmap": [
+    {
+      "t": "SRv6",
+      "c": [
+        {
+          "t": "SID",
+          "d": "Locator 定位，Function 是动作，Arguments 可选"
+        },
+        {
+          "t": "节点",
+          "d": "源节点封装。Endpoint 查 Local SID。中间只转发 IPv6"
+        },
+        {
+          "t": "两种转发",
+          "d": "BE 尽力而为。Policy 用 Color 和尾节点标识"
+        }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "h",
+      "text": "SID 就是一个 IPv6 地址"
+    },
+    {
+      "type": "p",
+      "text": "SRv6 的指令不是 MPLS 标签，是 IPv6 地址。一个 SID 128 位，通常分成 Locator、Function、Arguments。三段长度之和不超过 128，不够的位补 0。没有 Arguments 时就是 Locator 加 Function。Locator 占高位。"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "Locator 标识这台设备在拓扑里的位置，可路由、可聚合。配上之后会生成一条网段路由，由 IGP 在 SR 域里扩散。别人靠这条路由找到本机，本机发出的 SID 也都落在这段里。一般全网唯一。Anycast 保护时，多台可以配同一个 Locator。",
+        "Function 是要执行的动作，也叫 Opcode。可以静态配，也可以由 IGP 动态分配。End、End.X、End.DX4、End.DT4 都是 Function。",
+        "Arguments 可选。多数业务不用。EVPN VPLS 的 BUM 用 End.DT2M 时，Arguments 用来带 ESI，做水平分割。"
+      ]
+    },
+    {
+      "type": "p",
+      "text": "静态段和动态段错开。Locator 长度 64、静态段 32 时，静态 Opcode 从 2001:DB8:ABCD::1 用到 ::FFFF:FFFF，动态从 ::1:0:0 起。静态 SID 只占静态段，动态段为 0。动态 SID 会同时用到两段。课件建议 End 和 End.X 用静态：动态 SID 在设备重启后会变，不好维护。"
+    },
+    {
+      "type": "h",
+      "text": "三种节点，两类和 SR-MPLS 对得上的 SID"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "角色或 SID",
+        "什么时候算",
+        "动作"
+      ],
+      "rows": [
+        [
+          "源节点",
+          "流量进 SRv6 Policy 的地方",
+          "按 Insert 或 Encaps 加工 SRH"
+        ],
+        [
+          "Transit",
+          "目的地址不是本机 SID",
+          "按普通 IPv6 路由转发，不查 Local SID 表"
+        ],
+        [
+          "Endpoint",
+          "目的地址命中本机 Local SID 表",
+          "按 SID 的指令改 SL、改目的地址，或解封装"
+        ],
+        [
+          "End",
+          "对应 SR-MPLS 的 Node SID",
+          "SL 减 1，把 SL 指向的 SID 抄进 IPv6 目的地址，再查路由"
+        ],
+        [
+          "End.X",
+          "对应邻接 SID，三层交叉连接",
+          "从指定接口发给指定下一跳。配置时必须写接口和下一跳"
+        ],
+        [
+          "End.DT4",
+          "一个 IPv4 VPN 实例，相当于内层 VPN 标签",
+          "解封装后查这张 IPv4 VPN 路由表"
+        ]
+      ]
+    },
+    {
+      "type": "p",
+      "text": "名字可以拆开读。End 是结束当前指令、开始下一条。X 是指定三层出接口。T 是查路由表。D 是解封装。U 是查单播 MAC，M 是二层泛洪。B6 是套用一条 SRv6 Policy，BM 是套用一条 SR-MPLS Policy。End.DX2 用于 EVPN VPWS，End.DT2U 用于 VPLS 单播，End.DT2M 用于 VPLS 的 BUM。End.OP 把 OAM 报文上送，给 Ping 和 Tracert 用。"
+    },
+    {
+      "type": "p",
+      "text": "SRH 是路由扩展头，Next Header 为 43 时表示路由头，Routing Type 取 4 才是 SRH。里面有 Segment List、Segments Left 和 Tag。当前要执行的 SID 是 Slist[SL]。转发时减小 SL，并把新的活跃 SID 写进目的地址。Reduced SRH 的列表里不再重复已经放在 IPv6 目的地址里的第一个 SID。"
+    },
+    {
+      "type": "callout",
+      "kind": "fix",
+      "title": "备注把 USP 和 USD 写串了",
+      "text": "PSP 是倒数第二段弹出 SRH。USP 是最后一段弹出 SRH。USD 是最后一段解封装。备注里写「带上 PSP 和 USP，最后一段执行 USD」，后半句用错了缩写。最后一段弹出头是 USP，解封装是 USD。"
+    },
+    {
+      "type": "h",
+      "text": "BE 不带 SRH，Policy 用三元组"
+    },
+    {
+      "type": "p",
+      "text": "SRv6 BE 只用一个业务 SID，路径按 IGP 开销走，正常报文里没有 SRH，只能尽力而为。SRv6 Policy 才做流量工程。一条 Policy 由头节点、Color、终点标识。在指定头节点上，Color 加终点就够了。Color 是 32 位扩展团体，表示一种意图，比如低时延。这里的终点是隧道尾节点的 IPv6 地址，和「Endpoint 节点」不是同一个词。Endpoint 节点是任何会处理 SRH 的设备。"
+    },
+    {
+      "type": "p",
+      "text": "候选路径带优先级，最高的有效路径是主用，次高是备用。一条候选路径里可以有多条 Segment List，按权重分担。引流看路由上的 Color 和下一跳：Color 可以在路由发出方向加，也可以在收到方向加，还可以直接给某个 VPN 实例指定颜色。"
+    },
+    {
+      "type": "p",
+      "text": "栈太深时用 Binding SID 把路径粘成几段。Insert 是在原来的 IPv6 头后面插入 SRH，仍用原来的 IPv6 头转发。Encaps 是在外面再套一个 IPv6 头和 SRH，外层源地址是当前节点，目的地址是下一段的第一个 SID。End.B6.Encaps 就是先把内层 SL 减 1，再套外层。"
+    },
+    {
+      "type": "h",
+      "text": "尾节点和检测"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "SBFD 只能看隧道通不通，看不出断在哪一跳，所以要和 HSB 或 VPN FRR 一起用。SRv6 的反射端地址必须等于 Policy 的终点地址。",
+        "Ping 一个普通 IPv6 地址，走的是最短路径。目的地址如果是 SID，可以用 ICMPv6，也可以用 SRH 里的 O-bit，或者 End.OP。Tracert 才能看出断在哪一段。",
+        "尾节点保护：CE 双归的两台 PE 配相同的 Locator 和相同的 VPN SID，这就是 Anycast FRR。远端不用改路径，流量会落到还活着的那台。",
+        "防微环的原因和 SR-MPLS 一样：谁先收敛谁就可能把流量送回还没收敛的邻居。本地、远端、回切都要单独处理。"
+      ]
+    }
+  ],
+  "exam": [
+    "SID 三部分：Locator、Function、Arguments。长度之和不超过 128，其余补 0。",
+    "End 对应 Node SID。End.X 对应邻接 SID。",
+    "SRv6 BE 正常没有 SRH。Policy 在头节点上用 Color 加终点标识。",
+    "静态 Opcode 重启不变。动态分配的重启后可能变。",
+    "PSP 倒数第二段弹 SRH。USP 最后一段弹 SRH。USD 最后一段解封装。"
+  ],
+  "mixups": [
+    {
+      "see": "Policy 的 endpoint 和 Endpoint 节点",
+      "mean": "Policy 的 endpoint 是隧道终点地址。Endpoint 节点是目的地址命中了本机 SID、要处理 SRH 的那一跳。"
+    },
+    {
+      "see": "中间的 P 没有配 SRv6，BE 仍然能通",
+      "mean": "BE 的外层目的地址是 SID，P 只要有到 Locator 的 IPv6 路由就能转发。课件的 BE 实验明确写 P 不用配 SRv6。"
+    },
+    {
+      "see": "两台 PE 的 Locator 配成一样",
+      "mean": "平时不要这样。Anycast 保护尾节点时才故意配成同一个 Locator 和同一个 VPN SID。"
+    },
+    {
+      "see": "备注说最后一段做的是 USD",
+      "mean": "先看缩写。弹出 SRH 是 USP。解开 IPv6 头是 USD。"
+    }
+  ],
+  "memory": [
+    "高位是 Locator，后面是动作。End 是节点，End.X 是邻接。",
+    "BE 不带 SRH。Policy 认 Color 和终点。",
+    "静态 SID 重启还在。动态的会变。"
+  ],
+  "labs": [
+    {
+      "title": "IPv4 VPN 走 SRv6 BE",
+      "goal": "PE1 的环回是 2001:DB8:1::1，PE2 是 2001:DB8:3::3，AS 都是 100。vpna 的 IPv4 路由用 SRv6 BE 互访。P 只转发 Locator 路由。",
+      "topo": {
+        "caption": "Underlay 是 IPv6 和 IS-IS。CE 仍是 IPv4。",
+        "nodes": [
+          {
+            "id": "ce1",
+            "label": "CE1",
+            "sub": "10.1.4.4",
+            "x": 16,
+            "y": 36
+          },
+          {
+            "id": "pe1",
+            "label": "PE1",
+            "sub": "2001:DB8:1::1",
+            "x": 160,
+            "y": 36
+          },
+          {
+            "id": "p",
+            "label": "P",
+            "sub": "只跑 IS-IS",
+            "x": 340,
+            "y": 36
+          },
+          {
+            "id": "pe2",
+            "label": "PE2",
+            "sub": "2001:DB8:3::3",
+            "x": 500,
+            "y": 36
+          },
+          {
+            "id": "ce2",
+            "label": "CE2",
+            "sub": "10.1.5.5",
+            "x": 680,
+            "y": 36
+          }
+        ],
+        "links": [
+          {
+            "a": "ce1",
+            "b": "pe1"
+          },
+          {
+            "a": "pe1",
+            "b": "p",
+            "label": "Locator"
+          },
+          {
+            "a": "p",
+            "b": "pe2",
+            "label": "Locator"
+          },
+          {
+            "a": "pe2",
+            "b": "ce2"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "where": "PE1 对 PE2",
+          "text": "VPNv4 邻居建在 IPv6 环回上，并允许携带 Prefix SID。PE2 把 peer 换成 2001:DB8:1::1。",
+          "code": "bgp 100\n peer 2001:DB8:3::3 as-number 100\n peer 2001:DB8:3::3 connect-interface LoopBack0\n ipv4-family vpnv4\n  peer 2001:DB8:3::3 enable\n  peer 2001:DB8:3::3 prefix-sid"
+        },
+        {
+          "where": "PE1，PE2 换自己的地址和前缀",
+          "text": "封装源地址必须是本机已经有的接口地址。Locator 用 64 位前缀，静态段 32 位。IS-IS 发布这个 Locator。P 不用做这段。",
+          "code": "segment-routing ipv6\n encapsulation source-address 2001:DB8:1::1\n locator as100 ipv6-prefix 2001:DB8:100:: 64 static 32\nisis 1\n segment-routing ipv6 locator as100"
+        },
+        {
+          "where": "PE1 的 vpna",
+          "text": "RD 100:1，RT 111:1 双向。VPN 地址族里打开 best-effort，并指定同一个 Locator，路由才会带上 SID 并迭代到 BE。",
+          "code": "ip vpn-instance vpna\n ipv4-family\n  route-distinguisher 100:1\n  vpn-target 111:1 both\nbgp 100\n ipv4-family vpn-instance vpna\n  peer 10.0.14.4 as-number 65000\n  segment-routing ipv6 best-effort\n  segment-routing ipv6 locator as100"
+        }
+      ],
+      "verify": [
+        {
+          "title": "VPNv4 邻居是 IPv6 地址",
+          "see": "对端 2001:DB8:3::3 的状态是 Established。AS 显示 100。",
+          "code": "display bgp vpnv4 all peer"
+        }
+      ]
+    }
+  ],
+  "figures": []
+}

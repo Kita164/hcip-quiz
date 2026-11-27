@@ -1,0 +1,130 @@
+{
+  "id": "ssh-paramiko",
+  "title": "SSH 和 Paramiko",
+  "summary": "SSH 先协商版本和算法，再交换密钥，然后做口令或公钥认证，最后把多条通道复用在一条连接上。Paramiko 里未知主机的策略只有 AutoAdd、Warning、Reject，没有 AutoDel。",
+  "source": "Datacom 通用 V1.0 · SSH 原理与实践",
+  "mindmap": [
+    {
+      "t": "SSH",
+      "c": [
+        {
+          "t": "三层",
+          "d": "传输层、用户认证、连接协议"
+        },
+        {
+          "t": "认证",
+          "d": "口令，或公钥验签名"
+        },
+        {
+          "t": "Paramiko",
+          "d": "SSHClient 登录，SFTPClient 传文件"
+        }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "h",
+      "text": "一条连接里的三层协议"
+    },
+    {
+      "type": "p",
+      "text": "SSH 跑在不可靠网络上做安全远程登录。它由三部分叠起来：传输层协议、用户认证协议、连接协议。传输层通常坐在 TCP 上，先协商版本、算法和密钥。用户认证跑在传输层之上。连接协议再跑在认证之上，把这一条加密会话拆成多条逻辑通道。"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "版本协商：客户端先报自己的协议版本。服务器能支持更低的版本就用客户端的，否则用自己的。",
+        "传输层用 Diffie-Hellman 交换密钥，提供前向保密。长期私钥以后泄露，也推不出以前的会话密钥。",
+        "口令认证是用户名加密码。公钥认证是客户端送数字签名，服务器用事先装好的公钥解开，对得上才算这个人拿着私钥。",
+        "连接协议上的通道包括交互式会话、远程执行命令、TCP 转发和 X11 转发。端口被防火墙挡住、但 22 放行时，可以把别的 TCP 流量塞进 SSH 转发。"
+      ]
+    },
+    {
+      "type": "h",
+      "text": "Paramiko 怎么选类"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "类",
+        "用来干什么"
+      ],
+      "rows": [
+        [
+          "Transport",
+          "连上地址和端口，协商加密并认证。一条 Transport 上可以开多条通道"
+        ],
+        [
+          "SSHClient",
+          "常用入口。connect 登录，invoke_shell 做交互，exec_command 执行一条命令，open_sftp 开文件通道"
+        ],
+        [
+          "SFTPClient",
+          "上传下载。可以从已经建好的 Transport 用 from_transport 创建"
+        ]
+      ]
+    },
+    {
+      "type": "callout",
+      "kind": "exam",
+      "title": "没有 AutoDelPolicy",
+      "text": "set_missing_host_key_policy 只认三种：AutoAddPolicy、WarningPolicy、RejectPolicy。单选「哪一个不是」选 AutoDelPolicy。未知主机第一次连接时，OpenSSH 会问 yes 或 no，并把公钥记进 known_hosts。AutoAdd 是脚本里不再提问、直接把这台主机的公钥加进去。"
+    },
+    {
+      "type": "p",
+      "text": "华为设备不是执行完一条命令就退出的 Linux shell。要敲 display，用 invoke_shell，先发 screen-length 0 temporary，再发命令，然后 recv。exec_command 适合一条命令执行完就结束的场景，课件示例是 ls。"
+    }
+  ],
+  "exam": [
+    "SSH 三层：传输、用户认证、连接。连接协议在最上面。",
+    "公钥认证验的是签名，不是把口令加密再传。",
+    "未知主机策略没有 AutoDelPolicy。",
+    "华为设备上交互式敲命令用 invoke_shell。"
+  ],
+  "mixups": [
+    {
+      "see": "第一次连上去脚本卡住等 yes",
+      "mean": "没设 host key 策略。自动化里用 AutoAddPolicy。生产上要先核对指纹，不要无条件信任。"
+    },
+    {
+      "see": "exec_command 收不到 display current-configuration",
+      "mean": "VRP 要用交互式通道。课件用 invoke_shell，先关掉分页。"
+    },
+    {
+      "see": "公钥认证还在传密码",
+      "mean": "客户端发的是数字签名。服务器用配置好的公钥解密并核对。"
+    }
+  ],
+  "memory": [
+    "先协商，再换密钥，再认证，最后复用通道。",
+    "三种策略：自动加、警告、拒绝。没有自动删。",
+    "设备上敲命令用 invoke_shell。"
+  ],
+  "labs": [
+    {
+      "title": "用 Paramiko 登录并看配置",
+      "goal": "设备 192.168.56.100 打开 STelnet。客户端用私钥登录用户 client，执行 display current-configuration。",
+      "steps": [
+        {
+          "where": "设备",
+          "text": "管理口地址、打开 STelnet、VTY 只允许 SSH。本地用户进管理员组，服务类型是 SSH。认证方式按课件设成 RSA，并把客户端公钥绑到这个用户。",
+          "code": "system-view immediately\nsysname SSH Server\ninterface GE1/0/0\n ip address 192.168.56.100 24\nstelnet server enable\nuser-interface vty 0 4\n authentication-mode aaa\n protocol inbound ssh\n user privilege level 3\naaa\n local-user client password irreversible-cipher Huawei@123\n local-user client user-group manage-ug\n local-user client service-type ssh\nssh user client\nssh user client authentication-type rsa\nssh user client service-type stelnet"
+        },
+        {
+          "where": "客户端",
+          "text": "AutoAddPolicy 跳过第一次的主机确认。invoke_shell 里先关分页，再取配置。收完就关闭连接。",
+          "code": "import paramiko, time\nssh = paramiko.SSHClient()\nssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())\nssh.connect(hostname=\"192.168.56.100\", port=22, username=\"client\",\n            key_filename=r\"C:\\Users\\exampleuser\\.ssh\\id_rsa\")\ncli = ssh.invoke_shell()\ncli.send(\"screen-length 0 temporary\\n\")\ncli.send(\"display current-configuration\\n\")\ntime.sleep(3)\nprint(cli.recv(999999).decode())\nssh.close()"
+        }
+      ],
+      "verify": [
+        {
+          "title": "打印出来的是运行配置",
+          "see": "输出里能看到 sysname、接口地址和 stelnet server enable。连不上先看 VTY 是不是 protocol inbound ssh，用户是不是 service-type ssh。",
+          "code": ""
+        }
+      ]
+    }
+  ],
+  "figures": []
+}

@@ -1,0 +1,122 @@
+{
+  "id": "net-program",
+  "title": "网络编程和控制器开放",
+  "summary": "开放有两层：设备和控制器。控制器改设备配置，用 NETCONF 和 SNMP。Telemetry 和 Syslog 只上报，不改配置。北向给外部系统的是 REST。",
+  "source": "Datacom 通用 V1.0 · 网络编程自动化概述 / NCE 业务开放可编程",
+  "mindmap": [
+    {
+      "t": "可编程",
+      "c": [
+        {
+          "t": "两层",
+          "d": "设备南向，控制器北向"
+        },
+        {
+          "t": "配置",
+          "d": "NETCONF 和 SNMP。不是 Telemetry，也不是 Syslog"
+        },
+        {
+          "t": "模型",
+          "d": "YANG 描述能力，再转成 NETCONF 或 CLI"
+        }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "h",
+      "text": "两层开放"
+    },
+    {
+      "type": "p",
+      "text": "传统设备和 SDN 会长期一起存在。编程自动化指的是在网络已经开放的前提下，用程序去完成原来手工做的事。开放分设备自己，和 SDN 控制器。"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "层",
+        "外面看到什么",
+        "到设备上变成什么"
+      ],
+      "rows": [
+        [
+          "设备",
+          "NETCONF、RESTCONF、SNMP、CLI/SSH，也可以看 Telemetry",
+          "直接对这台设备"
+        ],
+        [
+          "iMaster NCE 北向",
+          "REST API",
+          "控制器再往下翻译"
+        ],
+        [
+          "NCE 业务包",
+          "业务 YANG 生成北向接口",
+          "Python 处理业务逻辑，Jinja2 填设备模型，再由驱动包下发"
+        ]
+      ]
+    },
+    {
+      "type": "p",
+      "text": "驱动包用设备 YANG 描述这台设备会什么。NETCONF 驱动把 YANG 转成 NETCONF。CLI 驱动转成命令行。定制驱动可以转到 RESTCONF 这类其他协议。业务包适合要跨多台设备的事，比如一次开通 L3VPN。"
+    },
+    {
+      "type": "callout",
+      "kind": "exam",
+      "title": "能改配置的是 NETCONF 和 SNMP",
+      "text": "多选「控制器用哪些协议完成设备配置」选 NETCONF 和 SNMP。Telemetry 是设备往外推数据，Syslog 是日志。这两个只上报，不把配置写回去。"
+    },
+    {
+      "type": "h",
+      "text": "两个包不要装反"
+    },
+    {
+      "type": "p",
+      "text": "iMaster NCE 业务开放可编程的两份核心包是网元驱动包和业务包。网元驱动包里是设备 YANG，由厂商提供，描述设备原子能力，再由驱动转成 NETCONF 或 CLI。业务包里是业务 YANG、Jinja2 模板和 Python 映射脚本。多选「业务包中包含」就这三样，不要选设备 YANG。业务 YANG 生成北向接口和页面。Python 处理与厂家无关的逻辑，Jinja2 填某一家设备的模型。映射可以跳过：业务模型如果能直接用南向模板，就不必再写一层 Python。"
+    },
+    {
+      "type": "callout",
+      "kind": "exam",
+      "title": "业务包不含设备 YANG",
+      "text": "简答核心功能包：网元驱动包和业务包。多选业务包的内容是业务 YANG、Jinja2、Python 映射脚本。设备 YANG 属于驱动包。"
+    },
+    {
+      "type": "p",
+      "text": "iMaster NAIE 是另一套东西：公有云上的网络 AI 开发平台，负责准备数据、训练和生成模型。它不代替 NCE 去给路由器下配置。模型要分成训练集和测试集，用测试集上的误差判断能不能用到现网。误差越小越好。"
+    }
+  ],
+  "exam": [
+    "控制器配置设备：NETCONF 和 SNMP。",
+    "Telemetry 和 Syslog 不负责下发配置。",
+    "NCE 北向是 REST。南向由驱动包转成 NETCONF 或 CLI。",
+    "NAIE 做模型训练，不负责业务下发。",
+    "核心包两个：网元驱动包、业务包。",
+    "业务包是业务 YANG、Jinja2、Python。设备 YANG 不在业务包里。"
+  ],
+  "mixups": [
+    {
+      "see": "用 Telemetry 给交换机下 VLAN",
+      "mean": "下不了。配置走 NETCONF 或 SNMP。Telemetry 只把状态推出来。"
+    },
+    {
+      "see": "在 NAIE 上开通 VPN",
+      "mean": "开通在 NCE 的业务包里做。NAIE 是训练模型的云平台。"
+    },
+    {
+      "see": "业务包直接生成命令行",
+      "mean": "业务 YANG 先到 Python 和 Jinja2，变成设备模型，再由 NETCONF 或 CLI 驱动发出去。"
+    },
+    {
+      "see": "业务包里放了设备 YANG",
+      "mean": "设备 YANG 在网元驱动包。业务包是业务 YANG、Jinja2 和 Python 映射脚本。"
+    }
+  ],
+  "memory": [
+    "改配置：NETCONF、SNMP。",
+    "看数据：Telemetry、Syslog。",
+    "北向 REST，南向再翻译。",
+    "两个包：驱动包对设备，业务包对业务。"
+  ],
+  "labs": [],
+  "figures": []
+}

@@ -1,0 +1,145 @@
+{
+  "id": "netconf-yang",
+  "title": "NETCONF、YANG 和 RESTCONF",
+  "summary": "NETCONF 分四层。消息层只有 rpc、rpc-reply 和 notification。get 是操作，不是消息类型。华为用 SSH 承载，830 和 22 可以同时开。RESTCONF 走 HTTP，没有事务。",
+  "source": "Datacom 通用 V1.0 · NETCONF YANG 原理与实践",
+  "mindmap": [
+    {
+      "t": "NETCONF",
+      "c": [
+        {
+          "t": "四层",
+          "d": "SSH、消息、操作、内容"
+        },
+        {
+          "t": "操作",
+          "d": "缺省 merge。delete 没有数据会报错，remove 不会"
+        },
+        {
+          "t": "RESTCONF",
+          "d": "HTTP，无状态，不能回滚"
+        }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "h",
+      "text": "为什么不用 SNMP 改业务"
+    },
+    {
+      "type": "p",
+      "text": "SNMP 基于 UDP，一次只能改一个对象。一批对象有的成功有的失败时，网络会停在未知状态。它也不做多台设备一起改，安全性弱。NETCONF 把一次业务放进一个 RPC，出错可以按 error-option 回滚。控制器能下发配置的协议里仍然包括 SNMP，那是概述课的结论。这篇讲 NETCONF 自己怎么分层。"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "层",
+        "干什么"
+      ],
+      "rows": [
+        [
+          "安全传输",
+          "华为用 SSH。没有 SSH，NETCONF 起不来"
+        ],
+        [
+          "消息",
+          "rpc 是请求，rpc-reply 是回应，notification 是通知"
+        ],
+        [
+          "操作",
+          "get、get-config、edit-config 这些调用方法"
+        ],
+        [
+          "内容",
+          "配置数据。现在用 YANG 描述"
+        ]
+      ]
+    },
+    {
+      "type": "callout",
+      "kind": "exam",
+      "title": "get 不在消息层",
+      "text": "多选「消息层有哪些消息类型」选 rpc、rpc-reply、notification。get 写在 rpc 里面，属于操作层。题目里的 NETCON 就是 NETCONF。"
+    },
+    {
+      "type": "h",
+      "text": "edit-config 的五种动作"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "没写 operation 就是 merge：没有就创建，有就修改。",
+        "create：数据已经存在就返回 data-exists。",
+        "delete：数据不存在就返回 data-missing。",
+        "remove：数据不存在也当成功。",
+        "replace：按整段替换。",
+        "error-option 用 rollback-on-error 时，这一次 RPC 里有错就整段退回。目标库可以是 running。"
+      ]
+    },
+    {
+      "type": "p",
+      "text": "编码是 XML，文件头声明 version 1.0 和 UTF-8。课件写当前只支持 UTF-8。内容层的名字空间决定这是哪一家的模型，例如华为 VLAN 用 http://www.huawei.com/netconf/vrp/huawei-vlan。YANG 文件是 module 或 submodule，在 NETCONF 客户端加载，由工具转成 XML 再下发，不是把 YANG 原文贴进设备。"
+    },
+    {
+      "type": "p",
+      "text": "RESTCONF 用 HTTP 方法改同一套 YANG 数据。它无状态，没有 NETCONF 那种事务，也不能回滚。报文外面是 HTTP，不是 rpc 和 rpc-reply。GET 没有请求体，见 REST 那篇。"
+    }
+  ],
+  "exam": [
+    "四层：传输、消息、操作、内容。",
+    "消息层是 rpc、rpc-reply、notification。",
+    "delete 缺数据报错，remove 缺数据成功。缺省操作是 merge。",
+    "830 和 snetconf server enable 可以同时开，客户端就能用 830 或 22。",
+    "RESTCONF 没有事务，也没有回滚。"
+  ],
+  "mixups": [
+    {
+      "see": "把 get 选成消息类型",
+      "mean": "get 是操作。消息只有三种元素：rpc、rpc-reply、notification。"
+    },
+    {
+      "see": "delete 和 remove",
+      "mean": "要删的数据不存在时，delete 返回 data-missing，remove 返回成功。"
+    },
+    {
+      "see": "只开了 NETCONF，SSH 没开",
+      "mean": "华为的 NETCONF 承载在 SSH 上。先有 SSH，再 snetconf 或 protocol inbound ssh port 830。"
+    },
+    {
+      "see": "RESTCONF 改错了还能回滚",
+      "mean": "不能。回滚是 NETCONF 的 error-option。RESTCONF 是一次 HTTP 请求。"
+    }
+  ],
+  "memory": [
+    "消息三件：rpc、rpc-reply、notification。",
+    "没有就建、有就改，是 merge。",
+    "delete 挑剔，remove 不挑剔。"
+  ],
+  "labs": [
+    {
+      "title": "打开 NETCONF 并下发 VLAN 10",
+      "goal": "设备同时接受 22 和 830 上的 NETCONF。用 edit-config 在 running 里创建 VLAN 10。",
+      "steps": [
+        {
+          "where": "设备",
+          "text": "两条命令都配时，客户端可以用 22，也可以用 830。",
+          "code": "netconf\n protocol inbound ssh port 830\nsnetconf server enable"
+        },
+        {
+          "where": "客户端发出的 RPC",
+          "text": "目标是 running。没写在节点上的 operation 按 default-operation，这里是 merge。rollback-on-error 表示这次 RPC 有错就整段撤销。",
+          "code": "<rpc message-id=\"801\">\n  <edit-config>\n    <target><running/></target>\n    <default-operation>merge</default-operation>\n    <error-option>rollback-on-error</error-option>\n    <config>\n      <vlan xmlns=\"http://www.huawei.com/netconf/vrp/huawei-vlan\">\n        <vlans><vlan><vlanId>10</vlanId></vlan></vlans>\n      </vlan>\n    </config>\n  </edit-config>\n</rpc>"
+        }
+      ],
+      "verify": [
+        {
+          "title": "回应在 rpc-reply 里",
+          "see": "成功时服务器回 rpc-reply，而不是再回一个 rpc。数据已存在却用了 create，会看到 error-tag data-exists。",
+          "code": ""
+        }
+      ]
+    }
+  ],
+  "figures": []
+}

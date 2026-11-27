@@ -1,0 +1,122 @@
+{
+  "id": "ipv6-plus",
+  "title": "IPv6+ 和网络怎么演进",
+  "summary": "IPv6+ 是 SRv6、切片、确定性网络、随流检测、BIERv6 和应用感知这一组技术。广域演进用双栈、6VPE 或 SRv6。VXLAN 底下仍是 IPv4、上面跑双栈，那是园区的做法，不是广域选项。",
+  "source": "Datacom 通用 V1.0 · IPv6+ 关键技术与演进趋势",
+  "mindmap": [
+    {
+      "t": "IPv6+",
+      "c": [
+        {
+          "t": "技术",
+          "d": "SRv6、FlexE、DetNet、iFIT、BIERv6、APN6"
+        },
+        {
+          "t": "广域",
+          "d": "存量走 6VPE。新建走 SRv6。没有 VPN 可以先双栈"
+        },
+        {
+          "t": "园区",
+          "d": "虚拟化园区先在 Overlay 打开 IPv6"
+        }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "h",
+      "text": "IPv6+ 不是再做一个地址协议"
+    },
+    {
+      "type": "p",
+      "text": "判断题说 IPv6+ 包括网络编程、网络切片、确定性网络、随流检测、新型组播和应用感知。这句是对的。课件点名的实现分别是 SRv6、FlexE 切片、DetNet、iFIT、BIERv6 和 APN6。连接类是 SRv6 和 BIERv6，控制面和转发面都不再用 MPLS。切片、检测和确定性体验是第二类。SRv6 的 SID、FlexE 和 iFIT 的测量方法见段路由和广域承载那几篇。"
+    },
+    {
+      "type": "h",
+      "text": "广域和园区不是同一条路"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "场景",
+        "现在怎么上 IPv6",
+        "以后"
+      ],
+      "rows": [
+        [
+          "广域，没有 VPN",
+          "所有三层设备双栈，路由也要双栈可达",
+          "要做按需调优和智能运维时再进 IPv6+，最后可以收到只剩 IPv6"
+        ],
+        [
+          "广域，已经有 MPLS VPN",
+          "边缘做 6VPE。P 不用改，原有 MP-IBGP 上增加 VPNv6",
+          "新建网络直接用 SRv6，不要先铺一层 MPLS 再拆"
+        ],
+        [
+          "园区，要 VPN",
+          "VXLAN 的 Underlay 继续 IPv4，Overlay 改成双栈",
+          "这是园区方案。多选「广域演进」时不要选它"
+        ]
+      ]
+    },
+    {
+      "type": "callout",
+      "kind": "exam",
+      "title": "广域四选三",
+      "text": "多选是双栈、6VPE、SRv6。VXLAN Underlay IPv4 加 Overlay 双栈是园区虚拟化的改法，不在广域这道题里。6PE 和 6VPE 的标签细节见 IPv6 过渡那篇。"
+    },
+    {
+      "type": "p",
+      "text": "已经虚拟化的园区，Underlay 的 OSPFv2 不用动。核心继续当 EVPN RR。集中式网关的 VBDIF 配 IPv6 地址，二层互通就有了。三层流量仍先送到这台网关。Edge 按接口 VLAN 把终端绑进不同 BD。双栈终端只认证一次，IPv4 和 IPv6 策略一起下，不要做两遍。访客用 Portal，办公终端用 802.1X，认证点和执行点的位置跟原来的 IPv4 一样。无线要让 CAPWAP 走 IPv6 时，用 capwap ipv6 enable。"
+    },
+    {
+      "type": "p",
+      "text": "新核心和老楼并存时，新楼的 IPv6 访问老楼的 IPv4 要经过数据中心的 NAT64。逐楼割接到新核心，割接用的临时链路最后拆掉。"
+    },
+    {
+      "type": "h",
+      "text": "组播改用比特串"
+    },
+    {
+      "type": "p",
+      "text": "BIER 不为一棵组播树保存每条流的状态。每个边缘节点有一个 BFR-id，范围 1 到 65535。报文头里的 BitString 哪一位是 1，就表示对应的出口要收这份流量。中间路由器按 BIFT 和 F-BM 决定往哪个邻居复制，以及这一跳要清掉哪些位。入口叫 BFIR，出口叫 BFER。BIERv6 把同一套复制做进 IPv6，所以能跟 SRv6 放在一张网上。IPTV 用 MVPN over BIERv6，就是为了少在公网维护组播树。"
+    },
+    {
+      "type": "p",
+      "text": "网管自己可以继续用 IPv4，它不直接面对用户。但它必须能识别各种 IPv6 地址，能看 IPv6 的 DNS，也能把双栈设备的性能和历史数据对上。通过 IPv4 的 SNMP 去读设备上的 IPv6 MIB 即可，不必先把网管整网改成 IPv6。"
+    }
+  ],
+  "exam": [
+    "IPv6+ 包括 SRv6、切片、DetNet、iFIT、新型组播和应用感知。判断题是对的。",
+    "广域演进：双栈、6VPE、SRv6。不选 VXLAN Overlay 双栈。",
+    "存量 MPLS 用 6VPE，P 不动。新建用 SRv6。",
+    "BFR-id 是边缘节点的位号。中间节点不为每条组播流建树。",
+    "虚拟化园区改 IPv6，先动 Overlay，Underlay 的 IPv4 路由可以不动。"
+  ],
+  "mixups": [
+    {
+      "see": "广域题里看到 VXLAN 双栈",
+      "mean": "那是园区虚拟化的第一步。广域的三个答案是双栈、6VPE、SRv6。"
+    },
+    {
+      "see": "6VPE 要求 P 也升级 IPv6",
+      "mean": "不要求。边缘交换 VPNv6，P 仍按标签转发。新建才直接用 SRv6。"
+    },
+    {
+      "see": "双栈电脑认证了两次",
+      "mean": "一次认证要同时带上 IPv4 和 IPv6 的策略。访客仍是 Portal，办公终端仍是 802.1X。"
+    },
+    {
+      "see": "BIER 中间路由器上有很多 (*, G)",
+      "mean": "没有。它只看报文头里的位串，按 BIFT 复制。"
+    }
+  ],
+  "memory": [
+    "广域三选：双栈、6VPE、SRv6。VXLAN 双栈留给园区。",
+    "旧网边缘改，新网直接 SRv6。",
+    "组播不再建树，出口靠位串上的 1。"
+  ],
+  "labs": [],
+  "figures": []
+}

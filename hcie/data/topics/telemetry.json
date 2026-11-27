@@ -1,0 +1,116 @@
+{
+  "id": "telemetry",
+  "title": "Telemetry 怎么订阅",
+  "summary": "静态订阅是设备去连采集器，适合长期巡检。动态订阅是采集器来连设备，适合短期看。推送只有 UDP 和 gRPC。编码是 GPB，不是 XML。",
+  "source": "Datacom 通用 V1.0 · Telemetry 原理与实践",
+  "mindmap": [
+    {
+      "t": "Telemetry",
+      "c": [
+        {
+          "t": "订阅",
+          "d": "静态 dial-out，动态 dial-in"
+        },
+        {
+          "t": "推送",
+          "d": "gRPC 或 UDP"
+        },
+        {
+          "t": "编码",
+          "d": "GPB，二进制"
+        }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "h",
+      "text": "它解决的是拉数据太慢"
+    },
+    {
+      "type": "p",
+      "text": "SNMP 和网管按秒甚至按分钟来算速率，看不见毫秒级的微突发。Telemetry 由设备按周期采样，再推出去。狭义框架是四块：数据源、数据生成、数据订阅、数据推送。数据源用 YANG 描述采样路径。它只上报，不改配置，这点和概述课一致。"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "订阅",
+        "谁主动连",
+        "适合"
+      ],
+      "rows": [
+        [
+          "静态，也叫 dial-out",
+          "设备是客户端，去连采集器",
+          "长期巡检。采样路径、周期、目的地用 CLI 或 NETCONF 先配好"
+        ],
+        [
+          "动态，也叫 dial-in",
+          "采集器是客户端，来连设备",
+          "短期监控。订阅请求由采集器发起"
+        ]
+      ]
+    },
+    {
+      "type": "callout",
+      "kind": "exam",
+      "title": "推送只有 UDP 和 gRPC",
+      "text": "多选不选 TCP，也不选 HTTP。订阅方式简答就是静态和动态。编码用 GPB。有一页标题印成 GBP，正文写的是 Google Protocol Buffers，按 GPB 记。它用数字代替字段名，比 XML 和 JSON 小。"
+    },
+    {
+      "type": "p",
+      "text": "gRPC 基于 HTTP/2，可以双向流。静态订阅的目的组里要写采集器地址、端口和协议。采样放在 sensor-group 的 sensor-path 里，订阅把目的组和采样组绑在一起，并给出采样间隔。"
+    }
+  ],
+  "exam": [
+    "静态：设备连采集器。动态：采集器连设备。",
+    "推送方式是 UDP 和 gRPC。",
+    "编码是 GPB。",
+    "采样路径是 YANG 路径，例如 huawei-devm:devm/cpuInfos/cpuInfo。"
+  ],
+  "mixups": [
+    {
+      "see": "静态订阅却在采集器上监听失败",
+      "mean": "静态是设备向外拨。采集器要先听端口。动态才是采集器去拨设备。"
+    },
+    {
+      "see": "用 TCP 或 HTTP 当推送选项",
+      "mean": "这道题只有 UDP 和 gRPC。gRPC 自己跑在 HTTP/2 上，但选项里的 HTTP 不选。"
+    },
+    {
+      "see": "标题上的 GBP",
+      "mean": "正文是 GPB。按 Protocol Buffers 记。"
+    }
+  ],
+  "memory": [
+    "长期：设备往外拨。短期：采集器往里拨。",
+    "推送两样：UDP、gRPC。",
+    "编码是 GPB。"
+  ],
+  "labs": [
+    {
+      "title": "静态订阅 CPU，用 gRPC 推走",
+      "goal": "设备主动把 CPU 信息推到 192.168.56.1 的 20000 端口。采样间隔 1000。",
+      "steps": [
+        {
+          "where": "CE1",
+          "text": "目的组决定推到哪、用什么协议。no-tls 是课件实验里的写法，现网要改成加密。",
+          "code": "telemetry\n destination-group Dest1\n  ipv4-address 192.168.56.1 port 20000 protocol gRPC no-tls"
+        },
+        {
+          "where": "CE1",
+          "text": "传感器组写采样路径。订阅把目的和传感器绑在一起。",
+          "code": "telemetry\n sensor-group Sensor1\n  sensor-path huawei-devm:devm/cpuInfos/cpuInfo\n subscription Sub1\n  destination-group Dest1\n  sensor-group Sensor1 sample-interval 1000"
+        }
+      ],
+      "verify": [
+        {
+          "title": "采集器先听 20000",
+          "see": "静态订阅是设备去连采集器。采集器没在 20000 上收 gRPC，设备侧不会有采样数据。采样路径必须和设备上的 YANG 模型一致。",
+          "code": ""
+        }
+      ]
+    }
+  ],
+  "figures": []
+}

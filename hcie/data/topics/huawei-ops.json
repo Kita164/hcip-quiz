@@ -1,0 +1,95 @@
+{
+  "id": "huawei-ops",
+  "title": "设备上的 OPS",
+  "summary": "OPS 是华为设备自己的开放接口，用 URI 标识管理对象，用 GET、PUT、POST、DELETE 去操作。当前能在设备上跑的脚本语言是 Python。",
+  "source": "Datacom 通用 V1.0 · OPS 原理与实践",
+  "mindmap": [
+    {
+      "t": "OPS",
+      "c": [
+        {
+          "t": "对象",
+          "d": "URI，例如 CPU 信息"
+        },
+        {
+          "t": "方法",
+          "d": "GET、PUT、POST、DELETE 都支持"
+        },
+        {
+          "t": "脚本",
+          "d": "上传、安装、运行"
+        }
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "type": "h",
+      "text": "脚本跑在设备里面"
+    },
+    {
+      "type": "p",
+      "text": "OPS 是华为 VRP 上的功能，不是控制器上的北向接口。它用 RESTful API 碰到设备的管理面、控制面和数据面。管理对象用 URI 唯一标识。CPU 信息的 URI 是 /devm/cpuInfos/cpuInfo。客户端用标准 HTTP 方法操作这些对象。设备上目前集成的是 Python 运行环境，Java 和 C/C++ 这门课说还没做。"
+    },
+    {
+      "type": "callout",
+      "kind": "exam",
+      "title": "四个方法都支持",
+      "text": "多选 GET、PUT、POST、DELETE，全选。REST 那篇会讲 GET 没有请求体，方法本身这里四个都开放。"
+    },
+    {
+      "type": "p",
+      "text": "典型用途是空配置自动开局、告警来了自动处理、定时把配置备份出去。脚本写好后三步：上传、安装、运行。安装用 ops install file，查看用 display ops script，运行用 ops run python。"
+    },
+    {
+      "type": "p",
+      "text": "脚本里自己建 HTTP 连接到本机的 OPS 端口，再按 URI 发请求。这和 Paramiko 从外面 SSH 进去不是一条路。外面登录用 SSH 那篇，模型化配置用 NETCONF 那篇。"
+    }
+  ],
+  "exam": [
+    "OPS 的方法是 GET、PUT、POST、DELETE，四个都选。",
+    "管理对象用 URI。CPU 是 /devm/cpuInfos/cpuInfo。",
+    "设备上能跑的是 Python。",
+    "安装是 ops install file，运行是 ops run python。"
+  ],
+  "mixups": [
+    {
+      "see": "把 OPS 当成 iMaster NCE 的北向",
+      "mean": "OPS 在设备上。控制器北向是另一套 REST 或 RESTCONF。"
+    },
+    {
+      "see": "脚本上传了但 display ops script 没有",
+      "mean": "上传之后还要 ops install file。没安装就不会出现在脚本目录里。"
+    },
+    {
+      "see": "用 Java 写 OPS 脚本",
+      "mean": "这门课的设备只带 Python 运行环境。"
+    }
+  ],
+  "memory": [
+    "设备里的 REST，四个方法都有。",
+    "先上传，再 install，再 run。",
+    "URI 指对象，不是指控制器。"
+  ],
+  "labs": [
+    {
+      "title": "安装并运行一台设备上的 Python 脚本",
+      "goal": "cpu_demo.py 已经传到设备。安装后能在脚本目录里看到，并能跑起来。",
+      "steps": [
+        {
+          "where": "用户视图",
+          "text": "安装和查看都在用户视图。文件名和设备上的文件一致。",
+          "code": "ops install file cpu_demo.py\ndisplay ops script\nops run python cpu_demo.py"
+        }
+      ],
+      "verify": [
+        {
+          "title": "脚本目录里有这个文件",
+          "see": "display ops script 能列出 cpu_demo.py。运行没有输出时，先看脚本里的 URI 和 HTTP 方法是不是设备开放的那一个。",
+          "code": "display ops script"
+        }
+      ]
+    }
+  ],
+  "figures": []
+}

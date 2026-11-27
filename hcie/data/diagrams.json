@@ -1,0 +1,1739 @@
+{
+  "ospf-fast": [
+    {
+      "at": "PRC",
+      "kind": "net",
+      "title": "PRC 只在已有节点上加叶子",
+      "caption": "树已经收敛。R5 新通告环回时，R1 不重算最短路径树，下一跳沿用去 R5 的那一跳。",
+      "nodes": [
+        {
+          "id": "r1",
+          "role": "router",
+          "label": "R1",
+          "sub": "根",
+          "x": 0,
+          "y": 1
+        },
+        {
+          "id": "r2",
+          "role": "router",
+          "label": "R2",
+          "sub": "",
+          "x": 1,
+          "y": 0
+        },
+        {
+          "id": "r5",
+          "role": "router",
+          "label": "R5",
+          "sub": "节点",
+          "x": 2,
+          "y": 1
+        },
+        {
+          "id": "lo",
+          "role": "server",
+          "label": "Loopback0",
+          "sub": "新叶子",
+          "x": 3,
+          "y": 1
+        }
+      ],
+      "links": [
+        {
+          "a": "r1",
+          "b": "r2",
+          "label": "已收敛",
+          "dashed": false
+        },
+        {
+          "a": "r2",
+          "b": "r5",
+          "label": "已收敛",
+          "dashed": false
+        },
+        {
+          "a": "r5",
+          "b": "lo",
+          "label": "只挂叶子",
+          "dashed": false
+        }
+      ]
+    },
+    {
+      "at": "智能定时器",
+      "kind": "flow",
+      "title": "智能定时器三次",
+      "caption": "第 1 次用 start。连续抖动按 hold×2 拉长，到达 max 后再连续三次，回到 start。",
+      "steps": [
+        {
+          "text": "第 1 次"
+        },
+        {
+          "text": "第 2 次"
+        },
+        {
+          "text": "第 3 次"
+        },
+        {
+          "text": "到顶"
+        }
+      ]
+    }
+  ],
+  "ospf-control": [
+    {
+      "at": "过滤发出",
+      "kind": "compare",
+      "title": "两种过滤不是一条命令",
+      "caption": "区域 import/export 只对 Type3。distribute-list 过滤的是本机路由表，不改别人的 LSA。",
+      "columns": [
+        {
+          "title": "区域过滤",
+          "items": [
+            "只作用于 Type3",
+            "ABR 上 import/export",
+            "不删 Type5/Type7"
+          ]
+        },
+        {
+          "title": "路由表过滤",
+          "items": [
+            "distribute-list",
+            "本机不装进路由表",
+            "LSA 仍然泛洪"
+          ]
+        }
+      ]
+    }
+  ],
+  "ospf-others": [
+    {
+      "at": "GR",
+      "kind": "flow",
+      "title": "OSPF GR 谁干什么",
+      "caption": "Restarter 保持转发。Helper 帮它把 LSDB 补齐。NSR 是本机主备倒换，不靠邻居。",
+      "steps": [
+        {
+          "text": "Restarter"
+        },
+        {
+          "text": "Grace LSA"
+        },
+        {
+          "text": "Helper"
+        },
+        {
+          "text": "退出 GR"
+        }
+      ]
+    }
+  ],
+  "isis-fast-control": [
+    {
+      "at": "I-SPF",
+      "kind": "net",
+      "title": "IS-IS 只重算变化的那一截",
+      "caption": "I-SPF 不动没变化的子树。ATT 只出现在 L1/2 发出的 L1 LSP 上。",
+      "nodes": [
+        {
+          "id": "l1",
+          "role": "router",
+          "label": "L1",
+          "sub": "",
+          "x": 0,
+          "y": 1
+        },
+        {
+          "id": "l12",
+          "role": "router",
+          "label": "L1/2",
+          "sub": "ATT",
+          "x": 1,
+          "y": 1
+        },
+        {
+          "id": "l2",
+          "role": "router",
+          "label": "L2",
+          "sub": "",
+          "x": 2,
+          "y": 1
+        }
+      ],
+      "links": [
+        {
+          "a": "l1",
+          "b": "l12",
+          "label": "L1 LSP",
+          "dashed": false
+        },
+        {
+          "a": "l12",
+          "b": "l2",
+          "label": "L2 LSP",
+          "dashed": false
+        }
+      ]
+    }
+  ],
+  "isis-fragment-gr": [
+    {
+      "at": "GR",
+      "kind": "flow",
+      "title": "IS-IS GR 三个定时器",
+      "caption": "用 IIH 里的 TLV 211，不用 OSPF 的 Opaque LSA。T3 必须长过 T2。",
+      "steps": [
+        {
+          "text": "T1"
+        },
+        {
+          "text": "T2"
+        },
+        {
+          "text": "T3"
+        }
+      ]
+    }
+  ],
+  "bgp-aspath": [
+    {
+      "at": "正则",
+      "kind": "flow",
+      "title": "AS_Path 过滤怎么生效",
+      "caption": "as-path-filter 缺省是拒绝。同一编号多行是或。路由策略没匹配到就按缺省拒绝丢掉。",
+      "steps": [
+        {
+          "text": "filter"
+        },
+        {
+          "text": "多行"
+        },
+        {
+          "text": "route-policy"
+        }
+      ]
+    }
+  ],
+  "bgp-community": [
+    {
+      "at": "打标记",
+      "kind": "compare",
+      "title": "三种不往外送的团体",
+      "caption": "团体属性要邻居开启 advertise-community 才会发出去。一行里面是与，多行是或。",
+      "columns": [
+        {
+          "title": "no-export",
+          "items": [
+            "不发给 EBGP",
+            "联盟外也停"
+          ]
+        },
+        {
+          "title": "no-advertise",
+          "items": [
+            "谁都不发"
+          ]
+        },
+        {
+          "title": "no-export-subconfed",
+          "items": [
+            "联盟内的 EBGP 也不发"
+          ]
+        }
+      ]
+    }
+  ],
+  "bgp-features": [
+    {
+      "at": "ORF",
+      "kind": "flow",
+      "title": "ORF 谁发送",
+      "caption": "接收路由的一方发 ORF。两端都要开。GTSM 只检查 TTL，挡不住非法邻居，认证才挡。",
+      "steps": [
+        {
+          "text": "接收方"
+        },
+        {
+          "text": "对端"
+        },
+        {
+          "text": "GTSM"
+        }
+      ]
+    }
+  ],
+  "bgp-rr": [
+    {
+      "at": "为什么要 RR",
+      "kind": "net",
+      "title": "路由反射器不改下一跳",
+      "caption": "客户之间的路由要经过 RR。同一个 Cluster ID 的反射路由会被丢掉。非客户之间不反射。",
+      "nodes": [
+        {
+          "id": "c1",
+          "role": "router",
+          "label": "Client1",
+          "sub": "",
+          "x": 0,
+          "y": 0
+        },
+        {
+          "id": "rr",
+          "role": "router",
+          "label": "RR",
+          "sub": "Cluster",
+          "x": 1,
+          "y": 1
+        },
+        {
+          "id": "c2",
+          "role": "router",
+          "label": "Client2",
+          "sub": "",
+          "x": 2,
+          "y": 0
+        },
+        {
+          "id": "nc",
+          "role": "router",
+          "label": "非客户",
+          "sub": "",
+          "x": 1,
+          "y": 2
+        }
+      ],
+      "links": [
+        {
+          "a": "c1",
+          "b": "rr",
+          "label": "IBGP",
+          "dashed": false
+        },
+        {
+          "a": "rr",
+          "b": "c2",
+          "label": "反射",
+          "dashed": false
+        },
+        {
+          "a": "rr",
+          "b": "nc",
+          "label": "不在客户间转发",
+          "dashed": false
+        }
+      ]
+    }
+  ],
+  "mpls-basics": [
+    {
+      "at": "Tunnel ID",
+      "kind": "net",
+      "title": "静态 LSP 标签必须对上",
+      "caption": "上一跳的出标签等于下一跳的入标签。静态入标签 16–1023，出标签可以到 1048575。回程这条图上没有标签。",
+      "nodes": [
+        {
+          "id": "r1",
+          "role": "router",
+          "label": "R1",
+          "sub": "出 200",
+          "x": 0,
+          "y": 0
+        },
+        {
+          "id": "r2",
+          "role": "router",
+          "label": "R2",
+          "sub": "入200 出300",
+          "x": 1,
+          "y": 0
+        },
+        {
+          "id": "r3",
+          "role": "router",
+          "label": "R3",
+          "sub": "入 300",
+          "x": 2,
+          "y": 0
+        }
+      ],
+      "links": [
+        {
+          "a": "r1",
+          "b": "r2",
+          "label": "10.0.12.0/24",
+          "dashed": false
+        },
+        {
+          "a": "r2",
+          "b": "r3",
+          "label": "10.0.23.0/24",
+          "dashed": false
+        }
+      ]
+    }
+  ],
+  "mpls-ldp": [
+    {
+      "at": "会话怎么起来",
+      "kind": "flow",
+      "title": "LDP 先 Hello 再 TCP",
+      "caption": "Hello 走 UDP 646 组播。传输地址大的一方主动建 TCP 646。缺省只给主机路由建 LSP。",
+      "steps": [
+        {
+          "text": "Hello"
+        },
+        {
+          "text": "比传输地址"
+        },
+        {
+          "text": "会话"
+        },
+        {
+          "text": "标签"
+        }
+      ]
+    }
+  ],
+  "mpls-l3vpn": [
+    {
+      "at": "两层标签",
+      "kind": "stack",
+      "title": "VPN 报文两层标签",
+      "caption": "内层是 PE 分给 VPN 路由的标签。外层是公网 LSP，把报文送到对端 PE。",
+      "layers": [
+        {
+          "name": "外层公网标签",
+          "note": "送到对端 PE"
+        },
+        {
+          "name": "内层 VPN 标签",
+          "note": "认 VRF"
+        },
+        {
+          "name": "IP 报文",
+          "note": "用户数据"
+        }
+      ]
+    }
+  ],
+  "mpls-vpn-deploy": [
+    {
+      "at": "Hub-Spoke",
+      "kind": "net",
+      "title": "分支只经过总部",
+      "caption": "Spoke 之间不直接通。Hub 上要区分从 Spoke 进来和发回 Spoke 的 RT，否则路由又被发回去。",
+      "nodes": [
+        {
+          "id": "s1",
+          "role": "router",
+          "label": "Spoke1",
+          "sub": "",
+          "x": 0,
+          "y": 0
+        },
+        {
+          "id": "hub",
+          "role": "router",
+          "label": "Hub",
+          "sub": "",
+          "x": 1,
+          "y": 1
+        },
+        {
+          "id": "s2",
+          "role": "router",
+          "label": "Spoke2",
+          "sub": "",
+          "x": 2,
+          "y": 0
+        }
+      ],
+      "links": [
+        {
+          "a": "s1",
+          "b": "hub",
+          "label": "只到 Hub",
+          "dashed": false
+        },
+        {
+          "a": "hub",
+          "b": "s2",
+          "label": "只从 Hub 出",
+          "dashed": false
+        }
+      ]
+    }
+  ],
+  "mpls-vpn-interas": [
+    {
+      "at": "三种方案",
+      "kind": "compare",
+      "title": "跨域三种接法",
+      "caption": "Option A 中间不跑 MPLS。Option B 的 ASBR 交换带标签的 VPNv4。Option C 的 ASBR 不存 CE 路由。",
+      "columns": [
+        {
+          "title": "Option A",
+          "items": [
+            "ASBR 当 CE",
+            "中间无 MPLS"
+          ]
+        },
+        {
+          "title": "Option B",
+          "items": [
+            "ASBR 间 VPNv4",
+            "流量仍过 ASBR"
+          ]
+        },
+        {
+          "title": "Option C",
+          "items": [
+            "PE 或 RR 传 VPNv4",
+            "ASBR 无 CE 路由"
+          ]
+        }
+      ]
+    }
+  ],
+  "evpn": [
+    {
+      "at": "五种路由",
+      "kind": "flow",
+      "title": "EVPN 路由各干什么",
+      "caption": "Type 3 拉 BUM。Type 4 选 DF。Type 1 做水平分割和快速收敛。Type 2 带单播标签。",
+      "steps": [
+        {
+          "text": "Type1"
+        },
+        {
+          "text": "Type2"
+        },
+        {
+          "text": "Type3"
+        },
+        {
+          "text": "Type4"
+        }
+      ]
+    }
+  ],
+  "enterprise-panorama": [
+    {
+      "at": "三张网",
+      "kind": "net",
+      "title": "企业网三块",
+      "caption": "园区接终端，数据中心接应用，广域把它们连起来。控制器不是转发面。",
+      "nodes": [
+        {
+          "id": "c",
+          "role": "cloud",
+          "label": "园区",
+          "sub": "终端",
+          "x": 0,
+          "y": 0
+        },
+        {
+          "id": "w",
+          "role": "cloud",
+          "label": "广域",
+          "sub": "",
+          "x": 1,
+          "y": 1
+        },
+        {
+          "id": "d",
+          "role": "server",
+          "label": "数据中心",
+          "sub": "应用",
+          "x": 2,
+          "y": 0
+        }
+      ],
+      "links": [
+        {
+          "a": "c",
+          "b": "w",
+          "label": "",
+          "dashed": false
+        },
+        {
+          "a": "w",
+          "b": "d",
+          "label": "",
+          "dashed": false
+        }
+      ]
+    }
+  ],
+  "campus-arch": [
+    {
+      "at": "可靠性和 MSTP",
+      "kind": "net",
+      "title": "园区三层加两台核心",
+      "caption": "接入不跑三层。核心用堆叠或 CSS。MST 域要名字、VLAN 映射、修订号都一样。",
+      "nodes": [
+        {
+          "id": "ac",
+          "role": "switch",
+          "label": "接入",
+          "sub": "二层",
+          "x": 0,
+          "y": 2
+        },
+        {
+          "id": "ag",
+          "role": "switch",
+          "label": "汇聚",
+          "sub": "",
+          "x": 1,
+          "y": 1
+        },
+        {
+          "id": "co",
+          "role": "switch",
+          "label": "核心",
+          "sub": "堆叠",
+          "x": 2,
+          "y": 0
+        }
+      ],
+      "links": [
+        {
+          "a": "ac",
+          "b": "ag",
+          "label": "Access",
+          "dashed": false
+        },
+        {
+          "a": "ag",
+          "b": "co",
+          "label": "Trunk",
+          "dashed": false
+        }
+      ]
+    }
+  ],
+  "campus-south": [
+    {
+      "at": "这三样",
+      "kind": "flow",
+      "title": "南向三条通道",
+      "caption": "LLDP 发现邻居。SNMP 是网管来拉。NETCONF 是控制器下配置。Telemetry 是设备往外推。",
+      "steps": [
+        {
+          "text": "LLDP"
+        },
+        {
+          "text": "SNMP"
+        },
+        {
+          "text": "NETCONF"
+        },
+        {
+          "text": "Telemetry"
+        }
+      ]
+    }
+  ],
+  "nac-auth": [
+    {
+      "at": "三种认证",
+      "kind": "flow",
+      "title": "802.1X 三个角色",
+      "caption": "终端是申请者，交换机是认证点，RADIUS 是认证服务器。MAC 旁路是 802.1X 失败后再走 MAC。",
+      "steps": [
+        {
+          "text": "申请者"
+        },
+        {
+          "text": "认证点"
+        },
+        {
+          "text": "RADIUS"
+        }
+      ]
+    }
+  ],
+  "nac-deploy": [
+    {
+      "at": "授权不是认证",
+      "kind": "flow",
+      "title": "先认证，再授权",
+      "caption": "认证回答是谁。授权才决定 VLAN、ACL 或安全组。认证前要留一条能访问门户的路。",
+      "steps": [
+        {
+          "text": "认证"
+        },
+        {
+          "text": "授权"
+        },
+        {
+          "text": "失败"
+        }
+      ]
+    }
+  ],
+  "vxlan-campus": [
+    {
+      "at": "为什么不用",
+      "kind": "stack",
+      "title": "VXLAN 封装",
+      "caption": "外层 UDP 目的端口 4789。VNI 24 位，和 BD 一对一。内层仍是原始以太网帧。",
+      "layers": [
+        {
+          "name": "外层 IP",
+          "note": "隧道端点"
+        },
+        {
+          "name": "UDP 4789",
+          "note": "目的端口"
+        },
+        {
+          "name": "VXLAN 头",
+          "note": "VNI"
+        },
+        {
+          "name": "原始以太帧",
+          "note": "用户数据"
+        }
+      ]
+    }
+  ],
+  "free-mobility": [
+    {
+      "at": "认证点和执行点",
+      "kind": "flow",
+      "title": "认人和查表可以分开",
+      "caption": "认证点只决定安全组。执行点拿矩阵，用源和目的 IP 查出组再放行或丢弃。",
+      "steps": [
+        {
+          "text": "认证点"
+        },
+        {
+          "text": "控制器"
+        },
+        {
+          "text": "执行点"
+        }
+      ]
+    }
+  ],
+  "campus-fabric": [
+    {
+      "at": "一万终端",
+      "kind": "net",
+      "title": "集中式网关放在 Border",
+      "caption": "约一万终端：网关在 Border，Edge 在汇聚。接入不做 Edge。",
+      "nodes": [
+        {
+          "id": "acc",
+          "role": "switch",
+          "label": "接入",
+          "sub": "不做 Edge",
+          "x": 0,
+          "y": 2
+        },
+        {
+          "id": "edge",
+          "role": "switch",
+          "label": "汇聚",
+          "sub": "Edge 二层",
+          "x": 1,
+          "y": 1
+        },
+        {
+          "id": "b",
+          "role": "router",
+          "label": "Border",
+          "sub": "三层网关",
+          "x": 2,
+          "y": 0
+        }
+      ],
+      "links": [
+        {
+          "a": "acc",
+          "b": "edge",
+          "label": "VXLAN 到此为止",
+          "dashed": false
+        },
+        {
+          "a": "edge",
+          "b": "b",
+          "label": "集中式",
+          "dashed": false
+        }
+      ]
+    }
+  ],
+  "campus-smb": [
+    {
+      "at": "漫游",
+      "kind": "compare",
+      "title": "二层漫游和三层漫游",
+      "caption": "二层 VLAN 不变，流量不绕回。三层 VLAN 变了，流量要绕回 HAP。客人用 Portal，不用 802.1X。",
+      "columns": [
+        {
+          "title": "二层漫游",
+          "items": [
+            "SSID 相同",
+            "VLAN 不变",
+            "新 AP 直接转发"
+          ]
+        },
+        {
+          "title": "三层漫游",
+          "items": [
+            "VLAN 变了",
+            "绕回 HAP",
+            "IP 保持不变"
+          ]
+        }
+      ]
+    }
+  ],
+  "campus-open-api": [
+    {
+      "at": "认证和位置",
+      "kind": "flow",
+      "title": "先换 Token 再调接口",
+      "caption": "开放四层都算：应用、平台、网络、终端。Token 放在请求头，不放在 URI 里。",
+      "steps": [
+        {
+          "text": "账号"
+        },
+        {
+          "text": "请求头"
+        },
+        {
+          "text": "API"
+        }
+      ]
+    }
+  ],
+  "sdwan-arch": [
+    {
+      "at": "三条通道",
+      "kind": "net",
+      "title": "管理、控制、数据",
+      "caption": "NETCONF 下配置。BGP EVPN 传路由和 TNP。站点之间的数据走 GRE。",
+      "nodes": [
+        {
+          "id": "nce",
+          "role": "server",
+          "label": "控制器",
+          "sub": "NETCONF",
+          "x": 1,
+          "y": 0
+        },
+        {
+          "id": "rr",
+          "role": "router",
+          "label": "RR",
+          "sub": "EVPN",
+          "x": 1,
+          "y": 1
+        },
+        {
+          "id": "c1",
+          "role": "router",
+          "label": "CPE",
+          "sub": "",
+          "x": 0,
+          "y": 2
+        },
+        {
+          "id": "c2",
+          "role": "router",
+          "label": "CPE",
+          "sub": "",
+          "x": 2,
+          "y": 2
+        }
+      ],
+      "links": [
+        {
+          "a": "nce",
+          "b": "rr",
+          "label": "管理",
+          "dashed": false
+        },
+        {
+          "a": "rr",
+          "b": "c1",
+          "label": "控制",
+          "dashed": false
+        },
+        {
+          "a": "rr",
+          "b": "c2",
+          "label": "控制",
+          "dashed": false
+        },
+        {
+          "a": "c1",
+          "b": "c2",
+          "label": "GRE 数据",
+          "dashed": false
+        }
+      ]
+    }
+  ],
+  "sdwan-functions": [
+    {
+      "at": "三个缺口",
+      "kind": "flow",
+      "title": "先认出应用再选路",
+      "caption": "识别是 SA/FPI。选路是 SPR。排队是 HQoS。丢包用 FEC 补。",
+      "steps": [
+        {
+          "text": "识别"
+        },
+        {
+          "text": "选路"
+        },
+        {
+          "text": "排队"
+        },
+        {
+          "text": "补包"
+        }
+      ]
+    }
+  ],
+  "sdwan-onboard": [
+    {
+      "at": "邮件开局",
+      "kind": "flow",
+      "title": "邮件开局的顺序",
+      "caption": "现场最常用邮件里的 URL。DHCP 开局靠 Option 148，适合现场不会配、运营商愿意配合的时候。",
+      "steps": [
+        {
+          "text": "邮件 URL"
+        },
+        {
+          "text": "设备"
+        },
+        {
+          "text": "NETCONF"
+        },
+        {
+          "text": "业务"
+        }
+      ]
+    }
+  ],
+  "sdwan-design": [
+    {
+      "at": "隧道只在",
+      "kind": "compare",
+      "title": "同路由域才建隧道",
+      "caption": "同一路由域里的 TNP 做 Full-mesh。不同路由域不枚举。RR 要公网地址或一对一静态 NAT。",
+      "columns": [
+        {
+          "title": "同一路由域",
+          "items": [
+            "TNP 互相建隧道",
+            "Full-mesh"
+          ]
+        },
+        {
+          "title": "不同路由域",
+          "items": [
+            "不枚举",
+            "没有数据隧道"
+          ]
+        }
+      ]
+    }
+  ],
+  "wan-overview": [
+    {
+      "at": "三种接法",
+      "kind": "compare",
+      "title": "专线和隧道不是一类",
+      "caption": "专线是裸纤、SDH/MSTP/WDM 和 MPLS VPN。L2TP 和 IPSec 是跑在 Internet 上的隧道。",
+      "columns": [
+        {
+          "title": "专线",
+          "items": [
+            "裸纤",
+            "SDH/MSTP/WDM",
+            "MPLS VPN"
+          ]
+        },
+        {
+          "title": "Internet + VPN",
+          "items": [
+            "L2TP 接入",
+            "GRE/DSVPN",
+            "SSL 对外"
+          ]
+        }
+      ]
+    }
+  ],
+  "gre-l2tp": [
+    {
+      "at": "GRE 本身",
+      "kind": "stack",
+      "title": "先 GRE 再 IPSec",
+      "caption": "GRE 能带组播。IPSec 再给它加密。课件推荐传输模式，少一层公网 IP，少分片。",
+      "layers": [
+        {
+          "name": "公网 IP",
+          "note": "隧道端点"
+        },
+        {
+          "name": "ESP",
+          "note": "加密"
+        },
+        {
+          "name": "GRE",
+          "note": "内层隧道"
+        },
+        {
+          "name": "用户报文",
+          "note": "单播或组播"
+        }
+      ]
+    }
+  ],
+  "wan-bearer": [
+    {
+      "at": "四种承载",
+      "kind": "flow",
+      "title": "从 LDP 到 SRv6",
+      "caption": "四种都算广域承载。绝对保证带宽的是 FlexE 切片，不是 SRv6 Policy，也不是 iFIT。",
+      "steps": [
+        {
+          "text": "LDP"
+        },
+        {
+          "text": "RSVP-TE"
+        },
+        {
+          "text": "SR-MPLS"
+        },
+        {
+          "text": "SRv6"
+        }
+      ]
+    }
+  ],
+  "wan-design": [
+    {
+      "at": "地址和路由",
+      "kind": "net",
+      "title": "双平面靠 MED 留在同平面",
+      "caption": "同平面下一跳 MED 100，异平面 200。数字小的优先，流量才留在这一平面。",
+      "nodes": [
+        {
+          "id": "pe1",
+          "role": "router",
+          "label": "PE1",
+          "sub": "主平面",
+          "x": 0,
+          "y": 0
+        },
+        {
+          "id": "pe3",
+          "role": "router",
+          "label": "PE3",
+          "sub": "MED 100",
+          "x": 1,
+          "y": 0
+        },
+        {
+          "id": "pe2",
+          "role": "router",
+          "label": "PE2",
+          "sub": "备平面",
+          "x": 0,
+          "y": 1
+        },
+        {
+          "id": "pe4",
+          "role": "router",
+          "label": "PE4",
+          "sub": "MED 200",
+          "x": 1,
+          "y": 1
+        }
+      ],
+      "links": [
+        {
+          "a": "pe1",
+          "b": "pe3",
+          "label": "同平面",
+          "dashed": false
+        },
+        {
+          "a": "pe2",
+          "b": "pe4",
+          "label": "同平面",
+          "dashed": true
+        },
+        {
+          "a": "pe1",
+          "b": "pe2",
+          "label": "",
+          "dashed": false
+        }
+      ]
+    }
+  ],
+  "sr-mpls": [
+    {
+      "at": "标签等于",
+      "kind": "flow",
+      "title": "索引加上本机 SRGB",
+      "caption": "通告的是索引，不是标签。入标签等于本机 SRGB 起点加索引。建议全网同一段 SRGB。",
+      "steps": [
+        {
+          "text": "通告"
+        },
+        {
+          "text": "本机 SRGB"
+        },
+        {
+          "text": "入标签"
+        }
+      ]
+    },
+    {
+      "at": "SBFD",
+      "kind": "state",
+      "title": "SBFD 发起端只有两态",
+      "caption": "发起端目的端口 7784，源端口 4784。反射端没有状态机，只把报文环回。",
+      "states": [
+        {
+          "id": "down",
+          "text": "Down"
+        },
+        {
+          "id": "up",
+          "text": "Up"
+        }
+      ],
+      "edges": [
+        {
+          "from": "down",
+          "to": "up",
+          "label": "收到 Up"
+        },
+        {
+          "from": "up",
+          "to": "down",
+          "label": "Admin Down 或超时"
+        }
+      ]
+    }
+  ],
+  "srv6": [
+    {
+      "at": "SID 就是",
+      "kind": "stack",
+      "title": "128 位 SID 怎么切",
+      "caption": "Locator 在高位，用来路由到这台设备。Function 是动作。Arguments 多数业务不用。不够 128 位的补 0。",
+      "layers": [
+        {
+          "name": "Locator",
+          "note": "高位，可路由"
+        },
+        {
+          "name": "Function",
+          "note": "End 或 End.X"
+        },
+        {
+          "name": "Arguments",
+          "note": "可选"
+        },
+        {
+          "name": "补 0",
+          "note": "不足 128 位"
+        }
+      ]
+    }
+  ],
+  "sec-port-mac": [
+    {
+      "at": "端口隔离",
+      "kind": "net",
+      "title": "同一 VLAN 里也可以隔开",
+      "caption": "隔离只限制接入交换机上这些口互相访问，不去掉 VLAN，也不代替上行口。",
+      "nodes": [
+        {
+          "id": "p1",
+          "role": "pc",
+          "label": "PC1",
+          "sub": "隔离口",
+          "x": 0,
+          "y": 1
+        },
+        {
+          "id": "p2",
+          "role": "pc",
+          "label": "PC2",
+          "sub": "隔离口",
+          "x": 2,
+          "y": 1
+        },
+        {
+          "id": "sw",
+          "role": "switch",
+          "label": "接入",
+          "sub": "",
+          "x": 1,
+          "y": 1
+        },
+        {
+          "id": "up",
+          "role": "switch",
+          "label": "上行",
+          "sub": "不隔离",
+          "x": 1,
+          "y": 0
+        }
+      ],
+      "links": [
+        {
+          "a": "p1",
+          "b": "sw",
+          "label": "",
+          "dashed": false
+        },
+        {
+          "a": "p2",
+          "b": "sw",
+          "label": "",
+          "dashed": false
+        },
+        {
+          "a": "sw",
+          "b": "up",
+          "label": "允许",
+          "dashed": false
+        },
+        {
+          "a": "p1",
+          "b": "p2",
+          "label": "互相不通",
+          "dashed": true
+        }
+      ]
+    }
+  ],
+  "sec-dhcp-ipsg": [
+    {
+      "at": "信任和非信任",
+      "kind": "flow",
+      "title": "DHCP Snooping 绑定表",
+      "caption": "非信任口上来的 DHCP Offer 丢掉。绑定表记下 MAC、IP、VLAN 和接口。IPSG 和 DAI 都查这张表。",
+      "steps": [
+        {
+          "text": "Discover"
+        },
+        {
+          "text": "Offer"
+        },
+        {
+          "text": "绑定表"
+        },
+        {
+          "text": "IPSG/DAI"
+        }
+      ]
+    }
+  ],
+  "fw-ha-vsys": [
+    {
+      "at": "为什么不能",
+      "kind": "net",
+      "title": "防火墙双机",
+      "caption": "两台独立防火墙不会同步会话。热备要有心跳，主用转发，备用接上时会话还在。",
+      "nodes": [
+        {
+          "id": "fw1",
+          "role": "fw",
+          "label": "FW1",
+          "sub": "主用",
+          "x": 0,
+          "y": 0
+        },
+        {
+          "id": "fw2",
+          "role": "fw",
+          "label": "FW2",
+          "sub": "备用",
+          "x": 0,
+          "y": 1
+        },
+        {
+          "id": "sw",
+          "role": "switch",
+          "label": "内侧",
+          "sub": "",
+          "x": 1,
+          "y": 0
+        }
+      ],
+      "links": [
+        {
+          "a": "fw1",
+          "b": "fw2",
+          "label": "心跳",
+          "dashed": false
+        },
+        {
+          "a": "fw1",
+          "b": "sw",
+          "label": "转发",
+          "dashed": false
+        },
+        {
+          "a": "fw2",
+          "b": "sw",
+          "label": "待命",
+          "dashed": true
+        }
+      ]
+    }
+  ],
+  "ipsec-vpn": [
+    {
+      "at": "AH 和 ESP",
+      "kind": "stack",
+      "title": "隧道模式的 ESP",
+      "caption": "AH 只认证，协议号 51。ESP 能加密，协议号 50。网关之间用隧道模式，最外层是新的公网 IP。",
+      "layers": [
+        {
+          "name": "新公网 IP",
+          "note": "隧道两端"
+        },
+        {
+          "name": "ESP 头",
+          "note": "协议 50"
+        },
+        {
+          "name": "原 IP 头",
+          "note": "被保护"
+        },
+        {
+          "name": "用户数据",
+          "note": "加密"
+        }
+      ]
+    },
+    {
+      "at": "手工还是 IKE",
+      "kind": "flow",
+      "title": "先有 IKE SA 再有 IPSec SA",
+      "caption": "IKE SA 一条、双向。IPSec SA 单向，业务要一对。过 NAT 时 ESP 套进 UDP 4500。",
+      "steps": [
+        {
+          "text": "IKE 第一阶段"
+        },
+        {
+          "text": "第二阶段"
+        },
+        {
+          "text": "转发"
+        }
+      ]
+    }
+  ],
+  "ipv6-nd": [
+    {
+      "at": "地址解析",
+      "kind": "flow",
+      "title": "IPv6 邻居发现",
+      "caption": "没有 ARP。问邻居用 NS，回答用 NA。路由器用 RA 告诉前缀。DAD 是自己给自己发 NS。",
+      "steps": [
+        {
+          "text": "NS"
+        },
+        {
+          "text": "NA"
+        },
+        {
+          "text": "RS"
+        },
+        {
+          "text": "RA"
+        }
+      ]
+    }
+  ],
+  "ipv6-routing": [
+    {
+      "at": "OSPFv3",
+      "kind": "compare",
+      "title": "OSPFv3 和 OSPFv2 的 LSA",
+      "caption": "多选里 Router、Network、Link-LSA 都有。Network-Summary 不是 OSPFv3 的名字。",
+      "columns": [
+        {
+          "title": "还在",
+          "items": [
+            "Router LSA",
+            "Network LSA",
+            "Link-LSA"
+          ]
+        },
+        {
+          "title": "不再这样叫",
+          "items": [
+            "Network-Summary",
+            "改由其他 LSA 承担"
+          ]
+        }
+      ]
+    }
+  ],
+  "ipv6-transition": [
+    {
+      "at": "先分隧道",
+      "kind": "net",
+      "title": "6PE：P 不用跑 IPv6",
+      "caption": "PE 把 IPv6 前缀放进 BGP，下一跳是 IPv4，外层仍是 MPLS。P 只认标签。6VPE 再加 VRF。",
+      "nodes": [
+        {
+          "id": "pe1",
+          "role": "router",
+          "label": "6PE",
+          "sub": "IPv6+标签",
+          "x": 0,
+          "y": 0
+        },
+        {
+          "id": "p",
+          "role": "router",
+          "label": "P",
+          "sub": "只认标签",
+          "x": 1,
+          "y": 0
+        },
+        {
+          "id": "pe2",
+          "role": "router",
+          "label": "6PE",
+          "sub": "",
+          "x": 2,
+          "y": 0
+        }
+      ],
+      "links": [
+        {
+          "a": "pe1",
+          "b": "p",
+          "label": "MPLS",
+          "dashed": false
+        },
+        {
+          "a": "p",
+          "b": "pe2",
+          "label": "MPLS",
+          "dashed": false
+        }
+      ]
+    }
+  ],
+  "ipv6-plus": [
+    {
+      "at": "广域和园区",
+      "kind": "compare",
+      "title": "广域演进不选 VXLAN 双栈",
+      "caption": "广域是双栈、6VPE 或 SRv6。VXLAN 底下仍是 IPv4、上面跑双栈，那是园区的改法。",
+      "columns": [
+        {
+          "title": "广域",
+          "items": [
+            "双栈",
+            "6VPE",
+            "SRv6"
+          ]
+        },
+        {
+          "title": "园区虚拟化",
+          "items": [
+            "Underlay 仍 IPv4",
+            "Overlay 开 IPv6"
+          ]
+        }
+      ]
+    }
+  ],
+  "qos-traffic": [
+    {
+      "at": "分类和标记",
+      "kind": "flow",
+      "title": "监管丢，整形先缓存",
+      "caption": "复杂分类做在 DS 边界入方向。监管超了就丢。整形超了先放进缓存。",
+      "steps": [
+        {
+          "text": "分类"
+        },
+        {
+          "text": "监管"
+        },
+        {
+          "text": "整形"
+        },
+        {
+          "text": "丢弃"
+        }
+      ]
+    }
+  ],
+  "qos-queue": [
+    {
+      "at": "四种调度",
+      "kind": "compare",
+      "title": "WRED 不是调度",
+      "caption": "调度是 PQ、WFQ、FIFO。WRED 是丢弃。HQoS 还有流队列、用户队列、接口队列。",
+      "columns": [
+        {
+          "title": "调度",
+          "items": [
+            "PQ",
+            "WFQ",
+            "FIFO"
+          ]
+        },
+        {
+          "title": "不是调度",
+          "items": [
+            "WRED 是丢弃",
+            "接口上 8 个队列"
+          ]
+        }
+      ]
+    }
+  ],
+  "net-ops": [
+    {
+      "at": "维护分两种",
+      "kind": "flow",
+      "title": "日志进通道再出去",
+      "caption": "信息中心把 Log、Trap、Debug 分到通道。抓包可以打在屏幕上，也可以存成文件。",
+      "steps": [
+        {
+          "text": "产生"
+        },
+        {
+          "text": "通道"
+        },
+        {
+          "text": "输出"
+        }
+      ]
+    }
+  ],
+  "net-troubleshoot": [
+    {
+      "at": "九步",
+      "kind": "flow",
+      "title": "先圈定再看邻居",
+      "caption": "先确认现象和范围，再看二层，然后看路由邻居。OSPF 邻居先对 RID、区域和掩码。",
+      "steps": [
+        {
+          "text": "现象"
+        },
+        {
+          "text": "二层"
+        },
+        {
+          "text": "邻居"
+        },
+        {
+          "text": "转发"
+        }
+      ]
+    }
+  ],
+  "net-cutover": [
+    {
+      "at": "三段流程",
+      "kind": "flow",
+      "title": "割接先备份再切换",
+      "caption": "备份不只是配置文件，还有端口、流量、路由、STP、ARP 和 MAC。先在实验里走一遍。",
+      "steps": [
+        {
+          "text": "实验"
+        },
+        {
+          "text": "备份"
+        },
+        {
+          "text": "切换"
+        },
+        {
+          "text": "核对"
+        }
+      ]
+    }
+  ],
+  "campus-insight": [
+    {
+      "at": "它和网管",
+      "kind": "flow",
+      "title": "Campus 管设备，Insight 看体验",
+      "caption": "分析器从 Campus 同步设备，再收 Telemetry。一个人的问题用协议回放，一批人的问题分四类。",
+      "steps": [
+        {
+          "text": "Campus"
+        },
+        {
+          "text": "Telemetry"
+        },
+        {
+          "text": "Insight"
+        }
+      ]
+    }
+  ],
+  "net-program": [
+    {
+      "at": "两个包",
+      "kind": "compare",
+      "title": "业务包里没有设备 YANG",
+      "caption": "网元驱动包装设备 YANG，转成 NETCONF 或 CLI。业务包是业务 YANG、Jinja2 和 Python。",
+      "columns": [
+        {
+          "title": "网元驱动包",
+          "items": [
+            "设备 YANG",
+            "转 NETCONF/CLI"
+          ]
+        },
+        {
+          "title": "业务包",
+          "items": [
+            "业务 YANG",
+            "Jinja2",
+            "Python 映射"
+          ]
+        }
+      ]
+    }
+  ],
+  "ssh-paramiko": [
+    {
+      "at": "一条连接",
+      "kind": "flow",
+      "title": "SSH 从下往上",
+      "caption": "先协商版本和算法，再交换密钥，然后口令或公钥认证。一条连接里可以开多条通道。",
+      "steps": [
+        {
+          "text": "传输层"
+        },
+        {
+          "text": "用户认证"
+        },
+        {
+          "text": "连接"
+        }
+      ]
+    }
+  ],
+  "netconf-yang": [
+    {
+      "at": "为什么不用",
+      "kind": "stack",
+      "title": "NETCONF 四层",
+      "caption": "消息层只有 rpc、rpc-reply、notification。get 写在 rpc 里面，是操作，不是消息类型。",
+      "layers": [
+        {
+          "name": "内容",
+          "note": "YANG"
+        },
+        {
+          "name": "操作",
+          "note": "get / edit-config"
+        },
+        {
+          "name": "消息",
+          "note": "rpc 与 rpc-reply"
+        },
+        {
+          "name": "传输",
+          "note": "SSH，830 或 22"
+        }
+      ]
+    }
+  ],
+  "telemetry": [
+    {
+      "at": "它解决的是",
+      "kind": "compare",
+      "title": "两种订阅方向相反",
+      "caption": "静态是设备去连采集器，适合长期巡检。动态是采集器来连设备。推送只有 UDP 和 gRPC。",
+      "columns": [
+        {
+          "title": "静态 dial-out",
+          "items": [
+            "设备是客户端",
+            "长期巡检"
+          ]
+        },
+        {
+          "title": "动态 dial-in",
+          "items": [
+            "采集器来连",
+            "短期查看"
+          ]
+        }
+      ]
+    }
+  ],
+  "huawei-ops": [
+    {
+      "at": "脚本跑在",
+      "kind": "flow",
+      "title": "脚本在设备上的三步",
+      "caption": "上传之后还要安装，display ops script 才看得到。运行用 ops run python。",
+      "steps": [
+        {
+          "text": "上传"
+        },
+        {
+          "text": "install"
+        },
+        {
+          "text": "运行"
+        }
+      ]
+    }
+  ],
+  "rest-api": [
+    {
+      "at": "三个名字",
+      "kind": "compare",
+      "title": "风格、接口、协议",
+      "caption": "REST 不是协议。GET 没有请求体。RESTCONF 才是把 YANG 映射到 HTTP 的协议。",
+      "columns": [
+        {
+          "title": "REST",
+          "items": [
+            "只是风格",
+            "资源用 URI"
+          ]
+        },
+        {
+          "title": "RESTful",
+          "items": [
+            "按这个风格做的接口"
+          ]
+        },
+        {
+          "title": "RESTCONF",
+          "items": [
+            "HTTP 操作 YANG",
+            "没有事务"
+          ]
+        }
+      ]
+    }
+  ]
+}
