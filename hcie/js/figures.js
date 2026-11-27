@@ -6,9 +6,11 @@
     }[c]));
   }
 
-  function measure(s) {
+  function measure(s, cjk, ascii) {
+    const wide = cjk == null ? 13 : cjk;
+    const narrow = ascii == null ? 7.2 : ascii;
     let w = 0;
-    for (const ch of String(s || "")) w += ch.charCodeAt(0) > 255 ? 16 : 8.8;
+    for (const ch of String(s || "")) w += ch.charCodeAt(0) > 255 ? wide : narrow;
     return Math.ceil(w);
   }
 
@@ -19,7 +21,9 @@
   }
 
   function svgWrap(w, h, body, label) {
-    return '<svg class="fig" viewBox="0 0 ' + w + " " + h + '" role="img" aria-label="' + esc(label || "图") + '" style="min-width:' + Math.ceil(w) + 'px">' + body + "</svg>";
+    const width = Math.ceil(w);
+    const height = Math.ceil(h);
+    return '<svg class="fig" viewBox="0 0 ' + width + " " + height + '" width="' + width + '" height="' + height + '" role="img" aria-label="' + esc(label || "图") + '" style="min-width:' + width + 'px">' + body + "</svg>";
   }
 
   function frame(title, caption, inner) {
@@ -49,12 +53,14 @@
     return '<circle class="ico ico-r" cx="26" cy="20" r="13"/><path class="ico-line" d="M26 7 V13 M26 27 V33 M13 20 H19 M33 20 H39"/>';
   }
 
-  function wrapLines(text, maxW) {
+  function wrapLines(text, maxW, cjk, ascii) {
+    const wide = cjk == null ? 13 : cjk;
+    const narrow = ascii == null ? 7.2 : ascii;
     const out = [];
     String(text || "").split("\n").forEach((para) => {
       let rest = para.trim();
       while (rest) {
-        if (measure(rest) <= maxW) {
+        if (measure(rest, wide, narrow) <= maxW) {
           out.push(rest);
           break;
         }
@@ -63,7 +69,7 @@
         let lastBreak = -1;
         for (let i = 0; i < rest.length; i++) {
           const ch = rest[i];
-          const cw = ch.charCodeAt(0) > 255 ? 16 : 8.8;
+          const cw = ch.charCodeAt(0) > 255 ? wide : narrow;
           if (width + cw > maxW) break;
           width += cw;
           cut = i + 1;
@@ -82,17 +88,23 @@
   function mind(topicId, roots, off) {
     if (!roots || !roots.length) return "";
     const root = roots.length === 1 ? roots[0] : { t: "本篇", c: roots };
-    const textW = 340;
+    const textW = 320;
+    const titleCjk = 13.5;
+    const titleAscii = 7.4;
+    const detailCjk = 12.5;
+    const detailAscii = 6.8;
     function layout(node, path) {
       const kids = node.c || [];
       const closed = !!(off && off.has(topicId + "|" + path) && kids.length);
-      const titleLines = wrapLines(node.t || "", textW);
-      const detailLines = wrapLines(node.d || "", textW);
-      const widest = Math.max.apply(null, titleLines.concat(detailLines).map(measure).concat([96]));
-      const tw = widest + (kids.length ? 56 : 28);
-      const th = 16 + titleLines.length * 22 + (detailLines.length ? 6 + detailLines.length * 20 : 0) + 14;
+      const titleLines = wrapLines(node.t || "", textW, titleCjk, titleAscii);
+      const detailLines = wrapLines(node.d || "", textW, detailCjk, detailAscii);
+      const widths = titleLines.map((line) => measure(line, titleCjk, titleAscii))
+        .concat(detailLines.map((line) => measure(line, detailCjk, detailAscii)));
+      const widest = Math.max.apply(null, widths.concat([72]));
+      const tw = widest + (kids.length ? 40 : 20);
+      const th = 8 + titleLines.length * 16 + (detailLines.length ? 2 + detailLines.length * 15 : 0) + 6;
       const laid = closed ? [] : kids.map((c, i) => layout(c, path + "/" + i));
-      const gap = 16;
+      const gap = 6;
       const inner = laid.reduce((s, c) => s + c.boxH, 0) + Math.max(0, laid.length - 1) * gap;
       const boxH = Math.max(th, inner);
       return {
@@ -105,9 +117,9 @@
       box.x = x;
       box.y = y + (box.boxH - box.th) / 2;
       let cy = y;
-      const gap = 16;
+      const gap = 6;
       box.kids.forEach((k) => {
-        place(k, x + box.tw + 46, cy);
+        place(k, x + box.tw + 22, cy);
         cy += k.boxH + gap;
       });
       let maxX = x + box.tw;
@@ -134,19 +146,19 @@
       const cls = depth === 0 ? "mind-node root" : "mind-node";
       const click = box.n ? ' data-mind-path="' + esc(topicId + "|" + box.path) + '" tabindex="0" role="button"' : "";
       parts.push('<g class="' + cls + '"' + click + ">");
-      parts.push('<rect x="' + box.x + '" y="' + box.y + '" width="' + box.tw + '" height="' + box.th + '" rx="10"/>');
+      parts.push('<rect x="' + box.x + '" y="' + box.y + '" width="' + box.tw + '" height="' + box.th + '" rx="8"/>');
       box.titleLines.forEach((line, i) => {
-        parts.push('<text class="mind-t" x="' + (box.x + 14) + '" y="' + (box.y + 26 + i * 22) + '">' + esc(line) + "</text>");
+        parts.push('<text class="mind-t" x="' + (box.x + 10) + '" y="' + (box.y + 16 + i * 16) + '">' + esc(line) + "</text>");
       });
-      const detailTop = box.y + 26 + box.titleLines.length * 22 + 4;
+      const detailTop = box.y + 16 + box.titleLines.length * 16 + 1;
       box.detailLines.forEach((line, i) => {
-        parts.push('<text class="mind-d" x="' + (box.x + 14) + '" y="' + (detailTop + i * 20) + '">' + esc(line) + "</text>");
+        parts.push('<text class="mind-d" x="' + (box.x + 10) + '" y="' + (detailTop + i * 15) + '">' + esc(line) + "</text>");
       });
       if (box.n) {
         const badge = box.closed ? "+" + box.n : "−";
-        const bx = box.x + box.tw - 14;
+        const bx = box.x + box.tw - 12;
         const by = box.y + box.th / 2;
-        parts.push('<circle class="mind-badge" cx="' + bx + '" cy="' + by + '" r="9"/><text class="mind-badge-t" x="' + bx + '" y="' + (by + 4) + '" text-anchor="middle">' + badge + "</text>");
+        parts.push('<circle class="mind-badge" cx="' + bx + '" cy="' + by + '" r="7"/><text class="mind-badge-t" x="' + bx + '" y="' + (by + 3) + '" text-anchor="middle">' + badge + "</text>");
       }
       parts.push("</g>");
     }
@@ -177,7 +189,7 @@
     Object.keys(by).forEach((id) => {
       const n = by[id];
       maxX = Math.max(maxX, n.cx + 90);
-      maxY = Math.max(maxY, n.cy + 90);
+      maxY = Math.max(maxY, n.cy + 70);
     });
     const lines = (spec.links || []).map((l) => {
       const a = by[l.a];
@@ -193,7 +205,7 @@
       let label = "";
       if (l.label) {
         const lines = String(l.label).split("\n");
-        const tw = Math.max.apply(null, lines.map(measure)) + 16;
+        const tw = Math.max.apply(null, lines.map((line) => measure(line, 14.5, 8))) + 18;
         const th = lines.length * 18 + 10;
         label = '<rect class="pill" x="' + (mx - tw / 2) + '" y="' + (my - 14) + '" width="' + tw + '" height="' + th + '" rx="6"/>' +
           lines.map((line, i) => '<text class="edge-t" x="' + mx + '" y="' + (my + 4 + i * 18) + '" text-anchor="middle">' + esc(line) + "</text>").join("");
@@ -204,7 +216,7 @@
       const n = by[raw.id];
       return '<g><g transform="translate(' + (n.cx - 26) + " " + (n.cy - 22) + ')">' + icon(n.role) + '</g>' +
         '<text class="n-text" x="' + n.cx + '" y="' + (n.cy + 32) + '" text-anchor="middle">' + esc(n.label) + "</text>" +
-        (n.sub ? '<text class="n-sub" x="' + n.cx + '" y="' + (n.cy + 54) + '" text-anchor="middle">' + esc(n.sub) + "</text>" : "") +
+        (n.sub ? '<text class="n-sub" x="' + n.cx + '" y="' + (n.cy + 46) + '" text-anchor="middle">' + esc(n.sub) + "</text>" : "") +
         "</g>";
     }).join("");
     return frame(spec.title, spec.caption, svgWrap(maxX, maxY + 8, lines + shapes, spec.title));
@@ -212,8 +224,8 @@
 
   function renderFlow(spec) {
     const steps = spec.steps || [];
-    const colW = 196;
-    const rowH = 108;
+    const colW = 176;
+    const rowH = 92;
     const cols = Math.min(4, Math.max(1, steps.length));
     const body = steps.map((s, i) => {
       const col = i % cols;
@@ -221,11 +233,11 @@
       const x = 24 + col * colW;
       const y = 24 + row * rowH;
       const arrow = col < cols - 1 && i < steps.length - 1
-        ? '<path class="edge" d="M' + (x + 156) + " " + (y + 32) + " H " + (x + colW - 8) + '" marker-end="url(#arr)"/>'
+        ? '<path class="edge" d="M' + (x + 144) + " " + (y + 26) + " H " + (x + colW - 8) + '" marker-end="url(#arr)"/>'
         : "";
-      return '<rect class="flow-box" x="' + x + '" y="' + y + '" width="148" height="64" rx="10"/>' +
-        '<text class="n-text" x="' + (x + 74) + '" y="' + (y + 28) + '" text-anchor="middle">' + esc(s.text) + "</text>" +
-        (s.sub ? '<text class="n-sub" x="' + (x + 74) + '" y="' + (y + 50) + '" text-anchor="middle">' + esc(clip(s.sub, 16)) + "</text>" : "") +
+      return '<rect class="flow-box" x="' + x + '" y="' + y + '" width="136" height="52" rx="10"/>' +
+        '<text class="n-text" x="' + (x + 68) + '" y="' + (y + 22) + '" text-anchor="middle">' + esc(s.text) + "</text>" +
+        (s.sub ? '<text class="n-sub" x="' + (x + 68) + '" y="' + (y + 40) + '" text-anchor="middle">' + esc(clip(s.sub, 16)) + "</text>" : "") +
         arrow;
     }).join("");
     const rows = Math.ceil(steps.length / cols);
@@ -239,12 +251,12 @@
     const layers = spec.layers || [];
     const w = 420;
     const body = layers.map((layer, i) => {
-      const y = 20 + i * 64;
-      return '<rect class="stack-box" x="70" y="' + y + '" width="280" height="52" rx="8"/>' +
-        '<text class="n-text" x="210" y="' + (y + 22) + '" text-anchor="middle">' + esc(layer.name) + "</text>" +
-        (layer.note ? '<text class="n-sub" x="210" y="' + (y + 42) + '" text-anchor="middle">' + esc(layer.note) + "</text>" : "");
+      const y = 16 + i * 52;
+      return '<rect class="stack-box" x="80" y="' + y + '" width="260" height="44" rx="8"/>' +
+        '<text class="n-text" x="210" y="' + (y + 18) + '" text-anchor="middle">' + esc(layer.name) + "</text>" +
+        (layer.note ? '<text class="n-sub" x="210" y="' + (y + 34) + '" text-anchor="middle">' + esc(layer.note) + "</text>" : "");
     }).join("");
-    const h = 32 + layers.length * 64;
+    const h = 24 + layers.length * 52;
     const note = '<text class="n-sub" x="24" y="36">外</text><text class="n-sub" x="24" y="' + (h - 20) + '">内</text>';
     return frame(spec.title, spec.caption, svgWrap(w, h, note + body, spec.title));
   }

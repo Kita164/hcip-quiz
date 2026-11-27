@@ -446,6 +446,7 @@ function snippet(topic) {
     const links = Array.from(rail.querySelectorAll("a[data-spy]"));
     const pairs = links.map((a) => [document.getElementById(a.getAttribute("data-spy")), a]).filter((pair) => pair[0]);
     if (!pairs.length) return;
+    const wide = window.matchMedia("(min-width: 1180px)").matches;
     const desktop = window.matchMedia("(min-width: 901px)").matches;
     state.spy = new IntersectionObserver((entries) => {
       const hit = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
@@ -454,7 +455,7 @@ function snippet(topic) {
       const link = pairs.find((pair) => pair[0] === hit.target);
       if (link) link[1].classList.add("active");
     }, {
-      root: desktop ? document.querySelector(".main") : null,
+      root: wide ? document.getElementById("article") : (desktop ? document.querySelector(".main") : null),
       rootMargin: "-8% 0px -70% 0px",
       threshold: 0,
     });
@@ -484,7 +485,9 @@ function snippet(topic) {
       if (el) el.scrollIntoView({ block: "start" });
       else art.scrollTop = 0;
     } else if (art && art.parentElement) {
-      const scroller = window.matchMedia("(min-width: 901px)").matches ? document.querySelector(".main") : window;
+      const scroller = window.matchMedia("(min-width: 1180px)").matches
+        ? document.getElementById("article")
+        : (window.matchMedia("(min-width: 901px)").matches ? document.querySelector(".main") : window);
       if (scroller === window) window.scrollTo(0, 0);
       else scroller.scrollTop = 0;
     }
